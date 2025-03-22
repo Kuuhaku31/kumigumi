@@ -1,2 +1,5 @@
 /.vscode
 /ignore
+/data
+
+__pycache__

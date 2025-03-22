@@ -5,10 +5,46 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KumiGumi</title>
+  <style>
+    body
+    {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+
+  </style>
 </head>
 
 <body>
   <h1>欢迎来到KumiGumi</h1>
+  <div id="output"></div>
+
+  <script>
+    "use strict";
+    // 读取./data/test.json文件
+    const file_path = "./data/test.json";
+
+    // 使用fetch API读取文件
+    fetch(file_path)
+      .then(response =>
+      {
+        if(!response.ok)
+        {
+          throw new Error('网络响应失败');
+        }
+        return response.json();
+      })
+      .then(data =>
+      {
+        // 将读取到的数据展示在页面上
+        document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+      })
+      .catch(error =>
+      {
+        console.error('读取文件时出错:', error);
+      });
+
+  </script>
 </body>
 
 </html>
