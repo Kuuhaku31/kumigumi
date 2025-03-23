@@ -1,8 +1,8 @@
 # Desc: 爬取 bangumi.tv 的番剧信息
 import csv  # noqa: E402
 import json  # noqa: E402
-import urllib.request  # noqa: E402
 
+import request_html.request_html as rh  # noqa: E402
 from lxml import etree
 
 # 共同信息
@@ -50,19 +50,6 @@ headers_ep = [
     header_str_ep_start,
     header_str_time,
 ]
-
-
-# 获取html页面
-def get_html(url: str) -> str:
-    print(f"正在请求 {url}")
-
-    res = urllib.request.urlopen(url)
-    if res.status != 200:
-        print(f"请求失败：{url}")
-        return None
-    else:
-        print(f"请求成功：{url}")
-        return res.read().decode("utf-8")
 
 
 # 获取单集信息
@@ -199,7 +186,7 @@ def prase_html(html: str) -> tuple:
 
 def prase_anime_info(url):
 
-    html = get_html(url)
+    html = rh.request(url)
     if not html:
         return None
 

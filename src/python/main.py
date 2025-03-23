@@ -1,34 +1,14 @@
-import csv
+# main.py
 
-from bangumi import ba
+import mikananime.config as mk_config
+import mikananime.prase_rss_html as mk_ph
+import mikananime.print_torrent_items as mk_pti
+import request_html.request_html as rh
 
+mk_config.init("data/config.json")
+json = mk_config.get_config()
+url = json["url_list"][0]
 
-def f1():
-    url = "https://bangumi.tv/subject/389156"
-
-    print("test")
-    html = ba.get_html(url)
-
-    with open("data/test.html", "w", encoding="utf-8") as f:
-        f.write(html)
-
-
-def f2():
-    res = None
-
-    with open("data/test.html", "r", encoding="utf-8") as f:
-        html = f.read()
-        res = ba.prase_html(html)
-
-    for key, value in res.items():
-        print(f"{key}: {value}")
-
-    with open("data/data.csv", "w+", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(ba.headers_anime)
-        writer.writerow(res.values())
-
-
-# f1()
-# f2()
-ba.update_csv("data/urls.json", "data/data.csv", "data/data_ep.csv")
+html_str = rh.request(url)
+dict = mk_ph.prase(html_str)
+mk_pti.print_dict(dict)
