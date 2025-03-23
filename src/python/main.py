@@ -25,10 +25,10 @@ def f2():
 
     with open("data/data.csv", "w+", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(ba.headers)
+        writer.writerow(ba.headers_anime)
         writer.writerow(res.values())
 
 
 # f1()
 # f2()
-ba.update_csv("data/urls.json", "data/data.csv")
+ba.update_csv("data/urls.json", "data/data.csv", "data/data_ep.csv")
