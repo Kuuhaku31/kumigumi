@@ -1,20 +1,25 @@
 # main.py
 
 import bangumi.update as up
-import mikananime.config as mk_config
 import mikananime.prase_rss_html as mk_ph
-import mikananime.print_torrent_items as mk_pti
 import utils
 
 
 def f1():
-    mk_config.init("data/config.json")
-    json = mk_config.get_config()
-    url = json["url_list"][0]
-
+    url = "https://mikanani.me/RSS/Bangumi?bangumiId=2702"
     html_str = utils.request_html(url)
     dict = mk_ph.prase(html_str)
-    mk_pti.print_dict(dict)
+
+    torrent_list = []
+    for group in dict:
+        for item in dict[group]:
+            item["字幕组"] = group
+            torrent_list.append(item)
+
+    for torrent in torrent_list:
+        print(torrent)
+
+    utils.save_csv("./data/torrent.csv", ["字幕组", "标题", "描述", "发布日期", "链接"], torrent_list)
 
 
 def f2():
@@ -25,4 +30,4 @@ def f2():
     )
 
 
-f2()
+f1()

@@ -37,6 +37,8 @@ dict:{
 def prase(html_str: str) -> dict:
     tree = etree.HTML(html_str.encode("utf-8"))
 
+    print(f"正在解析 {tree.xpath('//title/text()')[0]}")
+
     # 遍历每个 <item> 元素
     mikan_items = {}
     for item in tree.xpath("//item"):
@@ -66,5 +68,7 @@ def prase(html_str: str) -> dict:
             mikan_items[group_name] = [torrent_item]
         else:
             mikan_items[group_name].append(torrent_item)
+
+    print(f"解析完成：{tree.xpath('//title/text()')[0]}")
 
     return mikan_items
