@@ -7,11 +7,11 @@ import urllib.request  # noqa: E402
 
 # 获取html页面
 def request_html(url: str) -> str:
-    print(f"正在请求 {url}")
+    print(f"正在请求: {url}")
 
     res = urllib.request.urlopen(url)
     if res.status != 200:
-        print(f"请求失败：{url}")
+        print(f"请求失败：{url}, 状态码：{res.status}")
         return None
     else:
         print(f"请求成功：{url}")
@@ -30,8 +30,26 @@ def save_csv(file: str, headers: list, data: dict):
                 new_row.append(elem)
             writer.writerow(new_row)  # 写入数据
 
+    print(f"保存成功：{file}")
+
+
+# 读取csv文件
+def load_csv(file_path):
+    data = []
+    with open(file_path, mode="r", encoding="utf-8") as file:
+        reader = csv.DictReader(file)  # 使用 DictReader 读取为字典形式
+        for row in reader:
+            data.append(row)  # 每一行是一个字典
+
+    print(f"读取成功：{file_path}")
+    return data
+
 
 # 获取json文件
 def get_json(file: str) -> dict:
+    data = None
     with open(file, encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+
+    print(f"读取成功：{file}")
+    return data

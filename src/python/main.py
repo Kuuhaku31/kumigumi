@@ -17,8 +17,12 @@ def f1():
     mk_pti.print_dict(dict)
 
 
-up.update_csv(
-    utils.get_json("./data/urls.json")["url_list"],
-    "./data/anime.csv",
-    "./data/episode.csv",
-)
+def f2():
+    up.update_csv(
+        "./data/kumigumi.json",
+        "./data/anime.csv",
+        "./data/episode.csv",
+    )
+
+
+f2()
