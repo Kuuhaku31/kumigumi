@@ -64,35 +64,22 @@ def get_json(file: str) -> dict:
 
 
 # 补全配置文件
-def build_config_file(index_list: list, config_file: str):
+def build_config_file(动画id列表: list) -> list:
 
-    config_data = {
-        "动画信息": [],
-        "配置信息": {
-            "动画数据文件": "anime.csv",
-            "单集数据文件": "episode.csv",
-            "种子数据文件": "torrent.csv",
-        },
-    }
+    # 获取动画信息列表
+    动画信息列表 = []
+    for id in 动画id列表:
 
-    # 遍历每个index，拼接url
-    for index in index_list:
-
-        json_str = request_html("https://api.bgm.tv/v0/subjects/" + index)
+        # 遍历每个index，拼接url
+        json_str = request_html("https://api.bgm.tv/v0/subjects/" + id)
         json_data = json.loads(json_str)
 
         cn_name = name = json_data["name"]
         if json_data["name_cn"] != "":
             cn_name = json_data["name_cn"]
 
-        config_data["动画信息"].append(
-            {
-                "链接": {"bangumi": "https://bangumi.tv/subject/" + index, "蜜柑计划": ""},
-                "名称": name,
-                "中文名": cn_name,
-            }
+        动画信息列表.append(
+            {"名称": name, "中文名": cn_name, "bangumi源": "https://bangumi.tv/subject/" + id, "蜜柑计划RSS源": ""}
         )
 
-    # 保存到配置文件
-    with open(config_file, "w+", encoding="utf-8") as f:
-        json.dump(config_data, f, ensure_ascii=False)
+    return 动画信息列表

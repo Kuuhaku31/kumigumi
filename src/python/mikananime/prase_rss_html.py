@@ -33,17 +33,17 @@ dict:{
 """
 
 
-# 传入html字符串，解析html文件为字典
-def prase(name: str, rss_html_str: str) -> dict:
+# 传入html字符串，解析html文件为数组
+def prase(name: str, rss_html_str: str) -> list:
     tree = etree.HTML(rss_html_str.encode("utf-8"))
 
     print(f"正在解析 {tree.xpath('//title/text()')[0]}")
 
     # 遍历每个 <item> 元素
-    mikan_items = {}
+    种子信息列表 = []
     for item in tree.xpath("//item"):
 
-        torrent_item = {"作品": name}  # 用字典存储一个item的所有信息
+        torrent_item = {"名称": name}  # 用字典存储一个item的所有信息
 
         # 获取种子链接
         torrent_item["链接"] = item.xpath("./enclosure")[0].get("url") if item.xpath("./enclosure") else ""
@@ -61,15 +61,26 @@ def prase(name: str, rss_html_str: str) -> dict:
         else:
             group_name = "未知字幕组"
 
-        # 提取大小
-        torrent_item["大小"] = item.xpath("./description")[0].text.split("[")[-1].split("]")[0]
+        torrent_item["字幕组"] = group_name
 
-        # 添加到字典
-        if group_name not in mikan_items:
-            mikan_items[group_name] = [torrent_item]
-        else:
-            mikan_items[group_name].append(torrent_item)
+        # 提取大小
+        size_str = item.xpath("./description")[0].text.split("[")[-1].split("]")[0]
+
+        # 将大小转换为字节（Byte）
+        float_num = float(size_str[:-2].strip())
+        if "GB" in size_str:
+            float_num *= 1024 * 1024 * 1024
+        elif "MB" in size_str:
+            float_num *= 1024 * 1024
+        elif "KB" in size_str:
+            float_num *= 1024
+
+        torrent_item["大小"] = size_str
+        torrent_item["大小（Byte）"] = int(float_num)
+
+        # 添加到列表
+        种子信息列表.append(torrent_item)
 
     print(f"解析完成：{tree.xpath('//title/text()')[0]}")
 
-    return mikan_items
+    return 种子信息列表
