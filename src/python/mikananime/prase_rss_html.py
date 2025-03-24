@@ -34,8 +34,8 @@ dict:{
 
 
 # 传入html字符串，解析html文件为字典
-def prase(html_str: str) -> dict:
-    tree = etree.HTML(html_str.encode("utf-8"))
+def prase(name: str, rss_html_str: str) -> dict:
+    tree = etree.HTML(rss_html_str.encode("utf-8"))
 
     print(f"正在解析 {tree.xpath('//title/text()')[0]}")
 
@@ -43,14 +43,12 @@ def prase(html_str: str) -> dict:
     mikan_items = {}
     for item in tree.xpath("//item"):
 
-        torrent_item = {}  # 用字典存储一个item的所有信息
+        torrent_item = {"作品": name}  # 用字典存储一个item的所有信息
 
         # 获取种子链接
         torrent_item["链接"] = item.xpath("./enclosure")[0].get("url") if item.xpath("./enclosure") else ""
         # 获取种子标题
         torrent_item["标题"] = item.xpath("./title")[0].text if item.xpath("./title") else ""
-        # 获取种子描述
-        torrent_item["描述"] = item.xpath("./description")[0].text if item.xpath("./description") else ""
         # 获取发布日期
         torrent_item["发布日期"] = item.xpath("./torrent/pubdate")[0].text if item.xpath("./torrent/pubdate") else ""
 
@@ -62,6 +60,9 @@ def prase(html_str: str) -> dict:
             group_name = torrent_item["标题"].split("】")[0][1:]
         else:
             group_name = "未知字幕组"
+
+        # 提取大小
+        torrent_item["大小"] = item.xpath("./description")[0].text.split("[")[-1].split("]")[0]
 
         # 添加到字典
         if group_name not in mikan_items:

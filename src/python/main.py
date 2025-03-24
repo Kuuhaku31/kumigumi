@@ -1,33 +1,21 @@
 # main.py
 
-import bangumi.update as up
-import mikananime.prase_rss_html as mk_ph
-import utils
+import json
 
+import bangumi.update as ba_update
 
-def f1():
-    url = "https://mikanani.me/RSS/Bangumi?bangumiId=2702"
-    html_str = utils.request_html(url)
-    dict = mk_ph.prase(html_str)
+config_data = {}
 
-    torrent_list = []
-    for group in dict:
-        for item in dict[group]:
-            item["字幕组"] = group
-            torrent_list.append(item)
+# 读取配置文件
+with open("./kumigumi.json", "r", encoding="utf-8") as f:
+    config_data = json.load(f)
 
-    for torrent in torrent_list:
-        print(torrent)
+print("配置文件读取成功")
+print("开始更新bangumi动画信息...")
 
-    utils.save_csv("./data/torrent.csv", ["字幕组", "标题", "描述", "发布日期", "链接"], torrent_list)
+url_list = []
+for anime in config_data["动画信息"]:
+    url_list.append(anime["链接"]["bangumi"])
 
-
-def f2():
-    up.update_csv(
-        "./data/kumigumi.json",
-        "./data/anime.csv",
-        "./data/episode.csv",
-    )
-
-
-f1()
+ba_update.update_csv(url_list, config_data["配置信息"]["动画数据文件"], config_data["配置信息"]["单集数据文件"])
+print("更新完成")
