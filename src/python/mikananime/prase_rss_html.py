@@ -65,6 +65,7 @@ def prase(name: str, rss_html_str: str) -> list:
 
         # 提取大小
         size_str = item.xpath("./description")[0].text.split("[")[-1].split("]")[0]
+        size_str = size_str.replace(",", "")
 
         # 将大小转换为字节（Byte）
         float_num = float(size_str[:-2].strip())

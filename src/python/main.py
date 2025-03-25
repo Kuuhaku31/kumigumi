@@ -33,6 +33,28 @@ def 构建配置文件(工作目录: str):
     print("配置文件构建完成")
 
 
+def 更新配置文件(工作目录: str):
+    print("开始更新配置文件...")
+
+    动画信息列表 = []
+    with open(工作目录 + "kumigumi.json", "r", encoding="utf-8") as f:
+        kumigumi_json = json.load(f)
+        动画信息列表 = kumigumi_json["动画信息列表"]
+
+    for 动画信息 in 动画信息列表:
+        id = 动画信息["bangumi源"].split("/")[-1]
+        url = "https://api.bgm.tv/v0/subjects/" + id
+        json_str = utils.request_html(url)
+        json_data = json.loads(json_str)
+
+        动画信息["名称"] = json_data["name"]
+        动画信息["中文名"] = json_data["name_cn"]
+
+    # 保存配置文件
+    with open(工作目录 + "kumigumi.json", "w", encoding="utf-8") as f:
+        json.dump(kumigumi_json, f, ensure_ascii=False, indent=4)
+
+
 def 更新动画信息(工作目录: str):
     print("开始更新bangumi动画信息...")
 
@@ -67,6 +89,8 @@ def 更新种子信息(工作目录: str):
     # 获取种子信息列表
     种子信息列表 = []
     for 动画信息 in 动画信息列表:
+        if "蜜柑计划RSS源" not in 动画信息:
+            continue
         rss_html_str = utils.request_html(动画信息["蜜柑计划RSS源"])
         种子信息列表 += mikan.prase(动画信息["名称"], rss_html_str)
 
@@ -88,6 +112,8 @@ def main():
 
     if 配置信息["启动参数"] == "构建配置文件":
         构建配置文件(配置信息["工作目录"])
+    elif 配置信息["启动参数"] == "更新配置文件":
+        更新配置文件(配置信息["工作目录"])
     elif 配置信息["启动参数"] == "更新动画信息":
         更新动画信息(配置信息["工作目录"])
     elif 配置信息["启动参数"] == "更新种子信息":

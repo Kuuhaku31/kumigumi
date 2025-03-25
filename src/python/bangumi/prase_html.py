@@ -81,16 +81,24 @@ def prase_html(html_str: str) -> dict:
     prg_list = []
     for prg in tree.xpath('//ul[@class="prg_list"]/li'):
 
+        # 获取a标签
+        tag_a = prg.xpath(".//a")
+        if not tag_a:
+            continue
+        tag_a = tag_a[0]
+
         # 初始化字典
         new_prg = {}
         for header in hs.episode_headers:
             new_prg[header] = ""
-        new_prg[hs.bangumi_url] = "https://bangumi.tv" + prg.xpath(".//a/@href")[0]
+
+        # 通过a标签获取信息
+        new_prg[hs.bangumi_url] = "https://bangumi.tv" + tag_a.xpath("@href")[0]
         new_prg[hs.original_name] = anime_infos[hs.original_name]
         new_prg[hs.chinese_name] = anime_infos[hs.chinese_name]
         new_prg[hs.broadcast_day] = anime_infos[hs.broadcast_day]
-        new_prg[hs.episode_index] = prg.xpath(".//a/text()")[0]
-        new_prg[hs.episode_title] = prg.xpath(".//a/@title")[0].split(" ", 1)[1]  # 按第一个空格分割，取第二部分
+        new_prg[hs.episode_index] = tag_a.xpath("text()")[0]
+        new_prg[hs.episode_title] = tag_a.xpath("@title")[0].split(" ", 1)[1]  # 按第一个空格分割，取第二部分
 
         # 通过id获取span标签
         span = tree.xpath(f'//div[@id="{prg.xpath(".//a/@rel")[0].replace("#", "")}"]/span')
