@@ -1,9 +1,11 @@
 # main.py
 
+import argparse
 import json
 
 import bangumi.update as ba_update
 import mikananime.prase_rss_html as mikan
+import mikananime.torrent_headers as 种子信息表头
 import utils.utils as utils
 
 
@@ -91,35 +93,59 @@ def 更新种子信息(工作目录: str):
     for 动画信息 in 动画信息列表:
         if "蜜柑计划RSS源" not in 动画信息:
             continue
+        elif 动画信息["蜜柑计划RSS源"] == "":
+            continue
         rss_html_str = utils.request_html(动画信息["蜜柑计划RSS源"])
         种子信息列表 += mikan.prase(动画信息["名称"], rss_html_str)
 
     # 保存种子信息
     utils.save_csv(
-        工作目录 + 种子数据文件名, ["名称", "字幕组", "标题", "大小", "大小（Byte）", "发布日期", "链接"], 种子信息列表
+        工作目录 + 种子数据文件名,
+        种子信息表头.种子信息表头,
+        种子信息列表,
     )
 
     print("更新完成")
 
 
-def main():
+if __name__ == "__main__":
 
-    # 读取配置文件
-    配置信息 = {}
-    with open("./config.json", "r", encoding="utf-8") as f:
-        配置信息 = json.load(f)
-    print("配置文件读取成功")
+    # 创建解析器
+    parser = argparse.ArgumentParser(description="一个可以接受启动参数的 Python 程序")
 
-    if 配置信息["启动参数"] == "构建配置文件":
-        构建配置文件(配置信息["工作目录"])
-    elif 配置信息["启动参数"] == "更新配置文件":
-        更新配置文件(配置信息["工作目录"])
-    elif 配置信息["启动参数"] == "更新动画信息":
-        更新动画信息(配置信息["工作目录"])
-    elif 配置信息["启动参数"] == "更新种子信息":
-        更新种子信息(配置信息["工作目录"])
+    # 添加参数
+    parser.add_argument("--wd", type=str, help="工作目录")
+    parser.add_argument("--ac", type=str, help="行为")
+
+    # 解析参数
+    args = parser.parse_args()
+    工作目录: str = args.wd
+    行为: str = args.ac
+
+    if not 行为:
+        print("请输入启动参数:")
+        print("构建配置文件: build_config")
+        print("更新配置文件: uc")
+        print("更新动画信息: ua")
+        print("更新种子信息: ut")
+        print("更新动画信息和种子信息: u")
+
+        行为 = input()
+
+    if 行为 == "build_config":
+        print("确认后将会覆盖原有配置文件【y/n】")
+        if input() == "y":
+            构建配置文件(工作目录)
+    elif 行为 == "uc":
+        更新配置文件(工作目录)
+    elif 行为 == "ua":
+        更新动画信息(工作目录)
+    elif 行为 == "ut":
+        更新种子信息(工作目录)
+    elif 行为 == "u":
+        更新动画信息(工作目录)
+        更新种子信息(工作目录)
     else:
         print("未知的启动参数")
 
-
-main()
+    print("程序结束")

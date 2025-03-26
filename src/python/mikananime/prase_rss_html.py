@@ -1,4 +1,6 @@
 #
+import mikananime.prase_torrent_info as pt
+import mikananime.torrent_headers as 种子信息表头
 from lxml import etree
 
 # 按照字幕组分类
@@ -51,6 +53,8 @@ def prase(name: str, rss_html_str: str) -> list:
         torrent_item["标题"] = item.xpath("./title")[0].text if item.xpath("./title") else ""
         # 获取发布日期
         torrent_item["发布日期"] = item.xpath("./torrent/pubdate")[0].text if item.xpath("./torrent/pubdate") else ""
+        # 网页链接
+        torrent_item[种子信息表头.网页链接] = item.xpath("./link")[0].tail if item.xpath("./link") else ""
 
         # 提取字幕组信息
         group_name = ""
@@ -62,6 +66,10 @@ def prase(name: str, rss_html_str: str) -> list:
             group_name = "未知字幕组"
 
         torrent_item["字幕组"] = group_name
+
+        # 解析字幕组信息
+        if group_name in pt.解析方法字典:
+            torrent_item.update(pt.解析方法字典[group_name](torrent_item["标题"]))
 
         # 提取大小
         size_str = item.xpath("./description")[0].text.split("[")[-1].split("]")[0]

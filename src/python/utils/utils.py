@@ -34,7 +34,9 @@ def save_csv(file: str, headers: list, data: dict):
         for info in data:
             new_row = []
             for header in headers:
-                elem = info.get(header)
+                elem = ""
+                if header in info:
+                    elem = info.get(header)
                 new_row.append(elem)
             writer.writerow(new_row)  # 写入数据
 

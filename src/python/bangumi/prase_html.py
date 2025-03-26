@@ -35,7 +35,7 @@ def prase_html(html_str: str) -> dict:
         key = {
             "中文名": hs.chinese_name,
             "别名": hs.alternate_name,
-            "话数": hs.total_episodes,
+            "话数": int(hs.total_episodes) if hs.total_episodes.isdigit() else -1,
             "放送开始": hs.start_date,
             "放送星期": hs.broadcast_day,
         }.get(key, key)
