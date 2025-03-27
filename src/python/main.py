@@ -122,20 +122,23 @@ if __name__ == "__main__":
     工作目录: str = args.wd
     行为: str = args.ac
 
+    print("工作目录: " + 工作目录)
+
     if not 行为:
-        print("请输入启动参数:")
-        print("构建配置文件: build_config")
+        print("构建配置文件: bc")
         print("更新配置文件: uc")
         print("更新动画信息: ua")
         print("更新种子信息: ut")
         print("更新动画信息和种子信息: u")
 
-        行为 = input()
+        行为 = input("请输入启动参数: ")
 
-    if 行为 == "build_config":
+    if 行为 == "bc":
         print("确认后将会覆盖原有配置文件【y/n】")
-        if input() == "y":
+        if input() == "y" or "Y":
             构建配置文件(工作目录)
+        else:
+            print("取消构建配置文件")
     elif 行为 == "uc":
         更新配置文件(工作目录)
     elif 行为 == "ua":
