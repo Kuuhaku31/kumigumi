@@ -51,6 +51,7 @@ def 更新配置文件(工作目录: str):
 
         动画信息["名称"] = json_data["name"]
         动画信息["中文名"] = json_data["name_cn"]
+        动画信息["蜜柑计划RSS源"] = 动画信息["蜜柑计划RSS源"] if "蜜柑计划RSS源" in 动画信息 else ""
 
     # 保存配置文件
     with open(工作目录 + "kumigumi.json", "w", encoding="utf-8") as f:
