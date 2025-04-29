@@ -1,15 +1,14 @@
 # Desc: 爬取 bangumi.tv 的番剧信息
 
-import bangumi.headers as hs
 from lxml import etree
+
+import bangumi.headers as hs
 
 
 # 解析番剧信息
 # 字典：{动画信息列表（只有一个元素）, 单集信息列表}
 def prase_html(html_str: str) -> dict:
     tree = etree.HTML(html_str)
-
-    print(f"正在解析: {tree.xpath("//h1/a/text()")[0]}")
 
     # 初始化字典
     anime_infos = {}
@@ -128,7 +127,5 @@ def prase_html(html_str: str) -> dict:
                 new_prg[hs.duration] = value
 
         prg_list.append(new_prg)
-
-    print(f"解析完成：{anime_infos['名称']}")
 
     return {"动画信息": [anime_infos], "单集信息": prg_list}

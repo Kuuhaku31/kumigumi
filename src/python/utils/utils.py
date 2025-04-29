@@ -9,7 +9,6 @@ import fake_useragent
 
 # 获取html页面
 def request_html(url: str) -> str:
-    print(f"正在请求: {url}")
 
     # 随机请求头池
     headers = {
@@ -19,10 +18,8 @@ def request_html(url: str) -> str:
 
     res = urllib.request.urlopen(urllib.request.Request(url, headers=headers))
     if res.status != 200:
-        print(f"请求失败：{url}, 状态码：{res.status}")
         return None
     else:
-        print(f"请求成功：{url}")
         return res.read().decode("utf-8")
 
 

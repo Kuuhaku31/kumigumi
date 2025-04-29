@@ -1,7 +1,8 @@
 #
+from lxml import etree
+
 import mikananime.prase_torrent_info as pt
 import mikananime.torrent_headers as 种子信息表头
-from lxml import etree
 
 # 按照字幕组分类
 """
@@ -38,8 +39,6 @@ dict:{
 # 传入html字符串，解析html文件为数组
 def prase(name: str, rss_html_str: str) -> list:
     tree = etree.HTML(rss_html_str.encode("utf-8"))
-
-    print(f"正在解析 {tree.xpath('//title/text()')[0]}")
 
     # 遍历每个 <item> 元素
     种子信息列表 = []
@@ -89,7 +88,5 @@ def prase(name: str, rss_html_str: str) -> list:
 
         # 添加到列表
         种子信息列表.append(torrent_item)
-
-    print(f"解析完成：{tree.xpath('//title/text()')[0]}")
 
     return 种子信息列表
