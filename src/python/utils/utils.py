@@ -27,7 +27,7 @@ def request_html(url: str) -> str:
 
 
 # 保存csv文件
-def save_csv(file: str, headers: list, data: dict):
+def save_csv(file: str, headers: list, data: list):
     with open(file, "w+", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(headers)  # 写入表头

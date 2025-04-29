@@ -4,8 +4,7 @@ import argparse
 import json
 
 import bangumi.update as ba_update
-import mikananime.prase_rss_html as mikan
-import mikananime.torrent_headers as 种子信息表头
+import mikananime.update as mk_update
 import utils.utils as utils
 
 
@@ -90,21 +89,22 @@ def 更新种子信息(工作目录: str):
         种子数据文件名 = kumigumi_json["配置信息"]["种子数据文件名"]
 
     # 获取种子信息列表
-    种子信息列表 = []
+    MikanAnimate任务列表 = []
     for 动画信息 in 动画信息列表:
         if "蜜柑计划RSS源" not in 动画信息:
             continue
         elif 动画信息["蜜柑计划RSS源"] == "":
             continue
-        rss_html_str = utils.request_html(动画信息["蜜柑计划RSS源"])
-        种子信息列表 += mikan.prase(动画信息["名称"], rss_html_str)
 
-    # 保存种子信息
-    utils.save_csv(
-        工作目录 + 种子数据文件名,
-        种子信息表头.种子信息表头,
-        种子信息列表,
-    )
+        # 添加到任务列表
+        MikanAnimate任务列表.append(
+            {
+                "动画名称": 动画信息["名称"],
+                "蜜柑计划RSS源": 动画信息["蜜柑计划RSS源"],
+            }
+        )
+
+    mk_update.update_csv(MikanAnimate任务列表, 工作目录 + 种子数据文件名)
 
     print("更新完成")
 

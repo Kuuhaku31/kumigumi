@@ -1,18 +1,13 @@
-# import utils.utils as utils
+import requests
 
-import mikananime.prase_rss_html as mikan
+url = "http://192.168.100.197:8000/"
 
-# url = "https://mikanani.me/RSS/Bangumi?bangumiId=3526"
+utf8_str = ""
 
-# html_str = utils.request_html(url)
+res = requests.get(url)
 
-# # 保存到文件
-# with open("data/test.xml", "w", encoding="utf-8") as f:
-#     f.write(html_str)
+if res.status_code == 200:
+    utf8_str = res.content.decode("utf-8")
 
-html_src = ""
-with open("data/test.xml", "r", encoding="utf-8") as f:
-    html_src = f.read()
-
-data_list = mikan.prase("test", html_src)
-print(data_list)
+    with open("response.html", "w", encoding="utf-8") as f:
+        f.write(utf8_str)
