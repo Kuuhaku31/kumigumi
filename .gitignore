@@ -3,7 +3,10 @@
 /helps
 /ignore
 data
+torrents
 
 __pycache__
 
 *.json
+*.db
+*.xlsx
