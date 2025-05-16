@@ -163,8 +163,10 @@ if __name__ == "__main__":
             行为 = "ut"
         elif 参数列表[i] == "-u":
             行为 = "u"
-        elif 参数列表[i] == "-dt" and i + 1 < len(参数列表):
-            dt.依据列表文件下载种子(参数列表[i + 1], 参数列表[i + 1])
+        elif 参数列表[i] == "-dt":
+            dt.依据列表文件下载种子(
+                "D:/repositories/kumigumi/src/python/torrents/t.txt", "D:/repositories/kumigumi/src/python/torrents/t/"
+            )
             sys.exit(0)
 
         elif 参数列表[i].startswith("--wd"):
