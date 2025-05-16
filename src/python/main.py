@@ -1,9 +1,10 @@
 # main.py
 
-import argparse
 import json
+import sys
 
 import bangumi.update as ba_update
+import dt
 import mikananime.update as mk_update
 import utils.utils as utils
 
@@ -111,31 +112,69 @@ def 更新种子信息(工作目录: str):
 
 def 打印帮助文档():
     文档 = """
-    显示帮助文档            h
-    构建配置文件            bc
-    构建配置文件            bc
-    更新配置文件            uc
-    更新动画信息            ua
-    更新种子信息            ut
-    更新动画信息和种子信息  u
-    启动下载器              dt
+| 功能               | 参数                | 备注 |
+| ------------------ | ------------------- | ---- |
+| 显示帮助文档       | `-h`                |      |
+| 构建配置文件       | `-bc`               |      |
+| 更新配置文件       | `-uc`               |      |
+| 更新动画信息       | `-ua`               |      |
+| 更新种子信息       | `-ut`               |      |
+| 更新动画和种子信息 | `-u`                |      |
+| 批量下载种子       | `-dt <url列表文件>` |      |
+| 设置工作目录       | `--wd <工作目录>`   |      |
     """
     print(文档)
 
 
+def test():
+    print("测试函数")
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("-bc", action="store_true", help="构建配置文件")
+    # parser.add_argument("-uc", action="store_true", help="更新配置文件")
+    # # 可继续添加其他参数
+
+    # args = parser.parse_args()
+    # print(args)
+
+
 if __name__ == "__main__":
 
-    # 创建解析器
-    parser = argparse.ArgumentParser(description="一个可以接受启动参数的 Python 程序")
+    # 获取参数列表
+    参数列表 = sys.argv[1:]
 
-    # 添加参数
-    parser.add_argument("--wd", type=str, help="工作目录")
-    parser.add_argument("--ac", type=str, help="行为")
+    if len(参数列表) > 0 and 参数列表[0] == "t":
+        test()
+        sys.exit(0)
 
-    # 解析参数
-    args = parser.parse_args()
-    工作目录: str = args.wd
-    行为: str = args.ac
+    工作目录 = ""
+    行为 = "Unknown"
+
+    for i in range(len(参数列表)):
+        if 参数列表[i] == "-h":
+            打印帮助文档()
+            sys.exit(0)
+        elif 参数列表[i] == "-bc":
+            行为 = "bc"
+        elif 参数列表[i] == "-uc":
+            行为 = "uc"
+        elif 参数列表[i] == "-ua":
+            行为 = "ua"
+        elif 参数列表[i] == "-ut":
+            行为 = "ut"
+        elif 参数列表[i] == "-u":
+            行为 = "u"
+        elif 参数列表[i] == "-dt" and i + 1 < len(参数列表):
+            dt.依据列表文件下载种子(参数列表[i + 1], 参数列表[i + 1])
+            sys.exit(0)
+
+        elif 参数列表[i].startswith("--wd"):
+            工作目录 = 参数列表[i].split("=")[1]
+        else:
+            print("未知的参数: " + 参数列表[i])
+            sys.exit(1)
+
+    if 工作目录 == "":
+        工作目录 = "D:/OneDrive/kumigumi/2025.04/"
 
     print("工作目录: " + 工作目录)
 
