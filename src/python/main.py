@@ -12,21 +12,15 @@ import utils.utils as utils
 def 构建配置文件(工作目录: str):
     print("开始构建配置文件...")
 
-    动画ID列表文件名 = ""
-    kumigumi_json = {}
-    with open(工作目录 + "kumigumi.json", "r", encoding="utf-8") as f:
-        kumigumi_json = json.load(f)
-        动画ID列表文件名 = kumigumi_json["配置信息"]["动画ID列表文件名"]
-
     动画id列表 = []  # 获取动画ID列表
-    with open(工作目录 + 动画ID列表文件名, "r", encoding="utf-8") as f:
+    with open(工作目录 + "ids.txt", "r", encoding="utf-8") as f:
         动画id列表 = f.readlines()
 
     for i in range(len(动画id列表)):
         动画id列表[i] = 动画id列表[i].strip()
 
     动画信息列表 = utils.build_config_file(动画id列表)
-    kumigumi_json["动画信息列表"] = 动画信息列表
+    kumigumi_json = {"动画信息列表": 动画信息列表}
 
     # 保存配置文件
     with open(工作目录 + "kumigumi.json", "w", encoding="utf-8") as f:
@@ -149,6 +143,11 @@ if __name__ == "__main__":
     工作目录 = ""
     行为 = "Unknown"
 
+    # 获取用户默认下载路径
+    下载路径 = utils.获取用户默认下载路径()
+    if 下载路径 == "":
+        下载路径 = "./"
+
     for i in range(len(参数列表)):
         if 参数列表[i] == "-h":
             打印帮助文档()
@@ -164,9 +163,7 @@ if __name__ == "__main__":
         elif 参数列表[i] == "-u":
             行为 = "u"
         elif 参数列表[i] == "-dt":
-            dt.依据列表文件下载种子(
-                "D:/repositories/kumigumi/src/python/torrents/t.txt", "D:/repositories/kumigumi/src/python/torrents/t/"
-            )
+            dt.依据列表文件下载种子(下载路径 + "/dt.txt", 下载路径 + "dt/")
             sys.exit(0)
 
         elif 参数列表[i].startswith("--wd"):
@@ -176,7 +173,9 @@ if __name__ == "__main__":
             sys.exit(1)
 
     if 工作目录 == "":
-        工作目录 = "D:/OneDrive/kumigumi/2025.04/"
+        # 工作目录 = "D:/OneDrive/kumigumi/2025.04/"
+        print("未指定工作目录")
+        exit(1)
 
     print("工作目录: " + 工作目录)
 

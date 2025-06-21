@@ -2,7 +2,9 @@
 
 import csv  # noqa: E402
 import json  # noqa: E402
+import os  # noqa: E402
 import urllib.request  # noqa: E402
+import winreg  # noqa: E402
 
 import fake_useragent
 
@@ -67,10 +69,11 @@ def build_config_file(动画id列表: list) -> list:
 
     # 获取动画信息列表
     动画信息列表 = []
-    for id in 动画id列表:
+    length = len(动画id列表)
+    for i in range(length):
 
         # 遍历每个index，拼接url
-        json_str = request_html("https://api.bgm.tv/v0/subjects/" + id)
+        json_str = request_html("https://api.bgm.tv/v0/subjects/" + 动画id列表[i].strip())
         json_data = json.loads(json_str)
 
         cn_name = name = json_data["name"]
@@ -78,7 +81,31 @@ def build_config_file(动画id列表: list) -> list:
             cn_name = json_data["name_cn"]
 
         动画信息列表.append(
-            {"名称": name, "中文名": cn_name, "bangumi源": "https://bangumi.tv/subject/" + id, "蜜柑计划RSS源": ""}
+            {
+                "名称": name,
+                "中文名": cn_name,
+                "bangumi源": "https://bangumi.tv/subject/" + 动画id列表[i].strip(),
+                "蜜柑计划RSS源": "",
+            }
         )
 
+        print(f"{i}/{length} 已添加动画信息：{动画信息列表[i]['名称']}")
+
     return 动画信息列表
+
+
+def 获取用户默认下载路径():
+    try:
+        with winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
+        ) as key:
+            downloads, _ = winreg.QueryValueEx(key, "{374DE290-123F-4565-9164-39C4925E467B}")
+            return downloads + os.sep
+    except Exception:
+        # 兼容性处理，回退到用户主目录下的 Downloads
+        return os.path.join(os.path.expanduser("~"), "Downloads") + os.sep
+
+
+# 示例用法
+下载路径 = 获取用户默认下载路径()
+print(下载路径)
