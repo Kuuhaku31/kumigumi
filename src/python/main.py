@@ -1,59 +1,12 @@
 # main.py
 
-import concurrent.futures
 import json
 import sys
 from pathlib import Path
 
-from tqdm import tqdm
-
-import bangumi.update as ba_update
+import bangumi
 import mikananime.update as mk_update
 import utils.utils as utils
-
-
-def 更新配置文件(工作目录: str):
-    print("开始更新配置文件...")
-
-    动画信息列表 = []
-    with open(工作目录 + "kumigumi.json", "r", encoding="utf-8") as f:
-        kumigumi_json = json.load(f)
-        动画信息列表 = kumigumi_json["动画信息列表"]
-
-    for 动画信息 in 动画信息列表:
-        id = 动画信息["bangumi源"].split("/")[-1]
-        url = "https://api.bgm.tv/v0/subjects/" + id
-        json_str = utils.request_html(url)
-        json_data = json.loads(json_str)
-
-        动画信息["名称"] = json_data["name"]
-        动画信息["中文名"] = json_data["name_cn"]
-        动画信息["蜜柑计划RSS源"] = 动画信息["蜜柑计划RSS源"] if "蜜柑计划RSS源" in 动画信息 else ""
-
-    # 保存配置文件
-    with open(工作目录 + "kumigumi.json", "w", encoding="utf-8") as f:
-        json.dump(kumigumi_json, f, ensure_ascii=False, indent=4)
-
-
-def 更新动画信息(工作目录: str):
-    print("开始更新bangumi动画信息...")
-
-    动画信息列表 = []
-    动画数据文件名 = ""
-    单集数据文件名 = ""
-    with open(工作目录 + "kumigumi.json", "r", encoding="utf-8") as f:
-        kumigumi_json = json.load(f)
-        动画信息列表 = kumigumi_json["动画信息列表"]
-        动画数据文件名 = kumigumi_json["配置信息"]["动画数据文件名"]
-        单集数据文件名 = kumigumi_json["配置信息"]["单集数据文件名"]
-
-    动画URL列表 = []
-    for 动画信息 in 动画信息列表:
-        动画URL列表.append(动画信息["bangumi源"])
-
-    ba_update.update_csv(动画URL列表, 工作目录 + 动画数据文件名, 工作目录 + 单集数据文件名)
-
-    print("更新完成")
 
 
 def 更新种子信息(工作目录: str):
@@ -183,7 +136,7 @@ if __name__ == "__main__":
     elif 启动参数列表[0] == "-config":
         配置变量(启动参数列表[1:])
 
-    # 构建配置文件
+    # 添加动画信息
     elif 启动参数列表[0].startswith("-list-add"):
 
         参数列表: list[str] = 启动参数列表[0].replace("-list-add=", "").split("-")
@@ -200,21 +153,8 @@ if __name__ == "__main__":
             with open(启动参数列表[1], "r", encoding="utf-8") as file:
                 动画id列表 = [id.strip() for id in file.readlines() if id.strip()]
 
-            # 多线程优化
-            def worker(动画id):
-                return 更新动画信息列表([], 动画id)[0]  # 返回单个动画信息字典
-
-            动画信息结果列表 = []
-            with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-                futures = [executor.submit(worker, 动画id) for 动画id in 动画id列表]
-                for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures), desc="获取动画信息"):
-                    try:
-                        动画信息结果列表.append(future.result())
-                    except Exception as e:
-                        print(f"获取动画信息失败: {e}")
-
-            # 合并到动画信息列表
-            动画信息列表.extend(动画信息结果列表)
+            for id in 动画id列表:
+                动画信息列表 = 更新动画信息列表(动画信息列表, id)
 
         else:
             动画信息列表 = 更新动画信息列表(动画信息列表, 启动参数列表[1])
@@ -223,5 +163,20 @@ if __name__ == "__main__":
         with open(kumigumi_json_path, "w", encoding="utf-8") as file:
             kumigumi_json["动画信息列表"] = 动画信息列表
             json.dump(kumigumi_json, file, ensure_ascii=False, indent=4)
+
+    # 更新动画信息
+    elif 启动参数列表[0] == "-update-anime-info":
+        print("开始更新bangumi动画信息...")
+
+        动画数据文件地址: Path = 工作目录 / "anime.csv"
+        单集数据文件地址: Path = 工作目录 / "episodes.csv"
+
+        动画URL列表 = []
+        for 动画信息 in 动画信息列表:
+            动画URL列表.append(动画信息["bangumi源"])
+
+        bangumi.更新CSV文件(动画URL列表, 动画数据文件地址, 单集数据文件地址)
+
+        print("更新完成")
 
     print("程序结束")

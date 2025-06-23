@@ -22,6 +22,8 @@ kumigumi < 模式 > < 参数1 > < 参数2 > ...
 kumigumi -list-add < id >
 kumigumi -list-add-all < path to ids.txt >
 
+kumigumi -update-anime-info
+
 ```
 
 | 参数  | 说明         |
