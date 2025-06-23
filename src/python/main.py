@@ -1,39 +1,15 @@
 # main.py
 
+import concurrent.futures
 import json
 import sys
+from pathlib import Path
+
+from tqdm import tqdm
 
 import bangumi.update as ba_update
-import dt
 import mikananime.update as mk_update
 import utils.utils as utils
-
-
-def 构建配置文件(工作目录: str):
-    print("开始构建配置文件...")
-
-    动画id列表 = []  # 获取动画ID列表
-    with open(工作目录 + "ids.txt", "r", encoding="utf-8") as f:
-        动画id列表 = f.readlines()
-
-    for i in range(len(动画id列表)):
-        动画id列表[i] = 动画id列表[i].strip()
-
-    动画信息列表 = utils.build_config_file(动画id列表)
-    kumigumi_json = {
-        "配置信息": {
-            "动画数据文件名": "anime.csv",
-            "单集数据文件名": "episode.csv",
-            "种子数据文件名": "torrent.csv",
-        },
-        "动画信息列表": 动画信息列表,
-    }
-
-    # 保存配置文件
-    with open(工作目录 + "kumigumi.json", "w", encoding="utf-8") as f:
-        json.dump(kumigumi_json, f, ensure_ascii=False, indent=4)
-
-    print("配置文件构建完成")
 
 
 def 更新配置文件(工作目录: str):
@@ -111,101 +87,141 @@ def 更新种子信息(工作目录: str):
     print("更新完成")
 
 
-def 打印帮助文档():
-    文档 = """
-| 功能               | 参数                | 备注 |
-| ------------------ | ------------------- | ---- |
-| 显示帮助文档       | `-h`                |      |
-| 构建配置文件       | `-bc`               |      |
-| 更新配置文件       | `-uc`               |      |
-| 更新动画信息       | `-ua`               |      |
-| 更新种子信息       | `-ut`               |      |
-| 更新动画和种子信息 | `-u`                |      |
-| 批量下载种子       | `-dt <url列表文件>` |      |
-| 设置工作目录       | `--wd <工作目录>`   |      |
-    """
-    print(文档)
+def 配置变量(配置参数列表: list[str]):
+
+    print("设置配置变量")
+
+    # 读取配置文件
+    with open("config.json", "r", encoding="utf-8") as f:
+        config = json.load(f)
+
+    for i in range(0, len(配置参数列表)):
+        if 配置参数列表[i].startswith("--"):
+            key_value = 配置参数列表[i][2:].split("=")
+            if len(key_value) == 2:
+                config[key_value[0]] = key_value[1]
+            else:
+                print(f"无效的配置变量: {配置参数列表[i]}")
+        else:
+            print(f"无效的参数: {配置参数列表[i]}")
+
+    # 保存配置文件
+    with open("config.json", "w", encoding="utf-8") as f:
+        json.dump(config, f, ensure_ascii=False, indent=4)
 
 
-def test():
-    print("测试函数")
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("-bc", action="store_true", help="构建配置文件")
-    # parser.add_argument("-uc", action="store_true", help="更新配置文件")
-    # # 可继续添加其他参数
+def 读取工作目录() -> Path:
+    # 读取配置文件
+    with open("config.json", "r", encoding="utf-8") as f:
+        config = json.load(f)
 
-    # args = parser.parse_args()
-    # print(args)
+    工作目录: Path = Path("")
+    if "wd" in config:
+        工作目录 = Path(config["wd"])
+
+    return 工作目录
+
+
+def 更新动画信息列表(动画信息列表: list[dict], id: str) -> list[dict]:
+
+    # 拼接 url
+    url_v0: str = "https://api.bgm.tv/v0/subjects/" + id
+    url_ba: str = "https://bangumi.tv/subject/" + id
+
+    # 请求数据
+    res: str = utils.request_html(url_v0)
+    json_data = json.loads(res)
+
+    名称 = json_data["name"]
+    中文名 = json_data["name_cn"] if json_data["name_cn"] != "" else None
+
+    # 确认 url 是否存在
+    for item in 动画信息列表:
+        if item["bangumi源"] == url_ba:
+            item["名称"] = 名称
+            item["中文名"] = 中文名
+
+            return 动画信息列表
+
+    动画信息列表.append(
+        {
+            "名称": 名称,
+            "中文名": 中文名,
+            "bangumi源": url_ba,
+            "蜜柑计划RSS源": None,
+        }
+    )
+
+    return 动画信息列表
 
 
 if __name__ == "__main__":
 
-    # 获取参数列表
-    参数列表 = sys.argv[1:]
-
-    if len(参数列表) > 0 and 参数列表[0] == "t":
-        test()
-        sys.exit(0)
-
-    工作目录 = ""
-    行为 = "Unknown"
-
-    # 获取用户默认下载路径
-    下载路径 = utils.获取用户默认下载路径()
-    if 下载路径 == "":
-        下载路径 = "./"
-
-    for i in range(len(参数列表)):
-        if 参数列表[i] == "-h":
-            打印帮助文档()
-            sys.exit(0)
-        elif 参数列表[i] == "-bc":
-            行为 = "bc"
-        elif 参数列表[i] == "-uc":
-            行为 = "uc"
-        elif 参数列表[i] == "-ua":
-            行为 = "ua"
-        elif 参数列表[i] == "-ut":
-            行为 = "ut"
-        elif 参数列表[i] == "-u":
-            行为 = "u"
-        elif 参数列表[i] == "-dt":
-            dt.依据列表文件下载种子(下载路径 + "/dt.txt", 下载路径 + "dt/")
-            sys.exit(0)
-
-        elif 参数列表[i].startswith("--wd"):
-            工作目录 = 参数列表[i].split("=")[1]
-        else:
-            print("未知的参数: " + 参数列表[i])
-            sys.exit(1)
-
+    工作目录 = 读取工作目录()
     if 工作目录 == "":
-        工作目录 = "D:/OneDrive/kumigumi/2025.04/"
-        # print("未指定工作目录")
-        # exit(1)
+        print("请先设置工作目录")
+        sys.exit(1)
+    print(f"工作目录: {工作目录}")
 
-    print("工作目录: " + 工作目录)
+    kumigumi_json_path: Path = 工作目录 / "kumigumi.json"
+    kumigumi_json: dict = {}
+    动画信息列表: list[dict] = []
 
-    if not 行为:
-        打印帮助文档()
-        行为 = input("请输入操作参数: ")
+    # 读取配置文件
+    with open(kumigumi_json_path, "r", encoding="utf-8") as file:
+        kumigumi_json = json.load(file)
+        动画信息列表 = kumigumi_json["动画信息列表"]
 
-    if 行为 == "bc":
-        print("确认后将会覆盖原有配置文件【y/n】")
-        if input() == "y" or "Y":
-            构建配置文件(工作目录)
+    # 获取参数列表
+    启动参数列表 = sys.argv[1:]
+
+    # 如果没有参数，则打印帮助文档
+    if len(启动参数列表) == 0:
+        sys.exit(1)
+
+    # 设置配置变量
+    elif 启动参数列表[0] == "-config":
+        配置变量(启动参数列表[1:])
+
+    # 构建配置文件
+    elif 启动参数列表[0].startswith("-list-add"):
+
+        参数列表: list[str] = 启动参数列表[0].replace("-list-add=", "").split("-")
+
+        是添加文件: bool = False
+        for 参数 in 参数列表:
+            if 参数 == "all":
+                是添加文件 = True
+                break
+
+        if 是添加文件:
+            # 添加所有动画信息
+            动画id列表 = []
+            with open(启动参数列表[1], "r", encoding="utf-8") as file:
+                动画id列表 = [id.strip() for id in file.readlines() if id.strip()]
+
+            # 多线程优化
+            def worker(动画id):
+                return 更新动画信息列表([], 动画id)[0]  # 返回单个动画信息字典
+
+            动画信息结果列表 = []
+            with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+                futures = [executor.submit(worker, 动画id) for 动画id in 动画id列表]
+                for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures), desc="获取动画信息"):
+                    try:
+                        动画信息结果列表.append(future.result())
+                    except Exception as e:
+                        print(f"获取动画信息失败: {e}")
+
+            # 合并到动画信息列表
+            动画信息列表.extend(动画信息结果列表)
+
         else:
-            print("取消构建配置文件")
-    elif 行为 == "uc":
-        更新配置文件(工作目录)
-    elif 行为 == "ua":
-        更新动画信息(工作目录)
-    elif 行为 == "ut":
-        更新种子信息(工作目录)
-    elif 行为 == "u":
-        更新动画信息(工作目录)
-        更新种子信息(工作目录)
-    else:
-        print("未知的启动参数")
+            动画信息列表 = 更新动画信息列表(动画信息列表, 启动参数列表[1])
+
+        # 保存配置文件
+        with open(kumigumi_json_path, "w", encoding="utf-8") as file:
+            kumigumi_json["动画信息列表"] = 动画信息列表
+            json.dump(kumigumi_json, file, ensure_ascii=False, indent=4)
 
     print("程序结束")
