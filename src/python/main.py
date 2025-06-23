@@ -20,7 +20,14 @@ def 构建配置文件(工作目录: str):
         动画id列表[i] = 动画id列表[i].strip()
 
     动画信息列表 = utils.build_config_file(动画id列表)
-    kumigumi_json = {"动画信息列表": 动画信息列表}
+    kumigumi_json = {
+        "配置信息": {
+            "动画数据文件名": "anime.csv",
+            "单集数据文件名": "episode.csv",
+            "种子数据文件名": "torrent.csv",
+        },
+        "动画信息列表": 动画信息列表,
+    }
 
     # 保存配置文件
     with open(工作目录 + "kumigumi.json", "w", encoding="utf-8") as f:
@@ -173,9 +180,9 @@ if __name__ == "__main__":
             sys.exit(1)
 
     if 工作目录 == "":
-        # 工作目录 = "D:/OneDrive/kumigumi/2025.04/"
-        print("未指定工作目录")
-        exit(1)
+        工作目录 = "D:/OneDrive/kumigumi/2025.04/"
+        # print("未指定工作目录")
+        # exit(1)
 
     print("工作目录: " + 工作目录)
 
