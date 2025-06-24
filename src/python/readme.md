@@ -24,6 +24,8 @@ kumigumi -list-add-all < path to ids.txt >
 
 kumigumi -update-anime-info
 
+kumigumi -update-torrent-info
+
 ```
 
 | 参数  | 说明         |
@@ -54,35 +56,33 @@ kumigumi/20XX.XX/
 
 ## ✅`anime` 表字段对应
 
-| 中文键名           | 英文键名              | SQLite 类型 | 备注 |
-| ------------------ | --------------------- | ----------- | ---- |
-| `作品番组计划网址` | `animeBangumiURL`     | TEXT        | 主要 |
-| `作品蜜柑计划网址` | `animeMikananimeURL`  | TEXT        | 储存 |
-| `作品原名`         | `animeOriginalTitle`  | TEXT        | 更新 |
-| `作品中文名`       | `animeChineseTitle`   | TEXT        | 更新 |
-| `作品别名`         | `animeAliases`        | TEXT        | 更新 |
-| `作品分类`         | `animeCategories`     | TEXT        | 储存 |
-| `作品话数`         | `animeEpisodeCount`   | TEXT        | 更新 |
-| `作品放送开始`     | `animeBroadcastStart` | TEXT        | 更新 |
-| `作品放送星期`     | `animeBroadcastDay`   | TEXT        | 更新 |
-| `作品官方网址`     | `animeOfficialSite`   | TEXT        | 更新 |
-| `作品封面`         | `animeCoverImage`     | TEXT        | 更新 |
+| 中文键名         | 英文键名              |
+| ---------------- | --------------------- |
+| `作品bangumiURL` | `animeBangumiURL`     |
+| `作品mikanRSS`   | `animeMikananimeRSS`  |
+| `作品原名`       | `animeOriginalTitle`  |
+| `作品中文名`     | `animeChineseTitle`   |
+| `作品别名`       | `animeAliases`        |
+| `作品分类`       | `animeCategories`     |
+| `作品话数`       | `animeEpisodeCount`   |
+| `作品放送开始`   | `animeBroadcastStart` |
+| `作品放送星期`   | `animeBroadcastDay`   |
+| `作品官方网站`   | `animeOfficialSite`   |
+| `作品封面URL`    | `animeCoverImageURL`  |
 
 ---
 
 ## ✅`episodes` 表字段对应
 
-| 中文键名           | 英文键名               | SQLite 类型 | 备注 |
-| ------------------ | ---------------------- | ----------- | ---- |
-| `话番组计划网址`   | `episodeBangumiURL`    | TEXT        | 主要 |
-| `作品番组计划网址` | `animeBangumiURL`      | TEXT        | 标记 |
-| `话索引`           | `episodeIndex`         | TEXT        | 更新 |
-| `话原标题`         | `episodeOriginalTitle` | TEXT        | 更新 |
-| `话中文标题`       | `episodeChineseTitle`  | TEXT        | 更新 |
-| `话首播时间`       | `episodeAirDate`       | TEXT        | 更新 |
-| `话时长`           | `episodeDuration`      | TEXT        | 更新 |
-| `话是否下载`       | `episodeIsDownloaded`  | TEXT        | 储存 |
-| `话是否观看`       | `episodeIsWatched`     | TEXT        | 储存 |
+| 中文键名         | 英文键名               |
+| ---------------- | ---------------------- |
+| `话bangumiURL`   | `episodeBangumiURL`    |
+| `作品bangumiURL` | `animeBangumiURL`      |
+| `话索引`         | `episodeIndex`         |
+| `话原标题`       | `episodeOriginalTitle` |
+| `话中文标题`     | `episodeChineseTitle`  |
+| `话首播时间`     | `episodeAirDate`       |
+| `话时长`         | `episodeDuration`      |
 
 ---
 
@@ -111,6 +111,34 @@ kumigumi/20XX.XX/
 
 ---
 
+```xml
+ <item>
+      <guid isPermaLink="false">[喵萌奶茶屋&amp;LoliHouse] 群花绽放，仿如修罗 / Hana wa Saku Shura no Gotoku - 11 [WebRip 1080p HEVC-10bit AAC][简繁日内封字幕]</guid>
+      <link>https://mikanani.me/Home/Episode/9d22370519e85dde9c9521a289812d30b7b0321b</link>
+      <title>[喵萌奶茶屋&amp;LoliHouse] 群花绽放，仿如修罗 / Hana wa Saku Shura no Gotoku - 11 [WebRip 1080p HEVC-10bit AAC][简繁日内封字幕]</title>
+      <description>[喵萌奶茶屋&amp;LoliHouse] 群花绽放，仿如修罗 / Hana wa Saku Shura no Gotoku - 11 [WebRip 1080p HEVC-10bit AAC][简繁日内封字幕][364.66 MB]</description>
+      <torrent xmlns="https://mikanani.me/0.1/">
+        <link>https://mikanani.me/Home/Episode/9d22370519e85dde9c9521a289812d30b7b0321b</link>
+        <contentLength>382373728</contentLength>
+        <pubDate>2025-03-23T10:02:52.301</pubDate>
+      </torrent>
+      <enclosure type="application/x-bittorrent" length="382373728" url="https://mikanani.me/Download/20250323/9d22370519e85dde9c9521a289812d30b7b0321b.torrent" />
+    </item>
 ```
+
+```python
+
+# 种子信息格式：
+dict:{
+    "作品bangumiURL" : "...",
+    "字幕组"         : "喵萌奶茶屋&amp;LoliHouse",
+    "下载链接"       : "https://mikanani.me/Download/20250323/9d22370519e85dde9c9521a289812d30b7b0321b.torrent",
+    "页面链接"       : "https://mikanani.me/Home/Episode/9d22370519e85dde9c9521a289812d30b7b0321b",
+    "种子标题"       : "[喵萌奶茶屋&amp;LoliHouse] 群花绽放，仿如修罗 / Hana wa Saku Shura no Gotoku - 11 [WebRip 1080p HEVC-10bit AAC][简繁日内封字幕]",
+    "种子描述"       : "[喵萌奶茶屋&amp;LoliHouse] 群花绽放，仿如修罗 / Hana wa Saku Shura no Gotoku - 11 [WebRip 1080p HEVC-10bit AAC][简繁日内封字幕]",
+    "种子日期"       : "2025-03-23T10:02:52.301",
+    "种子大小_字节"  :  382373728 , # int 表示字节数
+    "种子大小"       :  "364.66 MB", # 字符串表示大小
+}
 
 ```
