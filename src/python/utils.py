@@ -107,8 +107,3 @@ def 获取用户默认下载路径():
     except Exception:
         # 兼容性处理，回退到用户主目录下的 Downloads
         return os.path.join(os.path.expanduser("~"), "Downloads") + os.sep
-
-
-# 示例用法
-下载路径 = 获取用户默认下载路径()
-print(下载路径)

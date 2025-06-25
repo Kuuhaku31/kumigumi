@@ -18,9 +18,10 @@ def 配置变量(配置参数列表: list[str]):
     print("设置配置变量")
 
     # 读取配置文件
-    with open("config.json", "r", encoding="utf-8") as f:
+    with open(Path(__file__).parent / "config.json", "r", encoding="utf-8") as f:
         config = json.load(f)
 
+    # 解析配置参数列表
     for i in range(0, len(配置参数列表)):
         if 配置参数列表[i].startswith("--"):
             key_value = 配置参数列表[i][2:].split("=")
@@ -37,13 +38,15 @@ def 配置变量(配置参数列表: list[str]):
 
 
 def 读取工作目录() -> Path:
+
+    # 获取源文件所在目录
+    config_path: Path = Path(__file__).parent / "config.json"
+
     # 读取配置文件
-    with open("D:/repositories/kumigumi/src/python/config.json", "r", encoding="utf-8") as f:
+    with open(config_path, "r", encoding="utf-8") as f:
         config = json.load(f)
 
-    工作目录: Path = Path("")
-    if "wd" in config:
-        工作目录 = Path(config["wd"])
+    工作目录: Path = Path(config["wd"]) if "wd" in config else None
 
     return 工作目录
 
@@ -64,6 +67,72 @@ def 获取动画索引信息(id: str) -> dict:
         bangumi.作品bangumiURL: url_ba,
         bangumi.作品mikanRSS: None,
     }
+
+
+def 添加动画信息(动画索引信息列表: list[dict], arg: str):
+    是添加文件: bool = arg.endswith(".txt")  # 检查是否是文件
+
+    if 是添加文件:
+
+        print("添加所有动画信息...")
+        # 添加所有动画信息
+        动画id列表: list[str] = []
+        with open(arg, "r", encoding="utf-8") as file:
+            动画id列表 = [id.strip() for id in file.readlines() if id.strip()]
+
+        # 使用线程池并行处理 URL 请求和解析
+        动画索引信息列表_new: list[dict] = []
+        with ThreadPoolExecutor() as 线程池:
+            futures = [线程池.submit(获取动画索引信息, id) for id in 动画id列表]
+
+            for future in tqdm(as_completed(futures), total=len(futures), desc="处理进度"):
+                动画索引信息列表_new.append(future.result())
+
+        # 将新动画索引信息列表根据 bangumi.作品bangumiURL 排序
+        动画索引信息列表_new.sort(key=lambda x: x[bangumi.作品bangumiURL])
+
+        # 对比新旧动画索引信息列表
+        # 如果新动画索引信息列表中的 bangumi.作品bangumiURL 不在旧动画索引信息列表中，则添加到旧动画索引信息列表中
+        # 如果新动画索引信息列表中的 bangumi.作品bangumiURL 在旧动画索引信息列表中，则更新旧动画索引信息列表中的对应项
+        i: int = 0
+        j: int = 0
+        while i < len(动画索引信息列表_new) and j < len(动画索引信息列表):
+            if 动画索引信息列表_new[i][bangumi.作品bangumiURL] < 动画索引信息列表[j][bangumi.作品bangumiURL]:
+                动画索引信息列表.append(动画索引信息列表_new[i])
+                i += 1
+            elif 动画索引信息列表_new[i][bangumi.作品bangumiURL] > 动画索引信息列表[j][bangumi.作品bangumiURL]:
+                j += 1
+            else:
+                动画索引信息列表[j][bangumi.作品原名] = 动画索引信息列表_new[i][bangumi.作品原名]
+                动画索引信息列表[j][bangumi.作品中文名] = 动画索引信息列表_new[i][bangumi.作品中文名]
+                i += 1
+                j += 1
+
+    else:
+        print("添加单个动画信息...")
+
+        # 添加单个动画信息
+        动画索引信息: dict = 获取动画索引信息(启动参数列表[1])
+
+        found = False
+        for i in range(len(动画索引信息列表)):
+            if 动画索引信息列表[i][bangumi.作品bangumiURL] == 动画索引信息[bangumi.作品bangumiURL]:
+                print(f"动画 {动画索引信息[bangumi.作品原名]} 已存在，更新信息...")
+                动画索引信息列表[i][bangumi.作品原名] = 动画索引信息[bangumi.作品原名]
+                动画索引信息列表[i][bangumi.作品中文名] = 动画索引信息[bangumi.作品中文名]
+                found = True
+                break
+
+        if not found:
+            print(f"添加动画 {动画索引信息[bangumi.作品原名]}...")
+            动画索引信息列表.append(动画索引信息)
+
+    动画索引信息列表.sort(key=lambda x: x[bangumi.作品bangumiURL])  # 再次排序
+
+    # 保存配置文件
+    with open(kumigumi_json_path, "w", encoding="utf-8") as file:
+        kumigumi_json["动画信息列表"] = 动画索引信息列表
+        json.dump(kumigumi_json, file, ensure_ascii=False, indent=4)
 
 
 def 更新动画信息(动画索引信息列表: list[dict]):
@@ -155,8 +224,7 @@ if __name__ == "__main__":
 
     # 如果没有参数，则打印帮助文档
     if len(启动参数列表) == 0:
-        # sys.exit(1)
-        pass
+        print("未知的参数")
 
     # 设置配置变量
     elif 启动参数列表[0] == "-config":
@@ -164,77 +232,19 @@ if __name__ == "__main__":
 
     # 添加动画信息
     elif 启动参数列表[0] == "-list-add":
-
-        是添加文件: bool = 启动参数列表[1].endswith(".txt")  # 检查是否是文件
-
-        if 是添加文件:
-
-            print("添加所有动画信息...")
-            # 添加所有动画信息
-            动画id列表: list[str] = []
-            with open(启动参数列表[1], "r", encoding="utf-8") as file:
-                动画id列表 = [id.strip() for id in file.readlines() if id.strip()]
-
-            # 使用线程池并行处理 URL 请求和解析
-            动画索引信息列表_new: list[dict] = []
-            with ThreadPoolExecutor() as 线程池:
-                futures = [线程池.submit(获取动画索引信息, id) for id in 动画id列表]
-
-                for future in tqdm(as_completed(futures), total=len(futures), desc="处理进度"):
-                    动画索引信息列表_new.append(future.result())
-
-            # 将新动画索引信息列表根据 bangumi.作品bangumiURL 排序
-            动画索引信息列表_new.sort(key=lambda x: x[bangumi.作品bangumiURL])
-
-            # 对比新旧动画索引信息列表
-            # 如果新动画索引信息列表中的 bangumi.作品bangumiURL 不在旧动画索引信息列表中，则添加到旧动画索引信息列表中
-            # 如果新动画索引信息列表中的 bangumi.作品bangumiURL 在旧动画索引信息列表中，则更新旧动画索引信息列表中的对应项
-            i: int = 0
-            j: int = 0
-            while i < len(动画索引信息列表_new) and j < len(动画索引信息列表):
-                if 动画索引信息列表_new[i][bangumi.作品bangumiURL] < 动画索引信息列表[j][bangumi.作品bangumiURL]:
-                    动画索引信息列表.append(动画索引信息列表_new[i])
-                    i += 1
-                elif 动画索引信息列表_new[i][bangumi.作品bangumiURL] > 动画索引信息列表[j][bangumi.作品bangumiURL]:
-                    j += 1
-                else:
-                    动画索引信息列表[j][bangumi.作品原名] = 动画索引信息列表_new[i][bangumi.作品原名]
-                    动画索引信息列表[j][bangumi.作品中文名] = 动画索引信息列表_new[i][bangumi.作品中文名]
-                    i += 1
-                    j += 1
-
-        else:
-            print("添加单个动画信息...")
-
-            # 添加单个动画信息
-            动画索引信息: dict = 获取动画索引信息(启动参数列表[1])
-
-            found = False
-            for i in range(len(动画索引信息列表)):
-                if 动画索引信息列表[i][bangumi.作品bangumiURL] == 动画索引信息[bangumi.作品bangumiURL]:
-                    print(f"动画 {动画索引信息[bangumi.作品原名]} 已存在，更新信息...")
-                    动画索引信息列表[i][bangumi.作品原名] = 动画索引信息[bangumi.作品原名]
-                    动画索引信息列表[i][bangumi.作品中文名] = 动画索引信息[bangumi.作品中文名]
-                    found = True
-                    break
-
-            if not found:
-                print(f"添加动画 {动画索引信息[bangumi.作品原名]}...")
-                动画索引信息列表.append(动画索引信息)
-
-        动画索引信息列表.sort(key=lambda x: x[bangumi.作品bangumiURL])  # 再次排序
-
-        # 保存配置文件
-        with open(kumigumi_json_path, "w", encoding="utf-8") as file:
-            kumigumi_json["动画信息列表"] = 动画索引信息列表
-            json.dump(kumigumi_json, file, ensure_ascii=False, indent=4)
+        添加动画信息(动画索引信息列表, 启动参数列表[1])
 
     # 更新动画信息
-    elif 启动参数列表[0] == "-update-anime-info":
+    elif 启动参数列表[0] == "-update-anime-info" or 启动参数列表[0] == "-ua":
         更新动画信息(动画索引信息列表)
 
     # 更新种子信息
-    elif 启动参数列表[0] == "-update-torrent-info":
+    elif 启动参数列表[0] == "-update-torrent-info" or 启动参数列表[0] == "-ut":
+        更新种子信息(动画索引信息列表)
+
+    # 更新全部信息
+    elif 启动参数列表[0] == "-update-all" or 启动参数列表[0] == "-u":
+        更新动画信息(动画索引信息列表)
         更新种子信息(动画索引信息列表)
 
     print("程序结束")
