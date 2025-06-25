@@ -5,6 +5,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+import requests
 from tqdm import tqdm  # 引入 tqdm 进度条库
 
 import bangumi
@@ -199,6 +200,63 @@ def 更新种子信息(动画索引信息列表: list[dict]):
     print("更新完成")
 
 
+def 批量下载种子():
+
+    下载路径: Path = Path(utils.获取用户默认下载路径())
+
+    文件地址: Path = 下载路径 / "dt.txt"
+    保存路径: Path = 下载路径 / "dt/"
+
+    # 创建保存路径
+    if not 保存路径.exists():
+        保存路径.mkdir(parents=True, exist_ok=True)
+
+    # 读取文件地址
+    urls: list[str] = []
+    with open(文件地址, "r", encoding="utf-8") as file:
+        urls = [line.strip() for line in file if line.strip()]
+
+    print(f"开始下载种子，保存路径: {保存路径}")
+
+    # 使用线程池并行下载
+    # 将下载失败的链接保存回文件
+    with ThreadPoolExecutor() as 线程池:
+
+        def 下载种子(url: str, 保存路径: Path):
+            try:
+                # 获取文件名
+                file_name = url.split("/")[-1]
+                file_path = 保存路径 / file_name
+                # 下载文件
+                resp = requests.get(url, timeout=30)
+                resp.raise_for_status()
+                with open(file_path, "wb") as f:
+                    f.write(resp.content)
+                return True
+            except Exception as e:
+                print(f"下载失败: {url}，原因: {e}")
+                return url  # 返回失败的url
+
+        futures = []
+        for url in urls:
+            futures.append(线程池.submit(下载种子, url, 保存路径))
+
+        # 收集下载失败的链接
+        失败链接 = []
+        for future in tqdm(as_completed(futures), total=len(futures), desc="下载进度"):
+            result = future.result()
+            if isinstance(result, str):
+                失败链接.append(result)
+
+    # 如果有下载失败的链接，保存回文件
+    # 先清除原先的所有内容
+    with open(下载路径 / "dt.txt", "w", encoding="utf-8") as f:
+        for url in 失败链接:
+            f.write(url + "\n")
+
+    print(f"共有 {len(urls)} 个链接，下载失败 {len(失败链接)} 个")
+
+
 if __name__ == "__main__":
 
     工作目录 = 读取工作目录()
@@ -246,5 +304,9 @@ if __name__ == "__main__":
     elif 启动参数列表[0] == "-update-all" or 启动参数列表[0] == "-u":
         更新动画信息(动画索引信息列表)
         更新种子信息(动画索引信息列表)
+
+    # 批量下载种子
+    elif 启动参数列表[0] == "-batch-download-torrent" or 启动参数列表[0] == "-dt":
+        批量下载种子()
 
     print("程序结束")
