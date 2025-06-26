@@ -16,12 +16,14 @@ def 解析mikanRSS_XML(bangumi_url: str, rss_html_str: str) -> list[dict]:
     种子信息列表: list[dict] = []
     for item in tree.xpath("//item"):
 
-        种子信息 = {headers.作品bangumiURL: bangumi_url}  # 用字典存储一个item的所有信息
+        种子信息 = {headers.番bangumiURL: bangumi_url}  # 用字典存储一个item的所有信息
 
-        种子信息[headers.下载链接] = item.xpath("./enclosure")[0].get("url") if item.xpath("./enclosure") else ""
+        种子信息[headers.种子下载链接] = item.xpath("./enclosure")[0].get("url") if item.xpath("./enclosure") else ""
         种子信息[headers.种子标题] = item.xpath("./title")[0].text if item.xpath("./title") else ""
-        种子信息[headers.种子日期] = item.xpath("./torrent/pubdate")[0].text if item.xpath("./torrent/pubdate") else ""
-        种子信息[headers.网页链接] = item.xpath("./link")[0].tail if item.xpath("./link") else ""
+        种子信息[headers.种子发布日期] = (
+            item.xpath("./torrent/pubdate")[0].text if item.xpath("./torrent/pubdate") else ""
+        )
+        种子信息[headers.种子下载页面链接] = item.xpath("./link")[0].tail if item.xpath("./link") else ""
         种子信息[headers.种子描述] = item.xpath("./description")[0].text if item.xpath("./description") else ""
 
         # 提取字幕组信息
@@ -33,11 +35,11 @@ def 解析mikanRSS_XML(bangumi_url: str, rss_html_str: str) -> list[dict]:
         else:
             group_name = "未知字幕组"
 
-        种子信息[headers.字幕组] = group_name
+        种子信息[headers.种子字幕组] = group_name
 
         # 解析字幕组信息
         if group_name in pt.解析方法字典:
-            种子信息.update(pt.解析方法字典[种子信息[headers.字幕组]](种子信息[headers.种子标题]))
+            种子信息.update(pt.解析方法字典[种子信息[headers.种子字幕组]](种子信息[headers.种子标题]))
 
         # 提取大小
         content_length = item.xpath("./torrent/contentlength")

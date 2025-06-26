@@ -1,7 +1,8 @@
 import bangumi
+import headers
 import utils
 
-url = "https://bangumi.tv/subject/436738"
+url = "https://bangumi.tv/subject/328609"
 
 html_str = utils.request_html(url)
 
@@ -13,5 +14,10 @@ for key, value in anime_info.items():
 
 print("\n单集信息:")
 for episode in episode_info:
+    print("\n单集:")
     for key, value in episode.items():
         print(f"  {key}: {value}")
+
+
+utils.保存CSV文件("anime.csv", headers.番组表头, [anime_info])
+utils.保存CSV文件("episode.csv", headers.单集表头, episode_info)

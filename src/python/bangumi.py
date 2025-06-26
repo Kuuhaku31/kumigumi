@@ -54,9 +54,9 @@ def 解析BangumiHTML_str(html_str: str) -> Tuple[dict, list[dict]]:
     anime_infos = {}
     for header in 表头.番组表头:
         anime_infos[header] = ""
-    anime_infos[表头.作品bangumiURL] = "https://bangumi.tv" + tree.xpath("//h1/a/@href")[0]
-    anime_infos[表头.作品原名] = tree.xpath("//h1/a/text()")[0]
-    anime_infos[表头.作品中文名] = tree.xpath("//h1/a/text()")[0]
+    anime_infos[表头.番bangumiURL] = "https://bangumi.tv" + tree.xpath("//h1/a/@href")[0]
+    anime_infos[表头.番名] = tree.xpath("//h1/a/text()")[0]
+    anime_infos[表头.番名zh] = tree.xpath("//h1/a/text()")[0]
     anime_infos[表头.话索引] = -1
 
     # 查找 ul#infobox 内的所有 li
@@ -72,11 +72,11 @@ def 解析BangumiHTML_str(html_str: str) -> Tuple[dict, list[dict]]:
 
         # 替换键
         key = {
-            "中文名": 表头.作品中文名,
-            "别名": 表头.作品别名,
-            "话数": 表头.作品话数,
-            "放送开始": 表头.作品放送开始,
-            "上映年度": 表头.作品放送开始,
+            "中文名": 表头.番名zh,
+            "别名": 表头.番别名,
+            "话数": 表头.番话数,
+            "放送开始": 表头.番组放送开始日期,
+            "上映年度": 表头.番组放送开始日期,
             "放送星期": 表头.作品放送星期,
         }.get(key, key)
 
@@ -86,7 +86,7 @@ def 解析BangumiHTML_str(html_str: str) -> Tuple[dict, list[dict]]:
         sub_ul = li.xpath(".//ul/li/text()")
         if links:  # 获取 <a> 标签内的文本（如果有）
             if key == "官方网站":  # 如果key是官方网站
-                key = 表头.作品官方网站
+                key = 表头.番组官方网站链接
                 value = li.xpath(".//a/@href")[0]
             else:
                 value = " / ".join(links)
@@ -114,7 +114,7 @@ def 解析BangumiHTML_str(html_str: str) -> Tuple[dict, list[dict]]:
     # 获取封面
     cover = tree.xpath('//img[@class="cover"]/@src')
     if cover:
-        anime_infos[表头.作品封面URL] = "https:" + cover[0]
+        anime_infos[表头.番组封面链接] = "https:" + cover[0]
 
     # 获取单集信息
     # 话索引;话标题;中文标题;首播;时长;
@@ -134,10 +134,10 @@ def 解析BangumiHTML_str(html_str: str) -> Tuple[dict, list[dict]]:
 
         # 通过a标签获取信息
         new_prg[表头.话bangumiURL] = "https://bangumi.tv" + tag_a.xpath("@href")[0]
-        new_prg[表头.作品bangumiURL] = anime_infos[表头.作品bangumiURL]
-        new_prg[表头.话原标题] = anime_infos[表头.作品原名]
-        new_prg[表头.话中文标题] = anime_infos[表头.作品中文名]
-        new_prg[表头.话首播时间] = anime_infos[表头.作品放送开始]
+        new_prg[表头.番bangumiURL] = anime_infos[表头.番bangumiURL]
+        new_prg[表头.话原标题] = anime_infos[表头.番名]
+        new_prg[表头.话中文标题] = anime_infos[表头.番名zh]
+        new_prg[表头.话首播时间] = anime_infos[表头.番组放送开始日期]
         new_prg[表头.话索引] = tag_a.xpath("text()")[0]
         new_prg[表头.话原标题] = tag_a.xpath("@title")[0].split(" ", 1)[1]  # 按第一个空格分割，取第二部分
 

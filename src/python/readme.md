@@ -56,36 +56,36 @@ kumigumi/20XX.XX/
 
 ## ✅`anime` 表字段对应
 
-| 中文键名         | 英文键名                   |          |
-| ---------------- | -------------------------- | -------- |
-| `作品bangumiURL` | `animeBangumiURL`          | 主键     |
-| `作品mikanRSS`   | `animeMikananimeRSS`       | 手动维护 |
-| `作品原名`       | `animeOriginalTitle`       |
-| `作品中文名`     | `animeChineseTitle`        |
-| `作品别名`       | `animeAliases`             |
-| `作品话数`       | `animeEpisodeCount`        |
-| `作品放送开始`   | `animeBroadcastStart`      |
-| `作品官方网站`   | `animeOfficialSite`        |
-| `作品封面URL`    | `animeCoverImageURL`       |
-| `作品分类`       | `animeCategories`          | 手动维护 |
-| `作品开播前评分` | `animePreBroadcastRating`  | 手动维护 |
-| `作品完播后评分` | `animePostBroadcastRating` | 手动维护 |
-| `作品备注`       |                            | 手动维护 |
+| 中文键名           | 英文键名                   |          |
+| ------------------ | -------------------------- | -------- |
+| `番bangumiURL`     | `animeBangumiURL`          | 主键     |
+| `mikanRSS`         | `animeMikananimeRSS`       | 手动维护 |
+| `番名`             | `animeOriginalTitle`       |
+| `番名zh`           | `animeChineseTitle`        |
+| `番别名`           | `animeAliases`             |
+| `作品话数`         | `animeEpisodeCount`        |
+| `作品放送开始日期` | `animeBroadcastStart`      |
+| `作品官方网站链接` | `animeOfficialSite`        |
+| `作品封面链接`     | `animeCoverImageURL`       |
+| `作品分类`         | `animeCategories`          | 手动维护 |
+| `作品开播前评分`   | `animePreBroadcastRating`  | 手动维护 |
+| `作品完播后评分`   | `animePostBroadcastRating` | 手动维护 |
+| `备注`             |                            | 手动维护 |
 
 ---
 
 ## ✅`episode` 表字段对应
 
-| 中文键名         | 英文键名               |          |
-| ---------------- | ---------------------- | -------- |
-| `话bangumiURL`   | `episodeBangumiURL`    | 主键     |
-| `作品bangumiURL` | `animeBangumiURL`      |
-| `话索引`         | `episodeIndex`         |
-| `话原标题`       | `episodeOriginalTitle` |
-| `话中文标题`     | `episodeChineseTitle`  |
-| `话首播时间`     | `episodeAirDate`       |
-| `话时长`         | `episodeDuration`      |
-| `话备注`         |                        | 手动维护 |
+| 中文键名       | 英文键名               |          |
+| -------------- | ---------------------- | -------- |
+| `话bangumiURL` | `episodeBangumiURL`    | 主键     |
+| `番bangumiURL` | `animeBangumiURL`      |
+| `话索引`       | `episodeIndex`         |
+| `话原标题`     | `episodeOriginalTitle` |
+| `话中文标题`   | `episodeChineseTitle`  |
+| `话首播时间`   | `episodeAirDate`       |
+| `话时长`       | `episodeDuration`      |
+| `备注`         |                        | 手动维护 |
 
 ---
 
@@ -94,8 +94,8 @@ kumigumi/20XX.XX/
 | 中文键名           | 英文键名                  |          |
 | ------------------ | ------------------------- | -------- |
 | `种子下载链接`     | `torrentMikananimeURL`    | 主键     |
-| `作品番组计划网址` | `animeBangumiURL`         |          |
-| `种子下载页面网址` | `torrentPageURL`          |          |
+| `番bangumiURL`     |
+| `种子下载页面链接` | `torrentPageURL`          |          |
 | `种子字幕组`       | `torrentSubtitleGroup`    |          |
 | `种子发布日期`     | `torrentReleaseDate`      |          |
 | `种子标题`         | `torrentTitle`            |          |
