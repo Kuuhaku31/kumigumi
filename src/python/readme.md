@@ -56,58 +56,62 @@ kumigumi/20XX.XX/
 
 ## ✅`anime` 表字段对应
 
-| 中文键名         | 英文键名              |
-| ---------------- | --------------------- |
-| `作品bangumiURL` | `animeBangumiURL`     |
-| `作品mikanRSS`   | `animeMikananimeRSS`  |
-| `作品原名`       | `animeOriginalTitle`  |
-| `作品中文名`     | `animeChineseTitle`   |
-| `作品别名`       | `animeAliases`        |
-| `作品分类`       | `animeCategories`     |
-| `作品话数`       | `animeEpisodeCount`   |
-| `作品放送开始`   | `animeBroadcastStart` |
-| `作品放送星期`   | `animeBroadcastDay`   |
-| `作品官方网站`   | `animeOfficialSite`   |
-| `作品封面URL`    | `animeCoverImageURL`  |
+| 中文键名         | 英文键名                   |          |
+| ---------------- | -------------------------- | -------- |
+| `作品bangumiURL` | `animeBangumiURL`          | 主键     |
+| `作品mikanRSS`   | `animeMikananimeRSS`       | 手动维护 |
+| `作品原名`       | `animeOriginalTitle`       |
+| `作品中文名`     | `animeChineseTitle`        |
+| `作品别名`       | `animeAliases`             |
+| `作品话数`       | `animeEpisodeCount`        |
+| `作品放送开始`   | `animeBroadcastStart`      |
+| `作品官方网站`   | `animeOfficialSite`        |
+| `作品封面URL`    | `animeCoverImageURL`       |
+| `作品分类`       | `animeCategories`          | 手动维护 |
+| `作品开播前评分` | `animePreBroadcastRating`  | 手动维护 |
+| `作品完播后评分` | `animePostBroadcastRating` | 手动维护 |
+| `作品备注`       |                            | 手动维护 |
 
 ---
 
-## ✅`episodes` 表字段对应
+## ✅`episode` 表字段对应
 
-| 中文键名         | 英文键名               |
-| ---------------- | ---------------------- |
-| `话bangumiURL`   | `episodeBangumiURL`    |
+| 中文键名         | 英文键名               |          |
+| ---------------- | ---------------------- | -------- |
+| `话bangumiURL`   | `episodeBangumiURL`    | 主键     |
 | `作品bangumiURL` | `animeBangumiURL`      |
 | `话索引`         | `episodeIndex`         |
 | `话原标题`       | `episodeOriginalTitle` |
 | `话中文标题`     | `episodeChineseTitle`  |
 | `话首播时间`     | `episodeAirDate`       |
 | `话时长`         | `episodeDuration`      |
+| `话备注`         |                        | 手动维护 |
 
 ---
 
-## ✅`torrents` 表字段对应
+## ✅`torrent` 表字段对应
 
-| 中文键名           | 英文键名                  | SQLite 类型 | 备注 |
-| ------------------ | ------------------------- | ----------- | ---- |
-| `种子下载链接`     | `torrentMikananimeURL`    | TEXT        | 主要 |
-| `作品番组计划网址` | `animeBangumiURL`         | TEXT        | 标记 |
-| `种子字幕组`       | `torrentSubtitleGroup`    | TEXT        | 更新 |
-| `种子发布日期`     | `torrentReleaseDate`      | TEXT        | 更新 |
-| `种子标题`         | `torrentTitle`            | TEXT        | 更新 |
-| `种子大小`         | `torrentSize`             | TEXT        | 更新 |
-| `种子大小_字节`    | `torrentSizeBytes`        | TEXT        | 更新 |
-| `话索引`           | `torrentEpisodeIndex`     | TEXT        | 可选 |
-| `分辨率`           | `torrentResolution`       | TEXT        | 可选 |
-| `片源`             | `torrentSource`           | TEXT        | 可选 |
-| `片源类型`         | `torrentSourceType`       | TEXT        | 可选 |
-| `视频编码格式`     | `torrentVideoCodec`       | TEXT        | 可选 |
-| `音频编码格式`     | `torrentAudioCodec`       | TEXT        | 可选 |
-| `字幕语言`         | `torrentSubtitleLanguage` | TEXT        | 可选 |
-| `文件格式`         | `torrentFileFormat`       | TEXT        | 可选 |
-| `其他标记`         | `torrentTags`             | TEXT        | 可选 |
-| `种子下载页面网址` | `torrentPageURL`          | TEXT        | 更新 |
-| `种子是否下载`     | `torrentIsDownloaded`     | TEXT        | 储存 |
+| 中文键名           | 英文键名                  |          |
+| ------------------ | ------------------------- | -------- |
+| `种子下载链接`     | `torrentMikananimeURL`    | 主键     |
+| `作品番组计划网址` | `animeBangumiURL`         |          |
+| `种子下载页面网址` | `torrentPageURL`          |          |
+| `种子字幕组`       | `torrentSubtitleGroup`    |          |
+| `种子发布日期`     | `torrentReleaseDate`      |          |
+| `种子标题`         | `torrentTitle`            |          |
+| `种子描述`         |                           |          |
+| `种子大小`         | `torrentSize`             |          |
+| `种子大小_字节`    | `torrentSizeBytes`        |          |
+| `备注`             |                           | 手动维护 |
+| `话索引`           | `torrentEpisodeIndex`     | 可选     |
+| `分辨率`           | `torrentResolution`       | 可选     |
+| `片源`             | `torrentSource`           | 可选     |
+| `片源类型`         | `torrentSourceType`       | 可选     |
+| `视频编码格式`     | `torrentVideoCodec`       | 可选     |
+| `音频编码格式`     | `torrentAudioCodec`       | 可选     |
+| `字幕语言`         | `torrentSubtitleLanguage` | 可选     |
+| `文件格式`         | `torrentFileFormat`       | 可选     |
+| `其他标记`         | `torrentTags`             | 可选     |
 
 ---
 

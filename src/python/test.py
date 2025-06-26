@@ -1,13 +1,17 @@
-import requests
+import bangumi
+import utils
 
-url = "http://192.168.100.197:8000/"
+url = "https://bangumi.tv/subject/436738"
 
-utf8_str = ""
+html_str = utils.request_html(url)
 
-res = requests.get(url)
+anime_info, episode_info = bangumi.解析BangumiHTML_str(html_str)
 
-if res.status_code == 200:
-    utf8_str = res.content.decode("utf-8")
+print("动画信息:")
+for key, value in anime_info.items():
+    print(f"{key}: {value}")
 
-    with open("response.html", "w", encoding="utf-8") as f:
-        f.write(utf8_str)
+print("\n单集信息:")
+for episode in episode_info:
+    for key, value in episode.items():
+        print(f"  {key}: {value}")

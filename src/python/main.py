@@ -151,7 +151,7 @@ def 更新动画信息(动画索引信息列表: list[dict]):
         # 定义请求 HTML 并解析的函数
         def 请求HTML并解析(动画信息索引: dict):
             html_str = utils.request_html(动画信息索引[bangumi.作品bangumiURL])
-            info: dict = bangumi.解析HTML(html_str)
+            info: dict = bangumi.解析BangumiHTML_str(html_str)
             info["动画信息"][0][bangumi.作品mikanRSS] = 动画信息索引[bangumi.作品mikanRSS]
             return info
 
