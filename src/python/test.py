@@ -13,14 +13,12 @@ import headers
 import utils
 
 
-def 批量获取数据() -> Tuple[List[dict], List[dict]]:
-
-    url_list = []
-    with open("data/urls.txt", "r", encoding="utf-8") as f:
-        for line in f:
-            url = line.strip()
-            if url:
-                url_list.append(url)
+def 批量获取数据(url_list: list[str]) -> Tuple[List[dict], List[dict]]:
+    """
+    批量获取动画信息和单集信息
+    :param url_list: 包含多个 Bangumi URL 的列表
+    :return: 返回动画信息列表和单集信息列表
+    """
 
     anime_info_list = []
     episode_info_list = []
@@ -248,8 +246,16 @@ def func2():
 def func3():
     print("func3 called")
 
+    # 读取 Excel 表格区域
+    _, data = 读取EXCEL表格区域(excel_path, "dev2")
+
+    url_list: list[str] = []
+    for row in data:
+        if row.get(headers.番bangumiURL):
+            url_list.append(row[headers.番bangumiURL])
+
     # 批量获取数据
-    anime_info, episode_info = 批量获取数据()
+    anime_info, episode_info = 批量获取数据(url_list)
 
     # 保存到 CSV 文件
     utils.保存CSV文件("anime.csv", headers.番组表头_src, anime_info)
