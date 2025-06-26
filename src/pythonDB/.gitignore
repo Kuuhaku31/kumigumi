@@ -1,0 +1,6 @@
+*.accdb
+*.laccdb
+*.db
+*.sqlite
+*.xlsx
+*.csv
