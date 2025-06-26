@@ -7,39 +7,6 @@ from lxml import etree
 
 import headers as 表头
 
-"""
-## ✅`anime` 表字段对应
-
-| 中文键名         | 英文键名                   |          |
-| ---------------- | -------------------------- | -------- |
-| `作品bangumiURL` | `animeBangumiURL`          | 主键     |
-| `作品mikanRSS`   | `animeMikananimeRSS`       | 手动维护 |
-| `作品原名`       | `animeOriginalTitle`       |
-| `作品中文名`     | `animeChineseTitle`        |
-| `作品别名`       | `animeAliases`             |
-| `作品话数`       | `animeEpisodeCount`        |
-| `作品放送开始`   | `animeBroadcastStart`      |
-| `作品官方网站`   | `animeOfficialSite`        |
-| `作品封面URL`    | `animeCoverImageURL`       |
-| `作品分类`       | `animeCategories`          | 手动维护 |
-| `作品开播前评分` | `animePreBroadcastRating`  | 手动维护 |
-| `作品完播后评分` | `animePostBroadcastRating` | 手动维护 |
-| `作品备注`       |                            | 手动维护 |
-
-## ✅`episode` 表字段对应
-
-| 中文键名         | 英文键名               |          |
-| ---------------- | ---------------------- | -------- |
-| `话bangumiURL`   | `episodeBangumiURL`    | 主键     |
-| `作品bangumiURL` | `animeBangumiURL`      |
-| `话索引`         | `episodeIndex`         |
-| `话原标题`       | `episodeOriginalTitle` |
-| `话中文标题`     | `episodeChineseTitle`  |
-| `话首播时间`     | `episodeAirDate`       |
-| `话时长`         | `episodeDuration`      |
-| `话备注`         |                        | 手动维护 |
-"""
-
 
 # 解析番剧信息
 # 参数：
@@ -77,7 +44,6 @@ def 解析BangumiHTML_str(html_str: str) -> Tuple[dict, list[dict]]:
             "话数": 表头.番话数,
             "放送开始": 表头.番组放送开始日期,
             "上映年度": 表头.番组放送开始日期,
-            "放送星期": 表头.作品放送星期,
         }.get(key, key)
 
         # 获取 <a> 标签内的文本（如果有）或者 li 内部的文本内容（去掉 <span class="tip">）
@@ -99,17 +65,6 @@ def 解析BangumiHTML_str(html_str: str) -> Tuple[dict, list[dict]]:
 
         # 保存到字典
         anime_infos[key] = value
-
-    # 转换星期成整数
-    anime_infos[表头.作品放送星期] = {
-        "星期日": 0,
-        "星期一": 1,
-        "星期二": 2,
-        "星期三": 3,
-        "星期四": 4,
-        "星期五": 5,
-        "星期六": 6,
-    }.get(anime_infos[表头.作品放送星期], -1)
 
     # 获取封面
     cover = tree.xpath('//img[@class="cover"]/@src')
