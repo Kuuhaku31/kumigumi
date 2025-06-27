@@ -77,7 +77,7 @@ def 创建数据库表(accdb_path: str, table_name: str, headers: list[str], ove
 
 
 # 同步数据到 Access 数据库
-def 更新数据库(data: list[dict], headers: list[str], accdb_path: str, table_name: str):
+def 更新数据库(data: list[dict], pk: str, headers_no_pk: list[str], accdb_path: str, table_name: str):
     """
     同步数据到 Access 数据库
     :param data:     list[dict]，每一行为一个字典，可能包含无关字段
@@ -102,10 +102,12 @@ def 更新数据库(data: list[dict], headers: list[str], accdb_path: str, table
     # 1. 获取主键列名
     #  将 headers 的第一列作为主键
 
-    if not headers or len(headers) == 0:
+    if not pk:
+        raise ValueError("❌ 主键列名 pk 不能为空")
+    elif not headers_no_pk or len(headers_no_pk) == 0:
         raise ValueError("❌ headers 列表不能为空")
 
-    pk_column = headers[0]  # 假设第一列为主键
+    pk_column = pk
 
     # cursor.execute(f"SELECT * FROM [{table_name}]")
     # pk_column = None
@@ -135,24 +137,21 @@ def 更新数据库(data: list[dict], headers: list[str], accdb_path: str, table
 
         if exists:
             # 3. 执行更新
-            update_fields = ", ".join(f"[{h}] = ?" for h in headers if h != pk_column)
+            update_fields = ", ".join(f"[{h}] = ?" for h in headers_no_pk)
             update_sql = f"UPDATE [{table_name}] SET {update_fields} WHERE [{pk_column}] = ?"
-            update_values = [record.get(h, "") for h in headers if h != pk_column]
-
-            print("SQL:", update_sql)
-            print("参数:", tuple(update_values) + (pk_value,))
-            print("参数数量:", len(update_values) + 1)
-
+            update_values = [record.get(h, "") for h in headers_no_pk]
             cursor.execute(update_sql, tuple(update_values) + (pk_value,))
             更新_count += 1
 
         else:
             # 4. 执行插入
-            field_names = ", ".join(f"[{h}]" for h in headers)
-            placeholders = ", ".join("?" for _ in headers)
+            field_names = ", ".join(f"[{h}]" for h in headers_no_pk)
+            field_names += f", [{pk_column}]"  # 添加主键列
+            placeholders = ", ".join("?" for _ in headers_no_pk)
+            placeholders += ", ?"
             insert_sql = f"INSERT INTO [{table_name}] ({field_names}) VALUES ({placeholders})"
-            insert_values = [record.get(h, "") for h in headers]
-            cursor.execute(insert_sql, tuple(insert_values))
+            insert_values = [record.get(h, "") for h in headers_no_pk]
+            cursor.execute(insert_sql, tuple(insert_values) + (pk_value,))
             插入_count += 1
 
     conn.commit()
@@ -232,8 +231,9 @@ def 读取EXCEL表格区域(path: str, sheet_name: str) -> Tuple[List[str], List
 
 # Access 数据库路径和表名
 accdb_path = "D:/def/test_db.accdb"
-anime_table_name = "Anime"
-episode_table_name = "Episode"
+anime_table_name = "anime"
+episode_table_name = "episode"
+torrent_table_name = "torrent"
 kumigumi_db_path = "D:/def/kumigumi.accdb"
 
 excel_path = "D:/def/2025.07.xlsx"
@@ -261,18 +261,22 @@ def 读取表格区域并更新数据库():
     # 读取 Excel 表格区域
     _, data = 读取EXCEL表格区域(excel_path, excel_sheet_name_ani202507)
 
+    # for row in data:
+    #     # 翻译键名
+    #     row = {headers.字段字典.get(k, k): v for k, v in row.items()}
+    data = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in data]
+
     # 更新 Access 数据库
-    # 表头 = [headers.单集表头_主键] + headers.单集表头_手动维护
-    表头 = [headers.番组表头_主键] + headers.番组表头_手动维护
-    更新数据库(data, 表头, accdb_path, episode_table_name)
+    更新数据库(data, headers.番组表头_主键_en, headers.番组表头_手动维护_en, accdb_path, anime_table_name)
 
 
-def func2():
-    print("func2 called")
+def 数据库创建数据库表():
+    print("数据库创建数据库表")
 
     # 创建 Access 数据库表
-    创建数据库表(accdb_path, anime_table_name, headers.番组表头, overwrite=True)
-    创建数据库表(accdb_path, episode_table_name, headers.单集表头, overwrite=True)
+    # 创建数据库表(accdb_path, anime_table_name, headers.番组表头_数据库_en, overwrite=True)
+    # 创建数据库表(accdb_path, episode_table_name, headers.单集表头_数据库_en, overwrite=True)
+    创建数据库表(accdb_path, torrent_table_name, headers.种子表头_数据库_en, overwrite=False)
 
 
 def func3():
@@ -303,7 +307,8 @@ if __name__ == "__main__":
     print("开始执行脚本...")
 
     # func0()
-    # 读取表格区域并更新数据库()
+    读取表格区域并更新数据库()
+    # 数据库创建数据库表()
     # func2()
     # func3()
 

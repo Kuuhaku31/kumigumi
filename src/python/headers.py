@@ -4,8 +4,8 @@
 from typing import Tuple
 
 字段字典: dict = {
-    "番组bangumi链接": "anime_bangumi_URL",
-    "番组RSS订阅链接": "anime_RSS_URL",
+    "番组bangumi链接": "anime_bangumi_url",
+    "番组RSS订阅链接": "anime_rss_url",
     "番组原名": "anime_title",
     "番组译名": "anime_title_cn",
     "番组别名": "anime_aliases",
@@ -14,15 +14,15 @@ from typing import Tuple
     "番组封面链接": "anime_cover_url",
     "番组观前评分": "anime_pre_view_rating",
     "番组观后评分": "anime_after_view_rating",
-    "话bangumiURL": "episode_bangumi_URL",
+    "话bangumiURL": "episode_bangumi_url",
     "话索引": "episode_index",
     "话标题": "episode_title",
     "话标题译名": "episode_title_cn",
     "话时长": "episode_duration",
     "话下载情况": "episode_download_status",
     "话观看情况": "episode_view_status",
-    "种子下载链接": "torrent_download_URL",
-    "种子页面链接": "torrent_page_URL",
+    "种子下载链接": "torrent_download_url",
+    "种子页面链接": "torrent_page_url",
     "种子字幕组": "torrent_subtitle_group",
     "种子标题": "torrent_title",
     "种子描述": "torrent_description",
@@ -30,7 +30,7 @@ from typing import Tuple
     "种子大小_字节": "torrent_size_bytes",
     "种子下载情况": "torrent_download_status",
     "发布日期": "air_date",
-    "备注": "remark",
+    "备注": "note",
 }
 
 
@@ -40,7 +40,7 @@ from typing import Tuple
 
 | 中文键名          | 英文键名                  | 备注     |
 | ----------------- | ------------------------- | -------- |
-| `番组bangumi链接` | `anime_bangumi_URL`       | 主键     |
+| `番组bangumi链接` | `anime_bangumi_url`       | 主键     |
 | `发布日期`        | `air_date`                |          |
 | `番组原名`        | `anime_title`             |          |
 | `番组译名`        | `anime_title_cn`          |          |
@@ -50,8 +50,8 @@ from typing import Tuple
 | `番组封面链接`    | `anime_cover_url`         |          |
 | `番组观前评分`    | `anime_pre_view_rating`   | 手动维护 |
 | `番组观后评分`    | `anime_after_view_rating` | 手动维护 |
-| `番组RSS订阅链接` | `anime_RSS_URL`           | 手动维护 |
-| `备注`            | `remark`                  | 手动维护 |
+| `番组RSS订阅链接` | `anime_rss_url`           | 手动维护 |
+| `备注`            | `note`                  | 手动维护 |
 
 ---
 
@@ -59,8 +59,8 @@ from typing import Tuple
 
 | 中文键名          | 英文键名                  |          |
 | ----------------- | ------------------------- | -------- |
-| `话bangumiURL`    | `episode_bangumi_URL`     | 主键     |
-| `番组bangumi链接` | `anime_bangumi_URL`       |          |
+| `话bangumiURL`    | `episode_bangumi_url`     | 主键     |
+| `番组bangumi链接` | `anime_bangumi_url`       |          |
 | `发布日期`        | `air_date`                |          |
 | `话索引`          | `episode_index`           |          |
 | `话标题`          | `episode_title`           |          |
@@ -68,7 +68,7 @@ from typing import Tuple
 | `话时长`          | `episode_duration`        |          |
 | `话下载情况`      | `episode_download_status` | 手动维护 |
 | `话观看情况`      | `episode_view_status`     | 手动维护 |
-| `备注`            | `remark`                  | 手动维护 |
+| `备注`            | `note`                  | 手动维护 |
 
 ---
 
@@ -76,18 +76,17 @@ from typing import Tuple
 
 | 中文键名          | 英文键名                  |          |
 | ----------------- | ------------------------- | -------- |
-| `种子下载链接`    | `torrentMikananimeURL`    | 主键     |
-| `番组bangumi链接` | `anime_RSS_URL`           |          |
+| `种子下载链接`    | `torrent_download_url`    | 主键     |
+| `番组bangumi链接` | `anime_bangumi_url`       |          |
 | `发布日期`        | `air_date`                |          |
-| `种子下载链接`    | `torrent_download_URL`    |          |
-| `种子页面链接`    | `torrent_page_URL`        |          |
+| `种子页面链接`    | `torrent_page_url`        |          |
 | `种子字幕组`      | `torrent_subtitle_group`  |          |
 | `种子标题`        | `torrent_title`           |          |
 | `种子描述`        | `torrent_description`     |          |
 | `种子大小`        | `torrent_size`            |          |
 | `种子大小_字节`   | `torrent_size_bytes`      |          |
 | `种子下载情况`    | `torrent_download_status` | 手动维护 |
-| `备注`            | `remark`                  | 手动维护 |
+| `备注`            | `note`                  | 手动维护 |
 
 """
 
@@ -163,7 +162,6 @@ def 预处理表头(表头: list[str]) -> Tuple[str, list[str], list[str], list[
     "种子下载链接*pk",  # 主键
     "番组bangumi链接*a",
     "发布日期*a",
-    "种子下载链接*a",
     "种子页面链接*a",
     "种子字幕组*a",
     "种子标题*a",
