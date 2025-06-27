@@ -240,6 +240,7 @@ excel_path = "D:/def/2025.07.xlsx"
 excel_sheet_name = "ani_index"
 excel_sheet_name_ep202504 = "ep202504"
 excel_sheet_name_ani202507 = "ani202507"
+excel_sheet_name_ani202504 = "ani202504"
 
 
 def func0():
@@ -259,7 +260,8 @@ def 读取表格区域并更新数据库():
     print("读取表格区域并更新数据库")
 
     # 读取 Excel 表格区域
-    _, data = 读取EXCEL表格区域(excel_path, excel_sheet_name_ani202507)
+    # _, data = 读取EXCEL表格区域(excel_path, excel_sheet_name_ani202504)
+    _, data = 读取EXCEL表格区域(excel_path, excel_sheet_name_ep202504)
 
     # for row in data:
     #     # 翻译键名
@@ -267,7 +269,31 @@ def 读取表格区域并更新数据库():
     data = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in data]
 
     # 更新 Access 数据库
-    更新数据库(data, headers.番组表头_主键_en, headers.番组表头_手动维护_en, accdb_path, anime_table_name)
+    # 更新数据库(data, headers.番组表头_主键_en, headers.番组表头_手动维护_en, accdb_path, anime_table_name)
+    更新数据库(data, headers.单集表头_主键_en, headers.单集表头_手动维护_en, accdb_path, episode_table_name)
+
+
+def 读取表格区域并爬取数据然后更新数据库():
+    print("读取表格区域并爬取数据然后更新数据库")
+
+    # 读取 Excel 表格区域
+    _, data = 读取EXCEL表格区域(excel_path, excel_sheet_name_ani202504)
+
+    bgm_url_list: list[str] = []
+    for row in data:
+        if row.get("番组bangumi链接"):
+            bgm_url_list.append(row["番组bangumi链接"])
+
+    # 批量获取数据
+    anime_info, episode_info = 批量获取数据(bgm_url_list)
+
+    # 翻译键名
+    anime_info = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in anime_info]
+    episode_info = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in episode_info]
+
+    # 同步动画信息到 Access
+    更新数据库(anime_info, headers.番组表头_主键_en, headers.番组表头_自动更新_en, accdb_path, anime_table_name)
+    更新数据库(episode_info, headers.单集表头_主键_en, headers.单集表头_自动更新_en, accdb_path, episode_table_name)
 
 
 def 数据库创建数据库表():
@@ -307,7 +333,8 @@ if __name__ == "__main__":
     print("开始执行脚本...")
 
     # func0()
-    读取表格区域并更新数据库()
+    # 读取表格区域并更新数据库()
+    读取表格区域并爬取数据然后更新数据库()
     # 数据库创建数据库表()
     # func2()
     # func3()

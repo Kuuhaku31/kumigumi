@@ -51,7 +51,7 @@ from typing import Tuple
 | `番组观前评分`    | `anime_pre_view_rating`   | 手动维护 |
 | `番组观后评分`    | `anime_after_view_rating` | 手动维护 |
 | `番组RSS订阅链接` | `anime_rss_url`           | 手动维护 |
-| `备注`            | `note`                  | 手动维护 |
+| `备注`            | `note`                    | 手动维护 |
 
 ---
 
@@ -68,7 +68,7 @@ from typing import Tuple
 | `话时长`          | `episode_duration`        |          |
 | `话下载情况`      | `episode_download_status` | 手动维护 |
 | `话观看情况`      | `episode_view_status`     | 手动维护 |
-| `备注`            | `note`                  | 手动维护 |
+| `备注`            | `note`                    | 手动维护 |
 
 ---
 
@@ -86,7 +86,7 @@ from typing import Tuple
 | `种子大小`        | `torrent_size`            |          |
 | `种子大小_字节`   | `torrent_size_bytes`      |          |
 | `种子下载情况`    | `torrent_download_status` | 手动维护 |
-| `备注`            | `note`                  | 手动维护 |
+| `备注`            | `note`                    | 手动维护 |
 
 """
 
