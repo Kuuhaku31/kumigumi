@@ -138,6 +138,11 @@ def 更新数据库(data: list[dict], headers: list[str], accdb_path: str, table
             update_fields = ", ".join(f"[{h}] = ?" for h in headers if h != pk_column)
             update_sql = f"UPDATE [{table_name}] SET {update_fields} WHERE [{pk_column}] = ?"
             update_values = [record.get(h, "") for h in headers if h != pk_column]
+
+            print("SQL:", update_sql)
+            print("参数:", tuple(update_values) + (pk_value,))
+            print("参数数量:", len(update_values) + 1)
+
             cursor.execute(update_sql, tuple(update_values) + (pk_value,))
             更新_count += 1
 
@@ -161,11 +166,8 @@ def 更新数据库(data: list[dict], headers: list[str], accdb_path: str, table
 
 def 读取EXCEL表格区域(path: str, sheet_name: str) -> Tuple[List[str], List[dict]]:
     """
-    读取 Excel 表格中指定工作表:
-    :param path: Excel 文件路径
-    :param sheet_name: 工作表名称
-    第一行为表头，后续行为数据
-    :return: 表头列表和数据行字典列表
+    读取 Excel 表格中指定工作表的区域（由 A1:A4 定义）
+    返回：表头列表和数据字典列表
     """
     print(f"📖 读取 Excel 文件: {path} 的工作表: {sheet_name}")
 
@@ -175,33 +177,55 @@ def 读取EXCEL表格区域(path: str, sheet_name: str) -> Tuple[List[str], List
 
     ws = wb[sheet_name]
 
+    # Step 1: 读取 A1, A2, A3, A4
+    row = ws["A1"].value
+    start_col = ws["A2"].value
+    height = ws["A3"].value
+    width = ws["A4"].value
+
+    # Step 2: 解析坐标
+    # start_col 和 width 可能是字母和数字混合的情况，需转换为列号
+    # 假设 start_col 是列号（数字），否则需要 openpyxl.utils.column_index_from_string
+    # 这里假设 start_col/width 都为整数
+    if (
+        not isinstance(row, int)
+        or not isinstance(start_col, int)
+        or not isinstance(height, int)
+        or not isinstance(width, int)
+    ):
+        raise ValueError("❌ A1:A4 必须为整数，分别代表起始行、起始列、区域高、区域宽")
+
+    end_row = row + height - 1
+    end_col = start_col + width - 1
+
+    # Step 3: 读取区域内的数据
     headers = []
     data = []
 
-    # 读取第一行作为表头（从 A1 开始，直到第一个空单元格为止）
-    for cell in ws[1]:
-        if cell.value is None:
-            break
-        headers.append(str(cell.value).strip())
+    # 表头行
+    header_row = ws.iter_rows(min_row=row, max_row=row, min_col=start_col, max_col=end_col)
+    for header_cell in next(header_row):
+        if header_cell.value is None:
+            headers.append("")
+        else:
+            headers.append(str(header_cell.value).strip())
 
-    num_cols = len(headers)
-    if num_cols == 0:
-        raise ValueError("❌ 未能读取到表头")
+    if not any(headers):
+        raise ValueError("❌ 区域内未能读取到有效表头")
 
-    # 从第二行开始读取数据，直到首列为空（视为表格结束）
-    for row in ws.iter_rows(min_row=2, max_col=num_cols):
-        if row[0].value is None:
-            break  # 首列为空视为结束
-
+    # 数据行
+    for row_cells in ws.iter_rows(min_row=row + 1, max_row=end_row, min_col=start_col, max_col=end_col):
+        # 如果首列为空，跳过整行
+        if row_cells[0].value is None:
+            continue
         row_dict = {}
-        for i in range(num_cols):
-            key = headers[i]
-            value = row[i].value
-            row_dict[key] = "" if value is None else str(value)
+        for i, cell in enumerate(row_cells):
+            key = headers[i] if i < len(headers) else f"列{i+1}"
+            value = "" if cell.value is None else str(cell.value)
+            row_dict[key] = value
         data.append(row_dict)
 
     wb.close()
-
     print(f"✅ 读取完成，共 {len(data)} 行数据，表头: {headers}")
     return headers, data
 
@@ -210,29 +234,37 @@ def 读取EXCEL表格区域(path: str, sheet_name: str) -> Tuple[List[str], List
 accdb_path = "D:/def/test_db.accdb"
 anime_table_name = "Anime"
 episode_table_name = "Episode"
+kumigumi_db_path = "D:/def/kumigumi.accdb"
 
-excel_path = "D:/OneDrive/2025.07.xlsx"
-excel_sheet_name = "dev"
+excel_path = "D:/def/2025.07.xlsx"
+excel_sheet_name = "ani_index"
+excel_sheet_name_ep202504 = "ep202504"
+excel_sheet_name_ani202507 = "ani202507"
 
 
 def func0():
     print("func0 called")
 
     # 读取 Excel 表格区域
-    _, data = 读取EXCEL表格区域(excel_path, excel_sheet_name)
+    header, data = 读取EXCEL表格区域(excel_path, excel_sheet_name)
 
     # 更新 Access 数据库
-    更新数据库(data, headers.番组表头_手动维护字段, accdb_path, anime_table_name)
+    # 更新数据库(data, headers.番组表头_手动维护字段, accdb_path, anime_table_name)
+    print(f"读取到 {len(data)} 行数据，表头: {header}")
+    for row in data:
+        print(row)
 
 
-def func1():
-    print("func1 called")
+def 读取表格区域并更新数据库():
+    print("读取表格区域并更新数据库")
 
     # 读取 Excel 表格区域
-    headers, data = 读取EXCEL表格区域(excel_path, excel_sheet_name)
+    _, data = 读取EXCEL表格区域(excel_path, excel_sheet_name_ani202507)
 
     # 更新 Access 数据库
-    更新数据库(data, headers, accdb_path, episode_table_name)
+    # 表头 = [headers.单集表头_主键] + headers.单集表头_手动维护
+    表头 = [headers.番组表头_主键] + headers.番组表头_手动维护
+    更新数据库(data, 表头, accdb_path, episode_table_name)
 
 
 def func2():
@@ -268,9 +300,11 @@ def func3():
 
 if __name__ == "__main__":
 
+    print("开始执行脚本...")
+
     # func0()
-    # func1()
+    # 读取表格区域并更新数据库()
     # func2()
-    func3()
+    # func3()
 
     print("所有操作完成")
