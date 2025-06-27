@@ -230,11 +230,11 @@ def 读取EXCEL表格区域(path: str, sheet_name: str) -> Tuple[List[str], List
 
 
 # Access 数据库路径和表名
-accdb_path = "D:/def/test_db.accdb"
-anime_table_name = "anime"
-episode_table_name = "episode"
-torrent_table_name = "torrent"
-kumigumi_db_path = "D:/def/kumigumi.accdb"
+全局_accdb_path = "D:/def/test_db.accdb"
+全局_数据库anime表名 = "anime"
+全局_数据库episode表名 = "episode"
+全局_数据库torrent表名 = "torrent"
+# 全局_kumigumi_db_path = "D:/def/kumigumi.accdb"
 
 excel_path = "D:/def/2025.07.xlsx"
 excel_sheet_name = "ani_index"
@@ -243,41 +243,42 @@ excel_sheet_name_ani202507 = "ani202507"
 excel_sheet_name_ani202504 = "ani202504"
 
 
-def func0():
-    print("func0 called")
-
-    # 读取 Excel 表格区域
-    header, data = 读取EXCEL表格区域(excel_path, excel_sheet_name)
-
-    # 更新 Access 数据库
-    # 更新数据库(data, headers.番组表头_手动维护字段, accdb_path, anime_table_name)
-    print(f"读取到 {len(data)} 行数据，表头: {header}")
-    for row in data:
-        print(row)
-
-
-def 读取表格区域并更新数据库():
+def 读取表格区域并更新数据库(EXCEL文件地址, 工作表名, mode):
     print("读取表格区域并更新数据库")
 
     # 读取 Excel 表格区域
-    # _, data = 读取EXCEL表格区域(excel_path, excel_sheet_name_ani202504)
-    _, data = 读取EXCEL表格区域(excel_path, excel_sheet_name_ep202504)
-
-    # for row in data:
-    #     # 翻译键名
-    #     row = {headers.字段字典.get(k, k): v for k, v in row.items()}
+    _, data = 读取EXCEL表格区域(EXCEL文件地址, 工作表名)
     data = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in data]
 
     # 更新 Access 数据库
-    # 更新数据库(data, headers.番组表头_主键_en, headers.番组表头_手动维护_en, accdb_path, anime_table_name)
-    更新数据库(data, headers.单集表头_主键_en, headers.单集表头_手动维护_en, accdb_path, episode_table_name)
+    if mode == "a":
+        更新数据库(
+            data,
+            headers.番组表头_主键_en,
+            headers.番组表头_手动维护_en,
+            全局_accdb_path,
+            全局_数据库anime表名,
+        )
+    elif mode == "e":
+        更新数据库(
+            data,
+            headers.单集表头_主键_en,
+            headers.单集表头_手动维护_en,
+            全局_accdb_path,
+            全局_数据库episode表名,
+        )
+    elif mode == "t":
+        # todo
+        pass
+    else:
+        raise ValueError("❌ 无效的模式")
 
 
-def 读取表格区域并爬取数据然后更新数据库():
+def 读取表格区域并爬取数据然后更新数据库(EXCEL文件地址, 工作表名):
     print("读取表格区域并爬取数据然后更新数据库")
 
     # 读取 Excel 表格区域
-    _, data = 读取EXCEL表格区域(excel_path, excel_sheet_name_ani202504)
+    _, data = 读取EXCEL表格区域(EXCEL文件地址, 工作表名)
 
     bgm_url_list: list[str] = []
     for row in data:
@@ -292,51 +293,27 @@ def 读取表格区域并爬取数据然后更新数据库():
     episode_info = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in episode_info]
 
     # 同步动画信息到 Access
-    更新数据库(anime_info, headers.番组表头_主键_en, headers.番组表头_自动更新_en, accdb_path, anime_table_name)
-    更新数据库(episode_info, headers.单集表头_主键_en, headers.单集表头_自动更新_en, accdb_path, episode_table_name)
-
-
-def 数据库创建数据库表():
-    print("数据库创建数据库表")
-
-    # 创建 Access 数据库表
-    # 创建数据库表(accdb_path, anime_table_name, headers.番组表头_数据库_en, overwrite=True)
-    # 创建数据库表(accdb_path, episode_table_name, headers.单集表头_数据库_en, overwrite=True)
-    创建数据库表(accdb_path, torrent_table_name, headers.种子表头_数据库_en, overwrite=False)
-
-
-def func3():
-    print("func3 called")
-
-    # 读取 Excel 表格区域
-    _, data = 读取EXCEL表格区域(excel_path, "dev2")
-
-    url_list: list[str] = []
-    for row in data:
-        if row.get(headers.番bangumiURL):
-            url_list.append(row[headers.番bangumiURL])
-
-    # 批量获取数据
-    anime_info, episode_info = 批量获取数据(url_list)
-
-    # 保存到 CSV 文件
-    utils.保存CSV文件("anime.csv", headers.番组表头_src, anime_info)
-    utils.保存CSV文件("episode.csv", headers.单集表头_src, episode_info)
-
-    # 同步动画信息到 Access
-    更新数据库(anime_info, headers.番组表头_src, accdb_path, anime_table_name)
-    更新数据库(episode_info, headers.单集表头_src, accdb_path, episode_table_name)
+    更新数据库(
+        anime_info,
+        headers.番组表头_主键_en,
+        headers.番组表头_自动更新_en,
+        全局_accdb_path,
+        全局_数据库anime表名,
+    )
+    更新数据库(
+        episode_info,
+        headers.单集表头_主键_en,
+        headers.单集表头_自动更新_en,
+        全局_accdb_path,
+        全局_数据库episode表名,
+    )
 
 
 if __name__ == "__main__":
 
     print("开始执行脚本...")
 
-    # func0()
-    # 读取表格区域并更新数据库()
-    读取表格区域并爬取数据然后更新数据库()
-    # 数据库创建数据库表()
-    # func2()
-    # func3()
+    读取表格区域并更新数据库(excel_path, "ep202504", "e")
+    # 读取表格区域并爬取数据然后更新数据库(EXCEL文件地址=excel_path, 工作表名=excel_sheet_name_ani202507)
 
     print("所有操作完成")
