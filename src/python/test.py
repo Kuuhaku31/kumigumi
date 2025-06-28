@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 import bangumi
 import headers
+import mikananime.mikananime as mikananime
 import utils
 
 
@@ -39,6 +40,38 @@ def 批量获取数据(url_list: list[str]) -> Tuple[List[dict], List[dict]]:
 
     # 返回动画信息和单集信息
     return anime_info_list, episode_info_list
+
+
+def 批量获取种子数据(data: list[dict]) -> List[dict]:
+
+    # 使用多线程批量获取种子数据
+    种子数据列表: list[dict] = []
+    with ThreadPoolExecutor() as executor:
+
+        def 获取种子数据(bgm_url: str, mikan_rss_url: str) -> list[dict]:
+            try:
+                rss_html_str = utils.request_html(mikan_rss_url)
+            except Exception as e:
+                print(f"❌ 获取 {bgm_url}: {mikan_rss_url} 时发生错误: {e}")
+                return []
+
+            return mikananime.解析mikanRSS_XML(bgm_url, rss_html_str)
+
+        futures = {
+            executor.submit(获取种子数据, row["番组bangumi链接"], row["番组RSS订阅链接"]): row
+            for row in data
+            if row.get("番组bangumi链接") and row.get("番组RSS订阅链接")
+        }
+
+        for future in tqdm(as_completed(futures), total=len(futures), desc="获取种子数据进度"):
+            try:
+                result = future.result()
+                种子数据列表.extend(result)
+            except Exception as e:
+                print(f"❌ 获取种子数据时发生错误: {e}")
+
+    # 返回所有种子数据
+    return 种子数据列表
 
 
 def 创建数据库表(accdb_path: str, table_name: str, headers: list[str], overwrite: bool = False):
@@ -309,11 +342,32 @@ def 读取表格区域并爬取数据然后更新数据库(EXCEL文件地址, �
     )
 
 
+def 读取表格数据并爬取种子信息然后保存到数据库(EXCEL文件地址, 工作表名):
+    print("读取表格数据并爬取种子信息然后保存到数据库")
+
+    # 读取 Excel 表格区域
+    _, data = 读取EXCEL表格区域(EXCEL文件地址, 工作表名)
+
+    # 批量获取种子数据
+    data = 批量获取种子数据(data)
+    data = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in data]
+
+    # 同步种子数据到 Access
+    更新数据库(
+        data,
+        headers.种子表头_主键_en,
+        headers.种子表头_自动更新_en,
+        全局_accdb_path,
+        全局_数据库torrent表名,
+    )
+
+
 if __name__ == "__main__":
 
     print("开始执行脚本...")
 
-    读取表格区域并更新数据库(excel_path, "ep202504", "e")
-    # 读取表格区域并爬取数据然后更新数据库(EXCEL文件地址=excel_path, 工作表名=excel_sheet_name_ani202507)
+    # 读取表格区域并更新数据库(excel_path, "ani202504", "a")
+    读取表格区域并爬取数据然后更新数据库(excel_path, excel_sheet_name_ani202504)
+    # 读取表格数据并爬取种子信息然后保存到数据库(excel_path, "ani202504")
 
     print("所有操作完成")
