@@ -71,7 +71,7 @@ def 解析BangumiHTML_str(html_str: str) -> Tuple[dict, list[dict]]:
 
         # 替换键
         key = {
-            "中文名": "番组原名",
+            "中文名": "番组译名",
             "别名": "番组别名",
             "话数": "番组话数",
             "放送开始": "发布日期",
@@ -120,9 +120,6 @@ def 解析BangumiHTML_str(html_str: str) -> Tuple[dict, list[dict]]:
         # 通过a标签获取信息
         new_prg["话bangumiURL"] = "https://bangumi.tv" + tag_a.xpath("@href")[0]
         new_prg["番组bangumi链接"] = anime_infos["番组bangumi链接"]
-        new_prg["话标题"] = anime_infos["番组原名"]
-        new_prg["话标题译名"] = anime_infos["番组译名"]
-        new_prg["发布日期"] = anime_infos["发布日期"]
         new_prg["话索引"] = tag_a.xpath("text()")[0]
         new_prg["话标题"] = tag_a.xpath("@title")[0].split(" ", 1)[1]  # 按第一个空格分割，取第二部分
 
@@ -147,7 +144,7 @@ def 解析BangumiHTML_str(html_str: str) -> Tuple[dict, list[dict]]:
 
             key, value = line.split(":", 1)
             if key == "中文标题":
-                new_prg["话标题"] = value
+                new_prg["话标题译名"] = value
             elif key == "首播":
                 new_prg["发布日期"] = value
             elif key == "时长":

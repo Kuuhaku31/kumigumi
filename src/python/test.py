@@ -196,70 +196,53 @@ def 更新数据库(data: list[dict], pk: str, headers_no_pk: list[str], accdb_p
     print(f"🔄 更新记录数：{更新_count}")
 
 
-def 读取EXCEL表格区域(path: str, sheet_name: str) -> Tuple[List[str], List[dict]]:
+def 读取EXCEL表格区域(excel_file_path: str, sheet_name: str) -> list[dict]:
     """
-    读取 Excel 表格中指定工作表的区域（由 A1:A4 定义）
-    返回：表头列表和数据字典列表
+    读取 Excel 表格中指定工作表的区域（由 A1:B* 定义）
+    返回：数据字典列表
+
+    Excel 表格中的 A1:B* 区域格式为：
+    |      | A               | B
+    | 1    | len             | 需要返回数据的字段的个数（即 A4:B* 的行数）
+    | 2    | start_row       | 数据区域开始的行号（不包括表头，即第一行数据所在的行的行号）
+    | 3    | end_row         | 最后一条数据的下一行的行号
+    | 4    | 种子下载链接    | 该字段所在的列号
+    | 5    | 种子下载情况    | 该字段所在的列号
+    | 6    | 备注            | 该字段所在的列号
+    | ...  | ...             | ...
+
     """
-    print(f"📖 读取 Excel 文件: {path} 的工作表: {sheet_name}")
 
-    wb = load_workbook(path, data_only=True)
-    if sheet_name not in wb.sheetnames:
-        raise ValueError(f"❌ 工作表 '{sheet_name}' 不存在")
+    print(f"📖 读取 Excel 文件: {excel_file_path} 的工作表: {sheet_name}")
 
-    ws = wb[sheet_name]
+    wb = load_workbook(excel_file_path, data_only=True)
+    sheet = wb[sheet_name]
 
-    # Step 1: 读取 A1, A2, A3, A4
-    row = ws["A1"].value
-    start_col = ws["A2"].value
-    height = ws["A3"].value
-    width = ws["A4"].value
+    # 读取元信息部分
+    index_len = sheet.cell(row=1, column=2).value
+    start_row = sheet.cell(row=2, column=2).value
+    end_row = sheet.cell(row=3, column=2).value
 
-    # Step 2: 解析坐标
-    # start_col 和 width 可能是字母和数字混合的情况，需转换为列号
-    # 假设 start_col 是列号（数字），否则需要 openpyxl.utils.column_index_from_string
-    # 这里假设 start_col/width 都为整数
-    if (
-        not isinstance(row, int)
-        or not isinstance(start_col, int)
-        or not isinstance(height, int)
-        or not isinstance(width, int)
-    ):
-        raise ValueError("❌ A1:A4 必须为整数，分别代表起始行、起始列、区域高、区域宽")
+    字段信息 = {}
+    row = 4
+    while row < 4 + index_len:
+        key_cell = sheet.cell(row=row, column=1).value
+        value_cell = sheet.cell(row=row, column=2).value
+        字段信息[key_cell] = value_cell
+        row += 1
 
-    end_row = row + height - 1
-    end_col = start_col + width - 1
+    # 读取数据区域
+    result = []
+    for 行号 in range(start_row, end_row):
+        row_data = {}
+        for field, col in 字段信息.items():
+            cell_value = sheet.cell(row=行号, column=col).value
+            row_data[field] = cell_value
+            if row_data[field] is None:
+                row_data[field] = ""
+        result.append(row_data)
 
-    # Step 3: 读取区域内的数据
-    headers = []
-    data = []
-
-    # 表头行
-    header_row = ws.iter_rows(min_row=row, max_row=row, min_col=start_col, max_col=end_col)
-    for header_cell in next(header_row):
-        if header_cell.value is None:
-            headers.append("")
-        else:
-            headers.append(str(header_cell.value).strip())
-
-    if not any(headers):
-        raise ValueError("❌ 区域内未能读取到有效表头")
-
-    # 数据行
-    for row_cells in ws.iter_rows(min_row=row + 1, max_row=end_row, min_col=start_col, max_col=end_col):
-        # 如果首列为空，跳过整行
-        if row_cells[0].value is None:
-            continue
-        row_dict = {}
-        for i, cell in enumerate(row_cells):
-            key = headers[i] if i < len(headers) else f"列{i+1}"
-            value = "" if cell.value is None else str(cell.value)
-            row_dict[key] = value
-        data.append(row_dict)
-
-    wb.close()
-    print(f"✅ 读取完成，共 {len(data)} 行数据，表头: {headers}")
-    return headers, data
+    return result
 
 
 # Access 数据库路径和表名
@@ -271,6 +254,7 @@ def 读取EXCEL表格区域(path: str, sheet_name: str) -> Tuple[List[str], List
 
 excel_path = "D:/def/2025.07.xlsx"
 excel_sheet_name = "ani_index"
+excel_sheet_name_torrent_db = "torrent_db"
 excel_sheet_name_ep202504 = "ep202504"
 excel_sheet_name_ani202507 = "ani202507"
 excel_sheet_name_ani202504 = "ani202504"
@@ -280,7 +264,7 @@ def 读取表格区域并更新数据库(EXCEL文件地址, 工作表名, mode):
     print("读取表格区域并更新数据库")
 
     # 读取 Excel 表格区域
-    _, data = 读取EXCEL表格区域(EXCEL文件地址, 工作表名)
+    data = 读取EXCEL表格区域(EXCEL文件地址, 工作表名)
     data = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in data]
 
     # 更新 Access 数据库
@@ -301,8 +285,14 @@ def 读取表格区域并更新数据库(EXCEL文件地址, 工作表名, mode):
             全局_数据库episode表名,
         )
     elif mode == "t":
-        # todo
-        pass
+        更新数据库(
+            data,
+            headers.种子表头_主键_en,
+            headers.种子表头_手动维护_en,
+            全局_accdb_path,
+            全局_数据库torrent表名,
+        )
+
     else:
         raise ValueError("❌ 无效的模式")
 
@@ -366,8 +356,8 @@ if __name__ == "__main__":
 
     print("开始执行脚本...")
 
-    # 读取表格区域并更新数据库(excel_path, "ani202504", "a")
-    读取表格区域并爬取数据然后更新数据库(excel_path, excel_sheet_name_ani202504)
+    读取表格区域并更新数据库(excel_path, "torrent_db", "t")
+    # 读取表格区域并爬取数据然后更新数据库(excel_path, excel_sheet_name_ani202504)
     # 读取表格数据并爬取种子信息然后保存到数据库(excel_path, "ani202504")
 
     print("所有操作完成")
