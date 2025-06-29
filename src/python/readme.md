@@ -36,8 +36,8 @@ kumigumi/20XX.XX/
 ```
 
 1. `anime.csv`：记录当季度所有在追番剧、记录动画信息
-2. `episodes.csv`：记录所有动画的所有单集信息
-3. `torrents.csv`：保存种子信息
+2. `episode.csv`：记录所有动画的所有单集信息
+3. `torrent.csv`：保存种子信息
 
 ---
 

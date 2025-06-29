@@ -187,6 +187,9 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
 
         if cell_Ax == "_end":
             break
+        elif cell_Ax == "_to":  # 跳到指定行
+            行指针 = sheet_main.cell(行指针, 2).value
+            continue
         elif cell_Ax is None:
             pass
 
@@ -242,6 +245,9 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
 
                 if 键 is None:
                     pass
+                elif cell_Ax == "_to":  # 跳到指定行
+                    行指针 = int(值)
+                    continue
                 elif 键 == "_end":
                     break
                 elif 键 == "_start_row":
@@ -289,6 +295,9 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
             # 仅获取番组链接和RSS订阅链接
             if cell_Ax == "_end":
                 break
+            elif cell_Ax == "_to":  # 跳到指定行
+                行指针 = int(sheet.cell(行指针, 2).value)
+                continue
             elif cell_Ax is None:
                 pass
             elif cell_Ax == "_start_row":
@@ -361,7 +370,7 @@ if __name__ == "__main__":
 
     kumigumiPrint("开始执行脚本...")
 
-    excel_path = "D:/OneDrive/2025.07.xlsx"
+    excel_path = "D:/OneDrive/kumigumi.xlsx"
     读取EXCEL并更新数据库(safe_load_excel(excel_path))
 
     kumigumiPrint("所有操作完成")
