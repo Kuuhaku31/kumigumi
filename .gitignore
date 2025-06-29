@@ -2,6 +2,8 @@
 /.vscode
 /helps
 /ignore
+/target
+
 data
 torrents
 
@@ -10,3 +12,5 @@ __pycache__
 *.json
 *.db
 *.xlsx
+*.log
+*csv
