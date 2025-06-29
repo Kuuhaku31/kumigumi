@@ -1,5 +1,6 @@
 # main.py
 
+import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Tuple
 
@@ -168,14 +169,16 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
     sheet_main = wb["main"]
 
     数据库地址: str = ""
-    数据库表名_sheet_映射: dict[str, str] = {}  # 数据库表名 : 工作表名
+    数据库anime表名: str = ""
+    数据库episode表名: str = ""
+    数据库torrent表名: str = ""
 
-    要获取远程: bool = False
-    数据库表名_anime: str = ""
-    数据库表名_episode: str = ""
-    数据库表名_torrent: str = ""
-    源sheet: str = ""
+    excel_anime_sheet_fetch_list: list[str] = []
+    excel_anime_sheet_store_list: list[str] = []
+    excel_episode_sheet_store_list: list[str] = []
+    excel_torrent_sheet_store_list: list[str] = []
 
+    # 解析 main 工作表
     行指针: int = 1
     while True:
         cell_Ax = sheet_main.cell(行指针, 1).value
@@ -184,81 +187,91 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
             break
         elif cell_Ax is None:
             pass
+
         elif cell_Ax == "_database_path":
             数据库地址 = sheet_main.cell(行指针, 2).value
+        elif cell_Ax == "_anime_table":
+            数据库anime表名 = sheet_main.cell(行指针, 2).value
+        elif cell_Ax == "_episode_table":
+            数据库episode表名 = sheet_main.cell(行指针, 2).value
+        elif cell_Ax == "_torrent_table":
+            数据库torrent表名 = sheet_main.cell(行指针, 2).value
+
         elif cell_Ax == "_store":
-            数据库表名 = sheet_main.cell(行指针, 2).value
+            数据库表类型 = sheet_main.cell(行指针, 2).value
             工作表名 = sheet_main.cell(行指针, 3).value
-            数据库表名_sheet_映射[数据库表名] = 工作表名
+            if 数据库表类型 == "_anime_table":
+                excel_anime_sheet_store_list.append(工作表名)
+            elif 数据库表类型 == "_episode_table":
+                excel_episode_sheet_store_list.append(工作表名)
+            elif 数据库表类型 == "_torrent_table":
+                excel_torrent_sheet_store_list.append(工作表名)
+
         elif cell_Ax == "_fetch":
-            数据库表名_anime = sheet_main.cell(行指针, 2).value
-            数据库表名_episode = sheet_main.cell(行指针, 3).value
-            数据库表名_torrent = sheet_main.cell(行指针, 4).value
-            源sheet = sheet_main.cell(行指针, 5).value
-            要获取远程 = True
+            excel_anime_sheet_fetch_list.append(sheet_main.cell(行指针, 3).value)
+
         else:
             kumigumiPrint(f"⚠️ 未知指令: {cell_Ax}")
 
         行指针 += 1
 
+    # 检查是否定义变量
+    if not 数据库地址 or not 数据库anime表名 or not 数据库episode表名 or not 数据库torrent表名:
+        raise ValueError("❌ 请确保在 main 工作表中定义了数据库地址和表名")
+
     # 更新 Access 数据库
-    for 数据库表名, 工作表名 in 数据库表名_sheet_映射.items():
+    kumigumiPrint("🔄 更新 Access 数据库...")
+    for 数据库表名, 工作表名_list in zip(
+        [数据库anime表名, 数据库episode表名, 数据库torrent表名],
+        [excel_anime_sheet_store_list, excel_episode_sheet_store_list, excel_torrent_sheet_store_list],
+    ):
+        for 工作表名 in 工作表名_list:
+            sheet = wb[工作表名]
 
-        sheet = wb[工作表名]
-        起始行: int = 0
-        结束行: int = 0
-        主键: str = ""
-        字段字典: dict[str, int] = {}  # 字段名 : 列号
+            起始行: int = 0
+            结束行: int = 0
+            主键: str = ""
+            字段字典: dict[str, int] = {}  # 字段名 : 列号
 
-        键: str = ""
-        值: str = ""
-        行指针: int = 1
-        while True:
-            键 = sheet.cell(row=行指针, column=1).value
-            值 = sheet.cell(row=行指针, column=2).value
+            行指针: int = 1
+            while True:
+                键: str = sheet.cell(row=行指针, column=1).value
+                值: str = sheet.cell(row=行指针, column=2).value
 
-            if 键 is None:
-                pass
-            elif 键 == "_end":
-                break
-            elif 键 == "_start_row":
-                起始行 = int(值)
-            elif 键 == "_end_row":
-                结束行 = int(值)
-            elif 键 == "_primary_key":
-                主键 = 值
-            else:
-                字段字典[键] = int(值)
+                if 键 is None:
+                    pass
+                elif 键 == "_end":
+                    break
+                elif 键 == "_start_row":
+                    起始行 = int(值)
+                elif 键 == "_end_row":
+                    结束行 = int(值)
+                elif 键 == "_primary_key":
+                    主键 = 值
+                else:
+                    字段字典[键] = int(值)
 
-            行指针 += 1
+                行指针 += 1
 
-        # 翻译
-        主键 = headers.字段字典.get(主键, 主键)
-        字段字典 = {headers.字段字典.get(k, k): v for k, v in 字段字典.items()}
+            # 翻译
+            主键 = headers.字段字典.get(主键, 主键)
+            字段字典 = {headers.字段字典.get(k, k): v for k, v in 字段字典.items()}
 
-        print(f"数据库地址: {数据库地址}")
-        print(f"数据库表名: {数据库表名}")
-        print(f"起始行: {起始行}")
-        print(f"结束行: {结束行}")
-        print(f"主键: {主键}")
-        print(f"字段字典: {字段字典}")
+            # 读取数据区域
+            data: list[dict[str, int]] = []
+            for 行号 in range(起始行, 结束行):
+                row_data: dict[str, int] = {}
+                for 字段名, 列号 in 字段字典.items():
+                    单元格值 = sheet.cell(row=行号, column=列号).value
+                    row_data[字段名] = 单元格值 if 单元格值 is not None else ""
+                data.append(row_data)
 
-        # 读取数据区域
-        data = []
-        for 行号 in range(起始行, 结束行):
-            row_data = {}
-            for 字段名, 列号 in 字段字典.items():
-                单元格值 = sheet.cell(row=行号, column=列号).value
-                row_data[字段名] = 单元格值 if 单元格值 is not None else ""
-            data.append(row_data)
-
-        # 更新 Access 数据库
-        headers_no_pk = [k for k in 字段字典.keys() if k != 主键]
-        更新数据库(data, 主键, headers_no_pk, 数据库地址, 数据库表名)
+            # 更新 Access 数据库
+            更新数据库(data, 主键, [k for k in 字段字典.keys() if k != 主键], 数据库地址, 数据库表名)
 
     # 批量获取远程数据并更新数据库
-    if 要获取远程:
-        kumigumiPrint("🔄 批量获取远程数据并更新数据库...")
+    kumigumiPrint("🔄 批量获取远程数据并更新数据库...")
+    for 源sheet in excel_anime_sheet_fetch_list:
 
         bgm_url_column: int = 0
         rss_url_column: int = 0
@@ -310,25 +323,27 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
             headers.番组表头_主键_en,
             headers.番组表头_自动更新_en,
             数据库地址,
-            数据库表名_anime,
+            数据库anime表名,
         )
         更新数据库(
             episode_info_list,
             headers.单集表头_主键_en,
             headers.单集表头_自动更新_en,
             数据库地址,
-            数据库表名_episode,
+            数据库episode表名,
         )
         更新数据库(
             torrent_info_list,
             headers.种子表头_主键_en,
             headers.种子表头_自动更新_en,
             数据库地址,
-            数据库表名_torrent,
+            数据库torrent表名,
         )
 
 
 if __name__ == "__main__":
+
+    warnings.filterwarnings("ignore", category=UserWarning)
 
     kumigumiPrint("开始执行脚本...")
 
