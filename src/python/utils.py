@@ -145,3 +145,7 @@ def 读取工作目录() -> Path:
     工作目录: Path = Path(config["wd"]) if "wd" in config else None
 
     return 工作目录
+
+
+def kumigumiPrint(str: str, end: str = "\n") -> None:
+    print(f"\033[35m[kumigumi]\033[0m: {str}", end=end)

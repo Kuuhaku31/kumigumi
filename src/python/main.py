@@ -1,3 +1,5 @@
+# main.py
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Tuple
 
@@ -9,6 +11,7 @@ import bangumi
 import headers
 import mikananime.mikananime as mikananime
 import utils
+from utils import kumigumiPrint
 
 
 def 批量获取数据(url_list: list[str]) -> Tuple[List[dict], List[dict]]:
@@ -25,7 +28,7 @@ def 批量获取数据(url_list: list[str]) -> Tuple[List[dict], List[dict]]:
     with ThreadPoolExecutor() as executor:
         future_to_url = {executor.submit(utils.request_html, url): url for url in url_list}
 
-        for future in tqdm(as_completed(future_to_url), total=len(future_to_url), desc="获取进度"):
+        for future in tqdm(as_completed(future_to_url), total=len(future_to_url), desc="获取番组数据进度"):
             url = future_to_url[future]
             try:
                 html_str = future.result()
@@ -51,6 +54,9 @@ def 批量获取种子数据(data: dict[str, str]) -> list[dict]:
     with ThreadPoolExecutor() as executor:
 
         def 获取种子数据(bgm_url: str, mikan_rss_url: str) -> list[dict]:
+
+            if mikan_rss_url is None:
+                return []
             try:
                 rss_html_str = utils.request_html(mikan_rss_url)
             except Exception as e:
@@ -66,7 +72,8 @@ def 批量获取种子数据(data: dict[str, str]) -> list[dict]:
         for future in tqdm(as_completed(futures), total=len(futures), desc="获取种子数据进度"):
             try:
                 result = future.result()
-                种子数据列表.extend(result)
+                if result:
+                    种子数据列表.extend(result)
             except Exception as e:
                 print(f"❌ 获取种子数据时发生错误: {e}")
 
@@ -91,28 +98,21 @@ def 更新数据库(data: list[dict], pk: str, headers_no_pk: list[str], accdb_p
         - 否则 → 仅插入 headers 中指定的字段
     """
 
-    print(f"🔄 同步数据到 Access 数据库: {accdb_path} 的表 {table_name}")
+    def database_print(msg: str, end: str = "\n"):
+        print(f"\033[92m[数据库操作]:\033[0m {msg}", end=end)
+
+    database_print(f"同步数据到数据库: {accdb_path} 的表 {table_name} : ", "")
 
     conn_str = r"DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};" rf"DBQ={accdb_path};"
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
 
     # 1. 获取主键列名
-    #  将 headers 的第一列作为主键
-
     if not pk:
         raise ValueError("❌ 主键列名 pk 不能为空")
     elif not headers_no_pk or len(headers_no_pk) == 0:
         raise ValueError("❌ headers 列表不能为空")
-
     pk_column = pk
-
-    # cursor.execute(f"SELECT * FROM [{table_name}]")
-    # pk_column = None
-    # for column in cursor.description:
-    #     if column[5]:  # column[5] 为 True 表示是主键
-    #         pk_column = column[0]
-    #         break
 
     if not pk_column:
         raise Exception(f"❌ 无法获取 Access 表 [{table_name}] 的主键列")
@@ -122,11 +122,9 @@ def 更新数据库(data: list[dict], pk: str, headers_no_pk: list[str], accdb_p
 
     for record in data:
         if pk_column not in record or not record[pk_column]:
-            print(f"⚠️ 跳过记录，缺少主键 [{pk_column}]：{record}")
+            database_print(f"⚠️ 跳过记录，缺少主键 [{pk_column}]：{record}")
             continue
 
-        # 仅保留 headers 中字段，按顺序提取值（空填""）
-        # row = [record.get(h, "") for h in headers]
         pk_value = record[pk_column]
 
         # 2. 判断主键是否存在
@@ -156,14 +154,15 @@ def 更新数据库(data: list[dict], pk: str, headers_no_pk: list[str], accdb_p
     cursor.close()
     conn.close()
 
-    print("✅ 同步完成")
-    print(f"➕ 插入记录数：{插入_count}")
-    print(f"🔄 更新记录数：{更新_count}")
+    print("同步完成")
+    database_print(f"➕ 插入记录数：{插入_count}")
+    database_print(f"🔄 更新记录数：{更新_count}")
+    print()
 
 
 def 读取EXCEL并更新数据库(EXCEL文件地址):
 
-    print(f"📖 读取 Excel 文件: {EXCEL文件地址}")
+    kumigumiPrint(f"📖 读取 Excel 文件: {EXCEL文件地址}")
 
     wb = load_workbook(EXCEL文件地址, data_only=True)
     sheet_main = wb["main"]
@@ -198,13 +197,12 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
             源sheet = sheet_main.cell(行指针, 5).value
             要获取远程 = True
         else:
-            print(f"⚠️ 未知指令: {cell_Ax}")
+            kumigumiPrint(f"⚠️ 未知指令: {cell_Ax}")
 
         行指针 += 1
 
     # 更新 Access 数据库
     for 数据库表名, 工作表名 in 数据库表名_sheet_映射.items():
-        print(f"🔄 更新数据库: {数据库地址} 的表 {数据库表名}，工作表名: {工作表名}")
 
         sheet = wb[工作表名]
         起始行: int = 0
@@ -258,8 +256,9 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
         headers_no_pk = [k for k in 字段字典.keys() if k != 主键]
         更新数据库(data, 主键, headers_no_pk, 数据库地址, 数据库表名)
 
+    # 批量获取远程数据并更新数据库
     if 要获取远程:
-        print("🔄 批量获取远程数据并更新数据库...")
+        kumigumiPrint("🔄 批量获取远程数据并更新数据库...")
 
         bgm_url_column: int = 0
         rss_url_column: int = 0
@@ -293,8 +292,7 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
         for 行号 in range(起始行, 结束行):
             bgm_url = sheet.cell(行号, bgm_url_column).value
             rss_url = sheet.cell(行号, rss_url_column).value
-            if bgm_url and rss_url:
-                bgm_url_rss_映射[bgm_url] = rss_url
+            bgm_url_rss_映射[bgm_url] = rss_url
 
         anime_info_list, episode_info_list = 批量获取数据(bgm_url_rss_映射.keys())
         torrent_info_list = 批量获取种子数据(bgm_url_rss_映射)
@@ -303,6 +301,8 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
         anime_info_list = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in anime_info_list]
         episode_info_list = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in episode_info_list]
         torrent_info_list = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in torrent_info_list]
+
+        kumigumiPrint("获取完毕")
 
         # 同步动画信息到 Access
         更新数据库(
@@ -330,9 +330,9 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
 
 if __name__ == "__main__":
 
-    print("开始执行脚本...")
+    kumigumiPrint("开始执行脚本...")
 
     excel_path = "D:/def/2025.07.xlsx"
     读取EXCEL并更新数据库(excel_path)
 
-    print("所有操作完成")
+    kumigumiPrint("所有操作完成")
