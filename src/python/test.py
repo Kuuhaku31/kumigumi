@@ -261,15 +261,8 @@ excel_sheet_name_ani202507 = "ani202507"
 excel_sheet_name_ani202504 = "ani202504"
 
 
-def 读取表格区域并更新数据库2(EXCEL文件地址, 工作表名):
+def 读取表格区域并更新数据库2(数据库地址, 数据库表名, sheet):
 
-    print(f"📖 读取 Excel 文件: {EXCEL文件地址} 的工作表: {工作表名}")
-
-    wb = load_workbook(EXCEL文件地址, data_only=True)
-    sheet = wb[工作表名]
-
-    数据库地址: str = ""
-    数据库表名: str = ""
     起始行: int = 0
     结束行: int = 0
     主键: str = ""
@@ -286,10 +279,6 @@ def 读取表格区域并更新数据库2(EXCEL文件地址, 工作表名):
             pass
         elif 键 == "_end":
             break
-        elif 键 == "_database_path":
-            数据库地址 = 值
-        elif 键 == "_database_table":
-            数据库表名 = 值
         elif 键 == "_start_row":
             起始行 = int(值)
         elif 键 == "_end_row":
@@ -324,6 +313,42 @@ def 读取表格区域并更新数据库2(EXCEL文件地址, 工作表名):
     # 更新 Access 数据库
     headers_no_pk = [k for k in 字段字典.keys() if k != 主键]
     更新数据库(data, 主键, headers_no_pk, 数据库地址, 数据库表名)
+
+
+def 读取表格区域并更新数据库3(EXCEL文件地址):
+
+    print(f"📖 读取 Excel 文件: {EXCEL文件地址}")
+
+    wb = load_workbook(EXCEL文件地址, data_only=True)
+    sheet_main = wb["main"]
+
+    数据库地址: str = ""
+    数据库表名_sheet_映射: dict[str, str] = {}  # 数据库表名 : 工作表名
+
+    行指针: int = 1
+    while True:
+        cell_Ax = sheet_main.cell(行指针, 1).value
+
+        if cell_Ax == "_end":
+            break
+        elif cell_Ax is None:
+            pass
+        elif cell_Ax == "_database_path":
+            数据库地址 = sheet_main.cell(行指针, 2).value
+        elif cell_Ax == "_store":
+            数据库表名 = sheet_main.cell(行指针, 2).value
+            工作表名 = sheet_main.cell(行指针, 3).value
+            数据库表名_sheet_映射[数据库表名] = 工作表名
+        else:
+            print(f"⚠️ 未知指令: {cell_Ax}")
+
+        行指针 += 1
+
+    # 更新 Access 数据库
+    for 数据库表名, 工作表名 in 数据库表名_sheet_映射.items():
+        print(f"🔄 更新数据库: {数据库地址} 的表 {数据库表名}，工作表名: {工作表名}")
+        sheet = wb[工作表名]
+        读取表格区域并更新数据库2(数据库地址, 数据库表名, sheet)
 
 
 def 读取表格区域并更新数据库(EXCEL文件地址, 工作表名, mode):
@@ -424,7 +449,7 @@ if __name__ == "__main__":
 
     print("开始执行脚本...")
 
-    读取表格区域并更新数据库2(excel_path, "torrent_update")
+    读取表格区域并更新数据库3(excel_path)
     # 读取表格区域并更新数据库(excel_path, excel_sheet_name_ani202504, "a")
     # 读取表格区域并爬取数据然后更新数据库(excel_path, excel_sheet_name_ani202507)
     # 读取表格数据并爬取种子信息然后保存到数据库(excel_path, "ani202504")
