@@ -42,7 +42,12 @@ def 批量获取数据(url_list: list[str]) -> Tuple[List[dict], List[dict]]:
     return anime_info_list, episode_info_list
 
 
-def 批量获取种子数据(data: list[dict]) -> List[dict]:
+def 批量获取种子数据(data: dict[str, str]) -> list[dict]:
+    """
+    批量获取种子数据
+    :param data: 包含多个番组链接和对应 RSS 订阅链接的字典列表 即 番组链接 : RSS订阅链接
+    :return: 返回所有种子数据的列表
+    """
 
     # 使用多线程批量获取种子数据
     种子数据列表: list[dict] = []
@@ -58,9 +63,7 @@ def 批量获取种子数据(data: list[dict]) -> List[dict]:
             return mikananime.解析mikanRSS_XML(bgm_url, rss_html_str)
 
         futures = {
-            executor.submit(获取种子数据, row["番组bangumi链接"], row["番组RSS订阅链接"]): row
-            for row in data
-            if row.get("番组bangumi链接") and row.get("番组RSS订阅链接")
+            executor.submit(获取种子数据, bgm_url, rss_url): (bgm_url, rss_url) for bgm_url, rss_url in data.items()
         }
 
         for future in tqdm(as_completed(futures), total=len(futures), desc="获取种子数据进度"):
@@ -326,6 +329,12 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
     数据库地址: str = ""
     数据库表名_sheet_映射: dict[str, str] = {}  # 数据库表名 : 工作表名
 
+    要获取远程: bool = False
+    数据库表名_anime: str = ""
+    数据库表名_episode: str = ""
+    数据库表名_torrent: str = ""
+    源sheet: str = ""
+
     行指针: int = 1
     while True:
         cell_Ax = sheet_main.cell(行指针, 1).value
@@ -340,6 +349,12 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
             数据库表名 = sheet_main.cell(行指针, 2).value
             工作表名 = sheet_main.cell(行指针, 3).value
             数据库表名_sheet_映射[数据库表名] = 工作表名
+        elif cell_Ax == "_fetch":
+            数据库表名_anime = sheet_main.cell(行指针, 2).value
+            数据库表名_episode = sheet_main.cell(行指针, 3).value
+            数据库表名_torrent = sheet_main.cell(行指针, 4).value
+            源sheet = sheet_main.cell(行指针, 5).value
+            要获取远程 = True
         else:
             print(f"⚠️ 未知指令: {cell_Ax}")
 
@@ -400,6 +415,75 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
         # 更新 Access 数据库
         headers_no_pk = [k for k in 字段字典.keys() if k != 主键]
         更新数据库(data, 主键, headers_no_pk, 数据库地址, 数据库表名)
+
+    if 要获取远程:
+        print("🔄 批量获取远程数据并更新数据库...")
+
+        bgm_url_column: int = 0
+        rss_url_column: int = 0
+        起始行: int = 0
+        结束行: int = 0
+
+        # 读取源工作表
+        sheet = wb[源sheet]
+        行指针 = 1
+        while True:
+            cell_Ax = sheet.cell(行指针, 1).value
+
+            # 仅获取番组链接和RSS订阅链接
+            if cell_Ax == "_end":
+                break
+            elif cell_Ax is None:
+                pass
+            elif cell_Ax == "_start_row":
+                起始行 = int(sheet.cell(行指针, 2).value)
+            elif cell_Ax == "_end_row":
+                结束行 = int(sheet.cell(行指针, 2).value)
+            elif cell_Ax == "番组bangumi链接":
+                bgm_url_column = sheet.cell(行指针, 2).value
+            elif cell_Ax == "番组RSS订阅链接":
+                rss_url_column = sheet.cell(行指针, 2).value
+
+            行指针 += 1
+
+        # 读取信息
+        bgm_url_rss_映射: dict[str, str] = {}  # 番组链接 : RSS订阅链接
+        for 行号 in range(起始行, 结束行):
+            bgm_url = sheet.cell(行号, bgm_url_column).value
+            rss_url = sheet.cell(行号, rss_url_column).value
+            if bgm_url and rss_url:
+                bgm_url_rss_映射[bgm_url] = rss_url
+
+        anime_info_list, episode_info_list = 批量获取数据(bgm_url_rss_映射.keys())
+        torrent_info_list = 批量获取种子数据(bgm_url_rss_映射)
+
+        # 翻译键名
+        anime_info_list = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in anime_info_list]
+        episode_info_list = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in episode_info_list]
+        torrent_info_list = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in torrent_info_list]
+
+        # 同步动画信息到 Access
+        更新数据库(
+            anime_info_list,
+            headers.番组表头_主键_en,
+            headers.番组表头_自动更新_en,
+            数据库地址,
+            数据库表名_anime,
+        )
+        更新数据库(
+            episode_info_list,
+            headers.单集表头_主键_en,
+            headers.单集表头_自动更新_en,
+            数据库地址,
+            数据库表名_episode,
+        )
+        更新数据库(
+            torrent_info_list,
+            headers.种子表头_主键_en,
+            headers.种子表头_自动更新_en,
+            数据库地址,
+            数据库表名_torrent,
+        )
 
 
 if __name__ == "__main__":
