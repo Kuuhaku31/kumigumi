@@ -261,135 +261,6 @@ excel_sheet_name_ani202507 = "ani202507"
 excel_sheet_name_ani202504 = "ani202504"
 
 
-def 读取表格区域并更新数据库2(数据库地址, 数据库表名, sheet):
-
-    起始行: int = 0
-    结束行: int = 0
-    主键: str = ""
-    字段字典: dict[str, int] = {}  # 字段名 : 列号
-
-    键: str = ""
-    值: str = ""
-    行指针: int = 1
-    while True:
-        键 = sheet.cell(row=行指针, column=1).value
-        值 = sheet.cell(row=行指针, column=2).value
-
-        if 键 is None:
-            pass
-        elif 键 == "_end":
-            break
-        elif 键 == "_start_row":
-            起始行 = int(值)
-        elif 键 == "_end_row":
-            结束行 = int(值)
-        elif 键 == "_primary_key":
-            主键 = 值
-        else:
-            字段字典[键] = int(值)
-
-        行指针 += 1
-
-    # 翻译
-    主键 = headers.字段字典.get(主键, 主键)
-    字段字典 = {headers.字段字典.get(k, k): v for k, v in 字段字典.items()}
-
-    print(f"数据库地址: {数据库地址}")
-    print(f"数据库表名: {数据库表名}")
-    print(f"起始行: {起始行}")
-    print(f"结束行: {结束行}")
-    print(f"主键: {主键}")
-    print(f"字段字典: {字段字典}")
-
-    # 读取数据区域
-    data = []
-    for 行号 in range(起始行, 结束行):
-        row_data = {}
-        for 字段名, 列号 in 字段字典.items():
-            单元格值 = sheet.cell(row=行号, column=列号).value
-            row_data[字段名] = 单元格值 if 单元格值 is not None else ""
-        data.append(row_data)
-
-    # 更新 Access 数据库
-    headers_no_pk = [k for k in 字段字典.keys() if k != 主键]
-    更新数据库(data, 主键, headers_no_pk, 数据库地址, 数据库表名)
-
-
-def 读取表格区域并更新数据库3(EXCEL文件地址):
-
-    print(f"📖 读取 Excel 文件: {EXCEL文件地址}")
-
-    wb = load_workbook(EXCEL文件地址, data_only=True)
-    sheet_main = wb["main"]
-
-    数据库地址: str = ""
-    数据库表名_sheet_映射: dict[str, str] = {}  # 数据库表名 : 工作表名
-
-    行指针: int = 1
-    while True:
-        cell_Ax = sheet_main.cell(行指针, 1).value
-
-        if cell_Ax == "_end":
-            break
-        elif cell_Ax is None:
-            pass
-        elif cell_Ax == "_database_path":
-            数据库地址 = sheet_main.cell(行指针, 2).value
-        elif cell_Ax == "_store":
-            数据库表名 = sheet_main.cell(行指针, 2).value
-            工作表名 = sheet_main.cell(行指针, 3).value
-            数据库表名_sheet_映射[数据库表名] = 工作表名
-        else:
-            print(f"⚠️ 未知指令: {cell_Ax}")
-
-        行指针 += 1
-
-    # 更新 Access 数据库
-    for 数据库表名, 工作表名 in 数据库表名_sheet_映射.items():
-        print(f"🔄 更新数据库: {数据库地址} 的表 {数据库表名}，工作表名: {工作表名}")
-        sheet = wb[工作表名]
-        读取表格区域并更新数据库2(数据库地址, 数据库表名, sheet)
-
-
-def 读取表格区域并更新数据库(EXCEL文件地址, 工作表名, mode):
-    print("读取表格区域并更新数据库")
-
-    # 读取 Excel 表格区域
-    data = 读取EXCEL表格区域(EXCEL文件地址, 工作表名)
-    data = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in data]
-
-    print(data[0])
-
-    # 更新 Access 数据库
-    if mode == "a":
-        更新数据库(
-            data,
-            headers.番组表头_主键_en,
-            headers.番组表头_手动维护_en,
-            全局_accdb_path,
-            全局_数据库anime表名,
-        )
-    elif mode == "e":
-        更新数据库(
-            data,
-            headers.单集表头_主键_en,
-            headers.单集表头_手动维护_en,
-            全局_accdb_path,
-            全局_数据库episode表名,
-        )
-    elif mode == "t":
-        更新数据库(
-            data,
-            headers.种子表头_主键_en,
-            headers.种子表头_手动维护_en,
-            全局_accdb_path,
-            全局_数据库torrent表名,
-        )
-
-    else:
-        raise ValueError("❌ 无效的模式")
-
-
 def 读取表格区域并爬取数据然后更新数据库(EXCEL文件地址, 工作表名):
     print("读取表格区域并爬取数据然后更新数据库")
 
@@ -445,11 +316,97 @@ def 读取表格数据并爬取种子信息然后保存到数据库(EXCEL文件�
     )
 
 
+def 读取EXCEL并更新数据库(EXCEL文件地址):
+
+    print(f"📖 读取 Excel 文件: {EXCEL文件地址}")
+
+    wb = load_workbook(EXCEL文件地址, data_only=True)
+    sheet_main = wb["main"]
+
+    数据库地址: str = ""
+    数据库表名_sheet_映射: dict[str, str] = {}  # 数据库表名 : 工作表名
+
+    行指针: int = 1
+    while True:
+        cell_Ax = sheet_main.cell(行指针, 1).value
+
+        if cell_Ax == "_end":
+            break
+        elif cell_Ax is None:
+            pass
+        elif cell_Ax == "_database_path":
+            数据库地址 = sheet_main.cell(行指针, 2).value
+        elif cell_Ax == "_store":
+            数据库表名 = sheet_main.cell(行指针, 2).value
+            工作表名 = sheet_main.cell(行指针, 3).value
+            数据库表名_sheet_映射[数据库表名] = 工作表名
+        else:
+            print(f"⚠️ 未知指令: {cell_Ax}")
+
+        行指针 += 1
+
+    # 更新 Access 数据库
+    for 数据库表名, 工作表名 in 数据库表名_sheet_映射.items():
+        print(f"🔄 更新数据库: {数据库地址} 的表 {数据库表名}，工作表名: {工作表名}")
+
+        sheet = wb[工作表名]
+        起始行: int = 0
+        结束行: int = 0
+        主键: str = ""
+        字段字典: dict[str, int] = {}  # 字段名 : 列号
+
+        键: str = ""
+        值: str = ""
+        行指针: int = 1
+        while True:
+            键 = sheet.cell(row=行指针, column=1).value
+            值 = sheet.cell(row=行指针, column=2).value
+
+            if 键 is None:
+                pass
+            elif 键 == "_end":
+                break
+            elif 键 == "_start_row":
+                起始行 = int(值)
+            elif 键 == "_end_row":
+                结束行 = int(值)
+            elif 键 == "_primary_key":
+                主键 = 值
+            else:
+                字段字典[键] = int(值)
+
+            行指针 += 1
+
+        # 翻译
+        主键 = headers.字段字典.get(主键, 主键)
+        字段字典 = {headers.字段字典.get(k, k): v for k, v in 字段字典.items()}
+
+        print(f"数据库地址: {数据库地址}")
+        print(f"数据库表名: {数据库表名}")
+        print(f"起始行: {起始行}")
+        print(f"结束行: {结束行}")
+        print(f"主键: {主键}")
+        print(f"字段字典: {字段字典}")
+
+        # 读取数据区域
+        data = []
+        for 行号 in range(起始行, 结束行):
+            row_data = {}
+            for 字段名, 列号 in 字段字典.items():
+                单元格值 = sheet.cell(row=行号, column=列号).value
+                row_data[字段名] = 单元格值 if 单元格值 is not None else ""
+            data.append(row_data)
+
+        # 更新 Access 数据库
+        headers_no_pk = [k for k in 字段字典.keys() if k != 主键]
+        更新数据库(data, 主键, headers_no_pk, 数据库地址, 数据库表名)
+
+
 if __name__ == "__main__":
 
     print("开始执行脚本...")
 
-    读取表格区域并更新数据库3(excel_path)
+    读取EXCEL并更新数据库(excel_path)
     # 读取表格区域并更新数据库(excel_path, excel_sheet_name_ani202504, "a")
     # 读取表格区域并爬取数据然后更新数据库(excel_path, excel_sheet_name_ani202507)
     # 读取表格数据并爬取种子信息然后保存到数据库(excel_path, "ani202504")
