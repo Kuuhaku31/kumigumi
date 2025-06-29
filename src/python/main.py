@@ -1,312 +1,338 @@
-# main.py
-
-import json
-import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
+from typing import List, Tuple
 
-import requests
-from tqdm import tqdm  # 引入 tqdm 进度条库
+import pyodbc
+from openpyxl import load_workbook
+from tqdm import tqdm
 
 import bangumi
 import headers
 import mikananime.mikananime as mikananime
-import utils as utils
+import utils
 
 
-def 配置变量(配置参数列表: list[str]):
+def 批量获取数据(url_list: list[str]) -> Tuple[List[dict], List[dict]]:
+    """
+    批量获取动画信息和单集信息
+    :param url_list: 包含多个 Bangumi URL 的列表
+    :return: 返回动画信息列表和单集信息列表
+    """
 
-    print("设置配置变量")
+    anime_info_list = []
+    episode_info_list = []
 
-    # 读取配置文件
-    with open(Path(__file__).parent / "config.json", "r", encoding="utf-8") as f:
-        config = json.load(f)
+    # 多线程实现
+    with ThreadPoolExecutor() as executor:
+        future_to_url = {executor.submit(utils.request_html, url): url for url in url_list}
 
-    # 解析配置参数列表
-    for i in range(0, len(配置参数列表)):
-        if 配置参数列表[i].startswith("--"):
-            key_value = 配置参数列表[i][2:].split("=")
-            if len(key_value) == 2:
-                config[key_value[0]] = key_value[1]
-            else:
-                print(f"无效的配置变量: {配置参数列表[i]}")
-        else:
-            print(f"无效的参数: {配置参数列表[i]}")
+        for future in tqdm(as_completed(future_to_url), total=len(future_to_url), desc="获取进度"):
+            url = future_to_url[future]
+            try:
+                html_str = future.result()
+                anime_info, episode_info = bangumi.解析BangumiHTML_str(html_str)
+                anime_info_list.append(anime_info)
+                episode_info_list.extend(episode_info)
+            except Exception as e:
+                print(f"❌ 获取 {url} 时发生错误: {e}")
 
-    # 保存配置文件
-    with open("config.json", "w", encoding="utf-8") as f:
-        json.dump(config, f, ensure_ascii=False, indent=4)
-
-
-def 读取工作目录() -> Path:
-
-    # 获取源文件所在目录
-    config_path: Path = Path(__file__).parent / "config.json"
-
-    # 读取配置文件
-    with open(config_path, "r", encoding="utf-8") as f:
-        config = json.load(f)
-
-    工作目录: Path = Path(config["wd"]) if "wd" in config else None
-
-    return 工作目录
+    # 返回动画信息和单集信息
+    return anime_info_list, episode_info_list
 
 
-def 获取动画索引信息(id: str) -> dict:
+def 批量获取种子数据(data: dict[str, str]) -> list[dict]:
+    """
+    批量获取种子数据
+    :param data: 包含多个番组链接和对应 RSS 订阅链接的字典列表 即 番组链接 : RSS订阅链接
+    :return: 返回所有种子数据的列表
+    """
 
-    # 拼接 url
-    url_v0: str = "https://api.bgm.tv/v0/subjects/" + id
-    url_ba: str = "https://bangumi.tv/subject/" + id
+    # 使用多线程批量获取种子数据
+    种子数据列表: list[dict] = []
+    with ThreadPoolExecutor() as executor:
 
-    # 请求数据
-    res: str = utils.request_html(url_v0)
-    json_data = json.loads(res)
-
-    return {
-        bangumi.作品原名: json_data["name"],
-        bangumi.作品中文名: json_data["name_cn"] if json_data["name_cn"] != "" else None,
-        bangumi.作品bangumiURL: url_ba,
-        bangumi.作品mikanRSS: None,
-    }
-
-
-def 添加动画信息(动画索引信息列表: list[dict], arg: str):
-    是添加文件: bool = arg.endswith(".txt")  # 检查是否是文件
-
-    if 是添加文件:
-
-        print("添加所有动画信息...")
-        # 添加所有动画信息
-        动画id列表: list[str] = []
-        with open(arg, "r", encoding="utf-8") as file:
-            动画id列表 = [id.strip() for id in file.readlines() if id.strip()]
-
-        # 使用线程池并行处理 URL 请求和解析
-        动画索引信息列表_new: list[dict] = []
-        with ThreadPoolExecutor() as 线程池:
-            futures = [线程池.submit(获取动画索引信息, id) for id in 动画id列表]
-
-            for future in tqdm(as_completed(futures), total=len(futures), desc="处理进度"):
-                动画索引信息列表_new.append(future.result())
-
-        # 将新动画索引信息列表根据 bangumi.作品bangumiURL 排序
-        动画索引信息列表_new.sort(key=lambda x: x[bangumi.作品bangumiURL])
-
-        # 对比新旧动画索引信息列表
-        # 如果新动画索引信息列表中的 bangumi.作品bangumiURL 不在旧动画索引信息列表中，则添加到旧动画索引信息列表中
-        # 如果新动画索引信息列表中的 bangumi.作品bangumiURL 在旧动画索引信息列表中，则更新旧动画索引信息列表中的对应项
-        i: int = 0
-        j: int = 0
-        while i < len(动画索引信息列表_new) and j < len(动画索引信息列表):
-            if 动画索引信息列表_new[i][bangumi.作品bangumiURL] < 动画索引信息列表[j][bangumi.作品bangumiURL]:
-                动画索引信息列表.append(动画索引信息列表_new[i])
-                i += 1
-            elif 动画索引信息列表_new[i][bangumi.作品bangumiURL] > 动画索引信息列表[j][bangumi.作品bangumiURL]:
-                j += 1
-            else:
-                动画索引信息列表[j][bangumi.作品原名] = 动画索引信息列表_new[i][bangumi.作品原名]
-                动画索引信息列表[j][bangumi.作品中文名] = 动画索引信息列表_new[i][bangumi.作品中文名]
-                i += 1
-                j += 1
-
-    else:
-        print("添加单个动画信息...")
-
-        # 添加单个动画信息
-        动画索引信息: dict = 获取动画索引信息(启动参数列表[1])
-
-        found = False
-        for i in range(len(动画索引信息列表)):
-            if 动画索引信息列表[i][bangumi.作品bangumiURL] == 动画索引信息[bangumi.作品bangumiURL]:
-                print(f"动画 {动画索引信息[bangumi.作品原名]} 已存在，更新信息...")
-                动画索引信息列表[i][bangumi.作品原名] = 动画索引信息[bangumi.作品原名]
-                动画索引信息列表[i][bangumi.作品中文名] = 动画索引信息[bangumi.作品中文名]
-                found = True
-                break
-
-        if not found:
-            print(f"添加动画 {动画索引信息[bangumi.作品原名]}...")
-            动画索引信息列表.append(动画索引信息)
-
-    动画索引信息列表.sort(key=lambda x: x[bangumi.作品bangumiURL])  # 再次排序
-
-    # 保存配置文件
-    with open(kumigumi_json_path, "w", encoding="utf-8") as file:
-        kumigumi_json["动画信息列表"] = 动画索引信息列表
-        json.dump(kumigumi_json, file, ensure_ascii=False, indent=4)
-
-
-def 更新动画信息(动画索引信息列表: list[dict]):
-    print("开始更新bangumi动画信息...")
-
-    动画信息CSV文件地址: Path = 工作目录 / "anime.csv"
-    单集信息CSV文件地址: Path = 工作目录 / "episode.csv"
-
-    动画信息列表 = []
-    单集信息列表 = []
-
-    # 使用线程池并行处理 URL 请求和解析
-    with ThreadPoolExecutor() as 线程池:
-
-        # 定义请求 HTML 并解析的函数
-        def 请求HTML并解析(动画信息索引: dict):
-            html_str = utils.request_html(动画信息索引[bangumi.作品bangumiURL])
-            info: dict = bangumi.解析BangumiHTML_str(html_str)
-            info["动画信息"][0][bangumi.作品mikanRSS] = 动画信息索引[bangumi.作品mikanRSS]
-            return info
-
-        # 提交任务到线程池
-        futures = [线程池.submit(请求HTML并解析, 动画信息索引) for 动画信息索引 in 动画索引信息列表]
-
-        # 使用 tqdm 显示进度条
-        for future in tqdm(as_completed(futures), total=len(futures), desc="处理进度"):
-            info = future.result()  # 获取任务结果
-            动画信息列表 += info["动画信息"]
-            单集信息列表 += info["单集信息"]
-
-    # 保存到 CSV 文件
-    utils.保存CSV文件(动画信息CSV文件地址, bangumi.anime_headers, 动画信息列表)
-    utils.保存CSV文件(单集信息CSV文件地址, bangumi.episode_headers, 单集信息列表)
-
-    print("更新完成")
-
-
-def 更新种子信息(动画索引信息列表: list[dict]):
-    种子信息列表: list[dict] = []
-
-    # 使用线程池并行处理 URL 请求和解析
-    with ThreadPoolExecutor() as 线程池:
-
-        def 请求HTML并解析(动画索引信息: dict) -> list[dict]:
-
-            mikan_rss: str = 动画索引信息.get(bangumi.作品mikanRSS)
-            if mikan_rss is None:
+        def 获取种子数据(bgm_url: str, mikan_rss_url: str) -> list[dict]:
+            try:
+                rss_html_str = utils.request_html(mikan_rss_url)
+            except Exception as e:
+                print(f"❌ 获取 {bgm_url}: {mikan_rss_url} 时发生错误: {e}")
                 return []
 
-            rss_html_str = utils.request_html(mikan_rss)
-            info: list[dict] = mikananime.解析mikanRSS_XML(动画索引信息[bangumi.作品bangumiURL], rss_html_str)
-            return info
+            return mikananime.解析mikanRSS_XML(bgm_url, rss_html_str)
 
-        futures = [线程池.submit(请求HTML并解析, 动画索引信息) for 动画索引信息 in 动画索引信息列表]
+        futures = {
+            executor.submit(获取种子数据, bgm_url, rss_url): (bgm_url, rss_url) for bgm_url, rss_url in data.items()
+        }
 
-        # 使用 tqdm 显示进度条
-        for future in tqdm(as_completed(futures), total=len(futures), desc="处理进度"):
-            info = future.result()  # 获取任务结果
-            种子信息列表 += info
-
-    # 保存到 CSV 文件
-    utils.保存CSV文件(工作目录 / "torrent.csv", headers.种子信息表头, 种子信息列表)
-
-    print("更新完成")
-
-
-def 批量下载种子():
-
-    下载路径: Path = Path(utils.获取用户默认下载路径())
-
-    文件地址: Path = 下载路径 / "dt.txt"
-    保存路径: Path = 下载路径 / "dt/"
-
-    # 创建保存路径
-    if not 保存路径.exists():
-        保存路径.mkdir(parents=True, exist_ok=True)
-
-    # 读取文件地址
-    urls: list[str] = []
-    with open(文件地址, "r", encoding="utf-8") as file:
-        urls = [line.strip() for line in file if line.strip()]
-
-    print(f"开始下载种子，保存路径: {保存路径}")
-
-    # 使用线程池并行下载
-    # 将下载失败的链接保存回文件
-    with ThreadPoolExecutor() as 线程池:
-
-        def 下载种子(url: str, 保存路径: Path):
+        for future in tqdm(as_completed(futures), total=len(futures), desc="获取种子数据进度"):
             try:
-                # 获取文件名
-                file_name = url.split("/")[-1]
-                file_path = 保存路径 / file_name
-                # 下载文件
-                resp = requests.get(url, timeout=30)
-                resp.raise_for_status()
-                with open(file_path, "wb") as f:
-                    f.write(resp.content)
-                return True
+                result = future.result()
+                种子数据列表.extend(result)
             except Exception as e:
-                print(f"下载失败: {url}，原因: {e}")
-                return url  # 返回失败的url
+                print(f"❌ 获取种子数据时发生错误: {e}")
 
-        futures = []
-        for url in urls:
-            futures.append(线程池.submit(下载种子, url, 保存路径))
+    # 返回所有种子数据
+    return 种子数据列表
 
-        # 收集下载失败的链接
-        失败链接 = []
-        for future in tqdm(as_completed(futures), total=len(futures), desc="下载进度"):
-            result = future.result()
-            if isinstance(result, str):
-                失败链接.append(result)
 
-    # 如果有下载失败的链接，保存回文件
-    # 先清除原先的所有内容
-    with open(下载路径 / "dt.txt", "w", encoding="utf-8") as f:
-        for url in 失败链接:
-            f.write(url + "\n")
+# 同步数据到 Access 数据库
+def 更新数据库(data: list[dict], pk: str, headers_no_pk: list[str], accdb_path: str, table_name: str):
+    """
+    同步数据到 Access 数据库
+    :param data:     list[dict]，每一行为一个字典，可能包含无关字段
+    :param headers:  需要写入的字段列表（顺序指定）
+    :param accdb_path: Access 数据库路径
+    :param table_name: 目标表名
 
-    print(f"共有 {len(urls)} 个链接，下载失败 {len(失败链接)} 个")
+    逻辑：
+    - 将 headers 的第一列作为主键
+    - 遍历数据：
+        - 如果缺主键或主键值为空，跳过
+        - 若主键已存在 → 仅更新 headers 中指定的字段
+        - 否则 → 仅插入 headers 中指定的字段
+    """
+
+    print(f"🔄 同步数据到 Access 数据库: {accdb_path} 的表 {table_name}")
+
+    conn_str = r"DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};" rf"DBQ={accdb_path};"
+    conn = pyodbc.connect(conn_str)
+    cursor = conn.cursor()
+
+    # 1. 获取主键列名
+    #  将 headers 的第一列作为主键
+
+    if not pk:
+        raise ValueError("❌ 主键列名 pk 不能为空")
+    elif not headers_no_pk or len(headers_no_pk) == 0:
+        raise ValueError("❌ headers 列表不能为空")
+
+    pk_column = pk
+
+    # cursor.execute(f"SELECT * FROM [{table_name}]")
+    # pk_column = None
+    # for column in cursor.description:
+    #     if column[5]:  # column[5] 为 True 表示是主键
+    #         pk_column = column[0]
+    #         break
+
+    if not pk_column:
+        raise Exception(f"❌ 无法获取 Access 表 [{table_name}] 的主键列")
+
+    插入_count = 0
+    更新_count = 0
+
+    for record in data:
+        if pk_column not in record or not record[pk_column]:
+            print(f"⚠️ 跳过记录，缺少主键 [{pk_column}]：{record}")
+            continue
+
+        # 仅保留 headers 中字段，按顺序提取值（空填""）
+        # row = [record.get(h, "") for h in headers]
+        pk_value = record[pk_column]
+
+        # 2. 判断主键是否存在
+        cursor.execute(f"SELECT COUNT(*) FROM [{table_name}] WHERE [{pk_column}] = ?", (pk_value,))
+        exists = cursor.fetchone()[0] > 0
+
+        if exists:
+            # 3. 执行更新
+            update_fields = ", ".join(f"[{h}] = ?" for h in headers_no_pk)
+            update_sql = f"UPDATE [{table_name}] SET {update_fields} WHERE [{pk_column}] = ?"
+            update_values = [record.get(h, "") for h in headers_no_pk]
+            cursor.execute(update_sql, tuple(update_values) + (pk_value,))
+            更新_count += 1
+
+        else:
+            # 4. 执行插入
+            field_names = ", ".join(f"[{h}]" for h in headers_no_pk)
+            field_names += f", [{pk_column}]"  # 添加主键列
+            placeholders = ", ".join("?" for _ in headers_no_pk)
+            placeholders += ", ?"
+            insert_sql = f"INSERT INTO [{table_name}] ({field_names}) VALUES ({placeholders})"
+            insert_values = [record.get(h, "") for h in headers_no_pk]
+            cursor.execute(insert_sql, tuple(insert_values) + (pk_value,))
+            插入_count += 1
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    print("✅ 同步完成")
+    print(f"➕ 插入记录数：{插入_count}")
+    print(f"🔄 更新记录数：{更新_count}")
+
+
+def 读取EXCEL并更新数据库(EXCEL文件地址):
+
+    print(f"📖 读取 Excel 文件: {EXCEL文件地址}")
+
+    wb = load_workbook(EXCEL文件地址, data_only=True)
+    sheet_main = wb["main"]
+
+    数据库地址: str = ""
+    数据库表名_sheet_映射: dict[str, str] = {}  # 数据库表名 : 工作表名
+
+    要获取远程: bool = False
+    数据库表名_anime: str = ""
+    数据库表名_episode: str = ""
+    数据库表名_torrent: str = ""
+    源sheet: str = ""
+
+    行指针: int = 1
+    while True:
+        cell_Ax = sheet_main.cell(行指针, 1).value
+
+        if cell_Ax == "_end":
+            break
+        elif cell_Ax is None:
+            pass
+        elif cell_Ax == "_database_path":
+            数据库地址 = sheet_main.cell(行指针, 2).value
+        elif cell_Ax == "_store":
+            数据库表名 = sheet_main.cell(行指针, 2).value
+            工作表名 = sheet_main.cell(行指针, 3).value
+            数据库表名_sheet_映射[数据库表名] = 工作表名
+        elif cell_Ax == "_fetch":
+            数据库表名_anime = sheet_main.cell(行指针, 2).value
+            数据库表名_episode = sheet_main.cell(行指针, 3).value
+            数据库表名_torrent = sheet_main.cell(行指针, 4).value
+            源sheet = sheet_main.cell(行指针, 5).value
+            要获取远程 = True
+        else:
+            print(f"⚠️ 未知指令: {cell_Ax}")
+
+        行指针 += 1
+
+    # 更新 Access 数据库
+    for 数据库表名, 工作表名 in 数据库表名_sheet_映射.items():
+        print(f"🔄 更新数据库: {数据库地址} 的表 {数据库表名}，工作表名: {工作表名}")
+
+        sheet = wb[工作表名]
+        起始行: int = 0
+        结束行: int = 0
+        主键: str = ""
+        字段字典: dict[str, int] = {}  # 字段名 : 列号
+
+        键: str = ""
+        值: str = ""
+        行指针: int = 1
+        while True:
+            键 = sheet.cell(row=行指针, column=1).value
+            值 = sheet.cell(row=行指针, column=2).value
+
+            if 键 is None:
+                pass
+            elif 键 == "_end":
+                break
+            elif 键 == "_start_row":
+                起始行 = int(值)
+            elif 键 == "_end_row":
+                结束行 = int(值)
+            elif 键 == "_primary_key":
+                主键 = 值
+            else:
+                字段字典[键] = int(值)
+
+            行指针 += 1
+
+        # 翻译
+        主键 = headers.字段字典.get(主键, 主键)
+        字段字典 = {headers.字段字典.get(k, k): v for k, v in 字段字典.items()}
+
+        print(f"数据库地址: {数据库地址}")
+        print(f"数据库表名: {数据库表名}")
+        print(f"起始行: {起始行}")
+        print(f"结束行: {结束行}")
+        print(f"主键: {主键}")
+        print(f"字段字典: {字段字典}")
+
+        # 读取数据区域
+        data = []
+        for 行号 in range(起始行, 结束行):
+            row_data = {}
+            for 字段名, 列号 in 字段字典.items():
+                单元格值 = sheet.cell(row=行号, column=列号).value
+                row_data[字段名] = 单元格值 if 单元格值 is not None else ""
+            data.append(row_data)
+
+        # 更新 Access 数据库
+        headers_no_pk = [k for k in 字段字典.keys() if k != 主键]
+        更新数据库(data, 主键, headers_no_pk, 数据库地址, 数据库表名)
+
+    if 要获取远程:
+        print("🔄 批量获取远程数据并更新数据库...")
+
+        bgm_url_column: int = 0
+        rss_url_column: int = 0
+        起始行: int = 0
+        结束行: int = 0
+
+        # 读取源工作表
+        sheet = wb[源sheet]
+        行指针 = 1
+        while True:
+            cell_Ax = sheet.cell(行指针, 1).value
+
+            # 仅获取番组链接和RSS订阅链接
+            if cell_Ax == "_end":
+                break
+            elif cell_Ax is None:
+                pass
+            elif cell_Ax == "_start_row":
+                起始行 = int(sheet.cell(行指针, 2).value)
+            elif cell_Ax == "_end_row":
+                结束行 = int(sheet.cell(行指针, 2).value)
+            elif cell_Ax == "番组bangumi链接":
+                bgm_url_column = sheet.cell(行指针, 2).value
+            elif cell_Ax == "番组RSS订阅链接":
+                rss_url_column = sheet.cell(行指针, 2).value
+
+            行指针 += 1
+
+        # 读取信息
+        bgm_url_rss_映射: dict[str, str] = {}  # 番组链接 : RSS订阅链接
+        for 行号 in range(起始行, 结束行):
+            bgm_url = sheet.cell(行号, bgm_url_column).value
+            rss_url = sheet.cell(行号, rss_url_column).value
+            if bgm_url and rss_url:
+                bgm_url_rss_映射[bgm_url] = rss_url
+
+        anime_info_list, episode_info_list = 批量获取数据(bgm_url_rss_映射.keys())
+        torrent_info_list = 批量获取种子数据(bgm_url_rss_映射)
+
+        # 翻译键名
+        anime_info_list = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in anime_info_list]
+        episode_info_list = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in episode_info_list]
+        torrent_info_list = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in torrent_info_list]
+
+        # 同步动画信息到 Access
+        更新数据库(
+            anime_info_list,
+            headers.番组表头_主键_en,
+            headers.番组表头_自动更新_en,
+            数据库地址,
+            数据库表名_anime,
+        )
+        更新数据库(
+            episode_info_list,
+            headers.单集表头_主键_en,
+            headers.单集表头_自动更新_en,
+            数据库地址,
+            数据库表名_episode,
+        )
+        更新数据库(
+            torrent_info_list,
+            headers.种子表头_主键_en,
+            headers.种子表头_自动更新_en,
+            数据库地址,
+            数据库表名_torrent,
+        )
 
 
 if __name__ == "__main__":
 
-    工作目录 = 读取工作目录()
-    if 工作目录 == "":
-        print("请先设置工作目录")
-        sys.exit(1)
-    print(f"工作目录: {工作目录}")
+    print("开始执行脚本...")
 
-    kumigumi_json_path: Path = 工作目录 / "kumigumi.json"
-    kumigumi_json: dict = {}
-    动画索引信息列表: list[dict] = []
+    excel_path = "D:/def/2025.07.xlsx"
+    读取EXCEL并更新数据库(excel_path)
 
-    # 读取配置文件
-    with open(kumigumi_json_path, "r", encoding="utf-8") as file:
-        kumigumi_json = json.load(file)
-        动画索引信息列表 = kumigumi_json["动画信息列表"]
-
-        # 将 动画索引信息列表 根据 bangumi.作品bangumiURL 排序
-        动画索引信息列表.sort(key=lambda x: x[bangumi.作品bangumiURL])
-
-    # 获取参数列表
-    启动参数列表 = sys.argv[1:]
-
-    # 如果没有参数，则打印帮助文档
-    if len(启动参数列表) == 0:
-        print("未知的参数")
-
-    # 设置配置变量
-    elif 启动参数列表[0] == "-config":
-        配置变量(启动参数列表[1:])
-
-    # 添加动画信息
-    elif 启动参数列表[0] == "-list-add":
-        添加动画信息(动画索引信息列表, 启动参数列表[1])
-
-    # 更新动画信息
-    elif 启动参数列表[0] == "-update-anime-info" or 启动参数列表[0] == "-ua":
-        更新动画信息(动画索引信息列表)
-
-    # 更新种子信息
-    elif 启动参数列表[0] == "-update-torrent-info" or 启动参数列表[0] == "-ut":
-        更新种子信息(动画索引信息列表)
-
-    # 更新全部信息
-    elif 启动参数列表[0] == "-update-all" or 启动参数列表[0] == "-u":
-        更新动画信息(动画索引信息列表)
-        更新种子信息(动画索引信息列表)
-
-    # 批量下载种子
-    elif 启动参数列表[0] == "-batch-download-torrent" or 启动参数列表[0] == "-dt":
-        批量下载种子()
-
-    print("程序结束")
+    print("所有操作完成")

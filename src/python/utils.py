@@ -107,3 +107,41 @@ def 获取用户默认下载路径():
     except Exception:
         # 兼容性处理，回退到用户主目录下的 Downloads
         return os.path.join(os.path.expanduser("~"), "Downloads") + os.sep
+
+
+def 配置变量(配置参数列表: list[str]):
+
+    print("设置配置变量")
+
+    # 读取配置文件
+    with open(Path(__file__).parent / "config.json", "r", encoding="utf-8") as f:
+        config = json.load(f)
+
+    # 解析配置参数列表
+    for i in range(0, len(配置参数列表)):
+        if 配置参数列表[i].startswith("--"):
+            key_value = 配置参数列表[i][2:].split("=")
+            if len(key_value) == 2:
+                config[key_value[0]] = key_value[1]
+            else:
+                print(f"无效的配置变量: {配置参数列表[i]}")
+        else:
+            print(f"无效的参数: {配置参数列表[i]}")
+
+    # 保存配置文件
+    with open("config.json", "w", encoding="utf-8") as f:
+        json.dump(config, f, ensure_ascii=False, indent=4)
+
+
+def 读取工作目录() -> Path:
+
+    # 获取源文件所在目录
+    config_path: Path = Path(__file__).parent / "config.json"
+
+    # 读取配置文件
+    with open(config_path, "r", encoding="utf-8") as f:
+        config = json.load(f)
+
+    工作目录: Path = Path(config["wd"]) if "wd" in config else None
+
+    return 工作目录
