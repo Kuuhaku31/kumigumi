@@ -1,5 +1,7 @@
 # main.py
 
+import shutil
+import tempfile
 import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Tuple
@@ -341,13 +343,25 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
         )
 
 
+def safe_load_excel(path) -> str:
+    """
+    创建一个临时文件，复制指定的 Excel 文件到临时文件中，
+    然后使用 openpyxl 加载临时文件以避免文件被占用
+    """
+
+    temp_path = tempfile.mktemp(suffix=".xlsx")
+    shutil.copy2(path, temp_path)
+
+    return temp_path
+
+
 if __name__ == "__main__":
 
     warnings.filterwarnings("ignore", category=UserWarning)
 
     kumigumiPrint("开始执行脚本...")
 
-    excel_path = "D:/def/2025.07.xlsx"
-    读取EXCEL并更新数据库(excel_path)
+    excel_path = "D:/OneDrive/2025.07.xlsx"
+    读取EXCEL并更新数据库(safe_load_excel(excel_path))
 
     kumigumiPrint("所有操作完成")
