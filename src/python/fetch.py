@@ -82,14 +82,13 @@ def 批量获取种子数据(data: dict[str, str]) -> list[dict]:
     return 种子数据列表
 
 
-def 批量下载种子(种子下载链接列表: list[str]):
+def 批量下载种子(download_path: str, 种子下载链接列表: list[str]):
     """
     批量下载种子
     :param 种子下载链接列表: 包含多个种子下载链接的列表
     :return: None
     """
 
-    download_path = utils.获取用户默认下载路径() + "/dt/"
     os.makedirs(download_path, exist_ok=True)
 
     # 单个种子下载函数
