@@ -204,7 +204,7 @@ def 批量获取远程数据并更新数据库(work_book: Workbook, 数据库地
         更新数据库(数据库地址, db_tor名, torrent_data)
 
 
-def 下载种子(work_book: Workbook, 数据库地址: str, C: list[tuple[str, str, str]]) -> None:
+def 下载种子(work_book: Workbook, C: list[tuple[str, str, str]]) -> None:
 
     for 种子下载地址, 工作表名, 种子状态 in C:
 
@@ -286,6 +286,6 @@ if __name__ == "__main__":
 
     批量获取远程数据并更新数据库(work_book, res.数据库地址, res.获取数据参数)
 
-    下载种子(work_book, res.数据库地址, res.下载种子参数)
+    下载种子(work_book, res.下载种子参数)
 
     kumigumiPrint("所有操作完成")
