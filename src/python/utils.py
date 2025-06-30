@@ -3,6 +3,8 @@
 import csv  # noqa: E402
 import json  # noqa: E402
 import os  # noqa: E402
+import shutil
+import tempfile
 import urllib.request  # noqa: E402
 import winreg  # noqa: E402
 from pathlib import Path
@@ -149,3 +151,15 @@ def 读取工作目录() -> Path:
 
 def kumigumiPrint(str: str, end: str = "\n") -> None:
     print(f"\033[35m[kumigumi]\033[0m: {str}", end=end)
+
+
+def safe_load(path) -> Path:
+    """
+    创建一个临时文件，复制指定的文件到临时文件中，
+    然后加载临时文件以避免文件被占用
+    """
+
+    temp_path: Path = Path(tempfile.mktemp(suffix=".xlsx"))
+    shutil.copy2(path, temp_path)
+
+    return temp_path
