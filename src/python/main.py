@@ -64,9 +64,7 @@ if __name__ == "__main__":
         更新数据库(excel_reader.数据库地址, 数据库表名, data)
 
     # 获取工作表中的 bgm_url 和 rss_url 映射
-    bgm_url_rss_映射: dict[str, str] = {}
-    for sheet名 in excel_reader.获取数据参数:
-        bgm_url_rss_映射.update(excel_reader.读取sheet获取bgm_url_rss_映射(sheet名))
+    bgm_url_rss_映射: dict[str, str] = excel_reader.读取sheet获取bgm_url_rss_映射()
 
     ani_data, ep_data, tor_data = 通过映射获取数据(bgm_url_rss_映射)
     # 更新 Access 数据库

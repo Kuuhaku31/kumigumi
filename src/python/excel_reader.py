@@ -130,30 +130,32 @@ class ExcelReader:
         print(" 读取结束")
         return data
 
-    def 读取sheet获取bgm_url_rss_映射(己, 工作表名: str) -> dict[str, str]:
+    def 读取sheet获取bgm_url_rss_映射(己) -> dict[str, str]:
         """
         读取指定工作表的 bgm_url 和 rss_url 映射
         """
 
-        data = 己.获取工作表数据(工作表名)
+        bgm_url_rss_映射: dict[str, str] = {}
+        for 工作表名 in 己.获取数据参数:
 
-        # 获取目标键的列数
-        column_bgm_url = -1
-        column_rss_url = -1
-        for i, header in enumerate(data[0]):
-            if header == "anime_bangumi_url":
-                column_bgm_url = i
-            elif header == "anime_rss_url":
-                column_rss_url = i
-        if column_bgm_url == -1 or column_rss_url == -1:
-            raise ValueError(f"❌ 工作表 {工作表名} 中未找到 'anime_bangumi_url' 或 'anime_rss_url' 列")
+            data = 己.获取工作表数据(工作表名)
 
-        # 构建 bgm_url 和 rss_url 的映射
-        bgm_url_rss_映射: dict[str, str] = {}  # 番组链接 : RSS订阅链接
-        for row in data[1:]:
-            bgm_url = row[column_bgm_url] if len(row) > column_bgm_url and row[column_bgm_url] else ""
-            rss_url = row[column_rss_url] if len(row) > column_rss_url and row[column_rss_url] else ""
-            bgm_url_rss_映射[bgm_url] = rss_url
+            # 获取目标键的列数
+            column_bgm_url = -1
+            column_rss_url = -1
+            for i, header in enumerate(data[0]):
+                if header == "anime_bangumi_url":
+                    column_bgm_url = i
+                elif header == "anime_rss_url":
+                    column_rss_url = i
+            if column_bgm_url == -1 or column_rss_url == -1:
+                raise ValueError(f"❌ 工作表 {工作表名} 中未找到 'anime_bangumi_url' 或 'anime_rss_url' 列")
+
+            # 构建 bgm_url 和 rss_url 的映射
+            for row in data[1:]:
+                bgm_url = row[column_bgm_url] if len(row) > column_bgm_url and row[column_bgm_url] else ""
+                rss_url = row[column_rss_url] if len(row) > column_rss_url and row[column_rss_url] else ""
+                bgm_url_rss_映射[bgm_url] = rss_url
 
         return bgm_url_rss_映射
 
