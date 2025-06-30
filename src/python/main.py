@@ -11,26 +11,25 @@ from utils import kumigumiPrint, safe_load
 
 if __name__ == "__main__":
 
-    warnings.filterwarnings("ignore", category=UserWarning)
-
     kumigumiPrint("开始执行脚本...")
 
-    excel_path = "D:/OneDrive/kumigumi.xlsx"
-    EXCEL文件地址 = safe_load(excel_path)
-    kumigumiPrint(f"📖 读取 Excel 文件: {EXCEL文件地址}")
+    warnings.filterwarnings("ignore", category=UserWarning)
 
-    wb = load_workbook(EXCEL文件地址, data_only=True)
-    sheet_main = wb["main"]
+    excel_path = "D:/OneDrive/kumigumi.xlsx"
+    kumigumiPrint(f"📖 读取 Excel 文件: {excel_path}")
+
+    work_book = load_workbook(safe_load(excel_path), data_only=True)
+    main_sheet = work_book["main"]
 
     数据库地址: str = ""
     数据库anime表名: str = ""
     数据库episode表名: str = ""
     数据库torrent表名: str = ""
 
-    excel_anime_sheet_fetch_list: list[str] = []
-    excel_anime_sheet_store_list: list[str] = []
-    excel_episode_sheet_store_list: list[str] = []
-    excel_torrent_sheet_store_list: list[str] = []
+    anime_sheet_fetch_list: list[str] = []
+    anime_sheet_store_list: list[str] = []
+    episode_sheet_store_list: list[str] = []
+    torrent_sheet_store_list: list[str] = []
 
     要下载的种子的状态: str = ""
     torrent_download_sheet_name: str = ""  # 用于存储种子下载链接的工作表名
@@ -38,45 +37,46 @@ if __name__ == "__main__":
 
     # 解析 main 工作表
     行指针: int = 1
+    列指针: int = 1
     while True:
-        cell_Ax = sheet_main.cell(行指针, 1).value
+        指令 = main_sheet.cell(行指针, 列指针).value
 
-        if cell_Ax == "_end":
+        if 指令 == "_end":
             break
-        elif cell_Ax == "_to":  # 跳到指定行
-            行指针 = sheet_main.cell(行指针, 2).value
+        elif 指令 == "_to":  # 跳到指定行
+            行指针 = main_sheet.cell(行指针, 列指针 + 1).value
             continue
-        elif cell_Ax is None:
+        elif 指令 is None:
             pass
 
-        elif cell_Ax == "_database_path":
-            数据库地址 = sheet_main.cell(行指针, 2).value
-        elif cell_Ax == "_anime_table":
-            数据库anime表名 = sheet_main.cell(行指针, 2).value
-        elif cell_Ax == "_episode_table":
-            数据库episode表名 = sheet_main.cell(行指针, 2).value
-        elif cell_Ax == "_torrent_table":
-            数据库torrent表名 = sheet_main.cell(行指针, 2).value
+        elif 指令 == "_database_path":
+            数据库地址 = main_sheet.cell(行指针, 列指针 + 1).value
+        elif 指令 == "_anime_table":
+            数据库anime表名 = main_sheet.cell(行指针, 列指针 + 1).value
+        elif 指令 == "_episode_table":
+            数据库episode表名 = main_sheet.cell(行指针, 列指针 + 1).value
+        elif 指令 == "_torrent_table":
+            数据库torrent表名 = main_sheet.cell(行指针, 列指针 + 1).value
 
-        elif cell_Ax == "_download_torrent":
-            torrent_download_sheet_name = sheet_main.cell(行指针, 2).value
-            要下载的种子的状态 = sheet_main.cell(行指针, 3).value
+        elif 指令 == "_download_torrent":
+            torrent_download_sheet_name = main_sheet.cell(行指针, 列指针 + 1).value
+            要下载的种子的状态 = main_sheet.cell(行指针, 3).value
 
-        elif cell_Ax == "_store":
-            数据库表类型 = sheet_main.cell(行指针, 2).value
-            工作表名 = sheet_main.cell(行指针, 3).value
+        elif 指令 == "_store":
+            数据库表类型 = main_sheet.cell(行指针, 列指针 + 1).value
+            工作表名 = main_sheet.cell(行指针, 列指针 + 2).value
             if 数据库表类型 == "_anime_table":
-                excel_anime_sheet_store_list.append(工作表名)
+                anime_sheet_store_list.append(工作表名)
             elif 数据库表类型 == "_episode_table":
-                excel_episode_sheet_store_list.append(工作表名)
+                episode_sheet_store_list.append(工作表名)
             elif 数据库表类型 == "_torrent_table":
-                excel_torrent_sheet_store_list.append(工作表名)
+                torrent_sheet_store_list.append(工作表名)
 
-        elif cell_Ax == "_fetch":
-            excel_anime_sheet_fetch_list.append(sheet_main.cell(行指针, 3).value)
+        elif 指令 == "_fetch":
+            anime_sheet_fetch_list.append(main_sheet.cell(行指针, 列指针 + 2).value)
 
         else:
-            kumigumiPrint(f"⚠️ 未知指令: {cell_Ax}")
+            kumigumiPrint(f"⚠️ 未知指令: {指令}")
 
         行指针 += 1
 
@@ -87,11 +87,11 @@ if __name__ == "__main__":
     # 更新 Access 数据库
     for 数据库表名, 工作表名_list in zip(
         [数据库anime表名, 数据库episode表名, 数据库torrent表名],
-        [excel_anime_sheet_store_list, excel_episode_sheet_store_list, excel_torrent_sheet_store_list],
+        [anime_sheet_store_list, episode_sheet_store_list, torrent_sheet_store_list],
     ):
         for 工作表名 in 工作表名_list:
             kumigumiPrint("🔄 更新 Access 数据库...")
-            sheet_download_torrent = wb[工作表名]
+            sheet_download_torrent = work_book[工作表名]
 
             起始行: int = 0
             结束行: int = 0
@@ -105,7 +105,7 @@ if __name__ == "__main__":
 
                 if 键 is None:
                     pass
-                elif cell_Ax == "_to":  # 跳到指定行
+                elif 指令 == "_to":  # 跳到指定行
                     行指针 = int(值)
                     continue
                 elif 键 == "_end":
@@ -138,7 +138,7 @@ if __name__ == "__main__":
             更新数据库(data, 主键, [k for k in 字段字典.keys() if k != 主键], 数据库地址, 数据库表名)
 
     # 批量获取远程数据并更新数据库
-    for 源sheet in excel_anime_sheet_fetch_list:
+    for 源sheet in anime_sheet_fetch_list:
         kumigumiPrint("🔄 批量获取远程数据并更新数据库...")
 
         bgm_url_column: int = 0
@@ -148,26 +148,26 @@ if __name__ == "__main__":
 
         # 读取源工作表
         print(f"📖 读取源工作表: {源sheet}")
-        sheet_download_torrent = wb[源sheet]
+        sheet_download_torrent = work_book[源sheet]
         行指针 = 1
         while True:
-            cell_Ax = sheet_download_torrent.cell(行指针, 1).value
+            指令 = sheet_download_torrent.cell(行指针, 1).value
 
             # 仅获取番组链接和RSS订阅链接
-            if cell_Ax == "_end":
+            if 指令 == "_end":
                 break
-            elif cell_Ax == "_to":  # 跳到指定行
+            elif 指令 == "_to":  # 跳到指定行
                 行指针 = int(sheet_download_torrent.cell(行指针, 2).value)
                 continue
-            elif cell_Ax is None:
+            elif 指令 is None:
                 pass
-            elif cell_Ax == "_start_row":
+            elif 指令 == "_start_row":
                 起始行 = int(sheet_download_torrent.cell(行指针, 2).value)
-            elif cell_Ax == "_end_row":
+            elif 指令 == "_end_row":
                 结束行 = int(sheet_download_torrent.cell(行指针, 2).value)
-            elif cell_Ax == "番组bangumi链接":
+            elif 指令 == "番组bangumi链接":
                 bgm_url_column = sheet_download_torrent.cell(行指针, 2).value
-            elif cell_Ax == "番组RSS订阅链接":
+            elif 指令 == "番组RSS订阅链接":
                 rss_url_column = sheet_download_torrent.cell(行指针, 2).value
 
             行指针 += 1
@@ -217,7 +217,7 @@ if __name__ == "__main__":
         kumigumiPrint("🔄 下载种子链接...")
 
         # 获取种子下载链接工作表
-        sheet_download_torrent = wb[torrent_download_sheet_name]
+        sheet_download_torrent = work_book[torrent_download_sheet_name]
 
         起始行: int = 0
         结束行: int = 0
@@ -227,24 +227,24 @@ if __name__ == "__main__":
         # 读取种子下载链接
         行指针 = 1
         while True:
-            cell_Ax = sheet_download_torrent.cell(行指针, 1).value
+            指令 = sheet_download_torrent.cell(行指针, 1).value
 
-            if cell_Ax == "_end":
+            if 指令 == "_end":
                 break
-            elif cell_Ax == "_to":
+            elif 指令 == "_to":
                 行指针 = int(sheet_download_torrent.cell(行指针, 2).value)
                 continue
-            elif cell_Ax is None:
+            elif 指令 is None:
                 pass
 
-            elif cell_Ax == "_start_row":
+            elif 指令 == "_start_row":
                 起始行 = int(sheet_download_torrent.cell(行指针, 2).value)
-            elif cell_Ax == "_end_row":
+            elif 指令 == "_end_row":
                 结束行 = int(sheet_download_torrent.cell(行指针, 2).value)
 
-            elif cell_Ax == "种子下载链接":
+            elif 指令 == "种子下载链接":
                 种子下载链接_column = sheet_download_torrent.cell(行指针, 2).value
-            elif cell_Ax == "种子下载情况":
+            elif 指令 == "种子下载情况":
                 种子下载情况_column = sheet_download_torrent.cell(行指针, 2).value
 
             行指针 += 1
