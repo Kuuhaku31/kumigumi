@@ -14,9 +14,10 @@ from tqdm import tqdm
 # 获取数据
 
 
-def 批量获取数据(url_list: list[str]) -> Tuple[List[dict], List[dict]]:
+def 批量获取番组及单集数据(url_list: list[str]) -> Tuple[List[dict], List[dict]]:
     """
     批量获取动画信息和单集信息
+
     :param url_list: 包含多个 Bangumi URL 的列表
     :return: 返回动画信息列表和单集信息列表
     """
