@@ -56,7 +56,7 @@ def 批量获取种子数据(data: dict[str, str]) -> list[dict]:
 
         def 获取种子数据(bgm_url: str, mikan_rss_url: str) -> list[dict]:
 
-            if mikan_rss_url is None:
+            if mikan_rss_url is None or mikan_rss_url == "":
                 return []
             try:
                 rss_html_str = utils.request_html(mikan_rss_url)

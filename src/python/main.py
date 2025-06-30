@@ -13,9 +13,9 @@ from utils import kumigumiPrint, safe_load
 class 解析结果:
     def __init__(己):
         己.数据库地址: str = ""
-        己.A: list[tuple[str, str]] = []
-        己.B: list[tuple[str, str, str, str]] = []
-        己.C: list[tuple[str, str, str]] = []
+        己.更新数据参数: list[tuple[str, str]] = []
+        己.获取数据参数: list[tuple[str, str, str, str]] = []
+        己.下载种子参数: list[tuple[str, str, str]] = []
 
     # [(数据库表名, 工作表名), ...]
     # [(数据库anime表名, 数据库episode表名, 数据库torrent表名, 工作表名), ...]
@@ -51,20 +51,20 @@ def 解析指令(work_book: Workbook) -> 解析结果:
         elif 指令 == "_store":
             数据库表名 = main_sheet.cell(行指针, 列指针 + 1).value
             工作表名 = main_sheet.cell(行指针, 列指针 + 2).value
-            解析结果实例.A.append((数据库表名, 工作表名))
+            解析结果实例.更新数据参数.append((数据库表名, 工作表名))
 
         elif 指令 == "_fetch":
             数据库anime表名 = main_sheet.cell(行指针, 列指针 + 1).value
             数据库episode表名 = main_sheet.cell(行指针, 列指针 + 2).value
             数据库torrent表名 = main_sheet.cell(行指针, 列指针 + 3).value
             工作表名 = main_sheet.cell(行指针, 列指针 + 4).value
-            解析结果实例.B.append((数据库anime表名, 数据库episode表名, 数据库torrent表名, 工作表名))
+            解析结果实例.获取数据参数.append((数据库anime表名, 数据库episode表名, 数据库torrent表名, 工作表名))
 
         elif 指令 == "_dt":
             下载地址 = main_sheet.cell(行指针, 列指针 + 1).value
             工作表名 = main_sheet.cell(行指针, 列指针 + 2).value
             种子下载状态 = main_sheet.cell(行指针, 列指针 + 3).value
-            解析结果实例.C.append((下载地址, 工作表名, 种子下载状态))
+            解析结果实例.下载种子参数.append((下载地址, 工作表名, 种子下载状态))
 
         行指针 += 1
 
@@ -133,53 +133,75 @@ def 获取工作表数据(work_book: Workbook, 工作表名: str) -> list[list[s
     return data
 
 
+def 读取sheet获取bgm_url_rss_映射(work_book: Workbook, sheet名: str) -> dict[str, str]:
+    """
+    读取指定工作表的 bgm_url 和 rss_url 映射
+    """
+
+    data = 获取工作表数据(work_book, sheet名)
+
+    # 获取目标键的列数
+    column_bgm_url = -1
+    column_rss_url = -1
+    for i, header in enumerate(data[0]):
+        if header == "anime_bangumi_url":
+            column_bgm_url = i
+        elif header == "anime_rss_url":
+            column_rss_url = i
+    if column_bgm_url == -1 or column_rss_url == -1:
+        raise ValueError(f"❌ 工作表 {sheet名} 中未找到 'anime_bangumi_url' 或 'anime_rss_url' 列")
+
+    # 构建 bgm_url 和 rss_url 的映射
+    bgm_url_rss_映射: dict[str, str] = {}  # 番组链接 : RSS订阅链接
+    for row in data[1:]:
+        bgm_url = row[column_bgm_url] if len(row) > column_bgm_url and row[column_bgm_url] else ""
+        rss_url = row[column_rss_url] if len(row) > column_rss_url and row[column_rss_url] else ""
+        bgm_url_rss_映射[bgm_url] = rss_url
+
+    return bgm_url_rss_映射
+
+
 def 批量获取远程数据并更新数据库(work_book: Workbook, 数据库地址: str, B: list[tuple[str, str, str, str]]) -> None:
     # 批量获取远程数据并更新数据库
     for db_ani名, db_ep名, db_tor名, sheet名 in B:
-        kumigumiPrint(f"🔄 批量获取 {sheet名} 的远程数据并更新数据库...")
 
-        # 读取源工作表
-        data = 获取工作表数据(work_book, sheet名)
-
-        # 读取信息
-        bgm_url_rss_映射: dict[str, str] = {}  # 番组链接 : RSS订阅链接
-        for row in data.数据:
-            bgm_url = row.get("番组bangumi链接", "")
-            rss_url = row.get("番组RSS订阅链接", "")
-            bgm_url_rss_映射[bgm_url] = rss_url
+        bgm_url_rss_映射 = 读取sheet获取bgm_url_rss_映射(work_book, sheet名)
 
         anime_info_list, episode_info_list = 批量获取番组及单集数据(bgm_url_rss_映射.keys())
         torrent_info_list = 批量获取种子数据(bgm_url_rss_映射)
 
-        # 翻译键名
+        # 翻译
         anime_info_list = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in anime_info_list]
         episode_info_list = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in episode_info_list]
         torrent_info_list = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in torrent_info_list]
 
-        kumigumiPrint("获取完毕")
+        # 转换数据
+        # 第一行是表头
+        anime_data = [[headers.番组表头_主键_en] + headers.番组表头_自动更新_en.copy()]  # 表头
+        episode_data = [[headers.单集表头_主键_en] + headers.单集表头_自动更新_en.copy()]  # 表头
+        torrent_data = [[headers.种子表头_主键_en] + headers.种子表头_自动更新_en.copy()]  # 表头
 
-        # 同步动画信息到 Access
-        更新数据库(
-            anime_info_list,
-            headers.番组表头_主键_en,
-            headers.番组表头_自动更新_en,
-            数据库地址,
-            db_ani名,
-        )
-        更新数据库(
-            episode_info_list,
-            headers.单集表头_主键_en,
-            headers.单集表头_自动更新_en,
-            数据库地址,
-            db_ep名,
-        )
-        更新数据库(
-            torrent_info_list,
-            headers.种子表头_主键_en,
-            headers.种子表头_自动更新_en,
-            数据库地址,
-            db_tor名,
-        )
+        # 剩下的行是数据
+        anime_data = anime_data + [
+            [anime_info[headers.番组表头_主键_en]]
+            + [anime_info.get(header, "") for header in headers.番组表头_自动更新_en]
+            for anime_info in anime_info_list
+        ]
+        episode_data = episode_data + [
+            [episode_info[headers.单集表头_主键_en]]
+            + [episode_info.get(header, "") for header in headers.单集表头_自动更新_en]
+            for episode_info in episode_info_list
+        ]
+        torrent_data = torrent_data + [
+            [torrent_info[headers.种子表头_主键_en]]
+            + [torrent_info.get(header, "") for header in headers.种子表头_自动更新_en]
+            for torrent_info in torrent_info_list
+        ]
+
+        # 同步数据到 Access
+        更新数据库(数据库地址, db_ani名, anime_data)
+        更新数据库(数据库地址, db_ep名, episode_data)
+        更新数据库(数据库地址, db_tor名, torrent_data)
 
 
 def 下载种子(work_book: Workbook, 数据库地址: str, C: list[tuple[str, str, str]]) -> None:
@@ -249,21 +271,21 @@ if __name__ == "__main__":
 
     print("解析结果:")
     print(f"数据库地址: {res.数据库地址}")
-    print(f"数据库表名与工作表名: {res.A}")
-    print(f"数据库表名元组与工作表名: {res.B}")
-    print(f"地址与下载种子工作表名: {res.C}")
+    print(f"数据库表名与工作表名: {res.更新数据参数}")
+    print(f"数据库表名元组与工作表名: {res.获取数据参数}")
+    print(f"地址与下载种子工作表名: {res.下载种子参数}")
 
     # 检查是否定义变量
     if not res.数据库地址:
         raise ValueError("❌ 请确保在 main 工作表中定义了数据库地址")
 
     # 更新 Access 数据库
-    for 数据库表名, 工作表名 in res.A:
+    for 数据库表名, 工作表名 in res.更新数据参数:
         data: list[list[str]] = 获取工作表数据(work_book, 工作表名)
         更新数据库(res.数据库地址, 数据库表名, data)
 
-    批量获取远程数据并更新数据库(work_book, res.数据库地址, res.B)
+    批量获取远程数据并更新数据库(work_book, res.数据库地址, res.获取数据参数)
 
-    下载种子(work_book, res.数据库地址, res.C)
+    下载种子(work_book, res.数据库地址, res.下载种子参数)
 
     kumigumiPrint("所有操作完成")
