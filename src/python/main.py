@@ -173,50 +173,6 @@ def 读取sheet获取bgm_url_rss_映射(work_book: Workbook, sheet名: str) -> d
     return bgm_url_rss_映射
 
 
-def 批量获取远程数据并更新数据库(
-    work_book: Workbook, sheet名list: list[str]
-) -> tuple[list[list[str]], list[list[str]], list[list[str]]]:
-    # 批量获取远程数据并更新数据库
-
-    # 获取工作表中的 bgm_url 和 rss_url 映射
-    bgm_url_rss_映射: dict[str, str] = {}
-    for sheet名 in sheet名list:
-        bgm_url_rss_映射.update(读取sheet获取bgm_url_rss_映射(work_book, sheet名))
-
-    # 批量获取番组及单集数据
-    anime_info_list, episode_info_list = 批量获取番组及单集数据(bgm_url_rss_映射.keys())
-    torrent_info_list = 批量获取种子数据(bgm_url_rss_映射)
-
-    # 翻译
-    anime_info_list = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in anime_info_list]
-    episode_info_list = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in episode_info_list]
-    torrent_info_list = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in torrent_info_list]
-
-    # 转换数据
-    # 第一行是表头
-    anime_data = [[headers.番组表头_主键_en] + headers.番组表头_自动更新_en.copy()]  # 表头
-    episode_data = [[headers.单集表头_主键_en] + headers.单集表头_自动更新_en.copy()]  # 表头
-    torrent_data = [[headers.种子表头_主键_en] + headers.种子表头_自动更新_en.copy()]  # 表头
-
-    # 剩下的行是数据
-    anime_data = anime_data + [
-        [anime_info[headers.番组表头_主键_en]] + [anime_info.get(header, "") for header in headers.番组表头_自动更新_en]
-        for anime_info in anime_info_list
-    ]
-    episode_data = episode_data + [
-        [episode_info[headers.单集表头_主键_en]]
-        + [episode_info.get(header, "") for header in headers.单集表头_自动更新_en]
-        for episode_info in episode_info_list
-    ]
-    torrent_data = torrent_data + [
-        [torrent_info[headers.种子表头_主键_en]]
-        + [torrent_info.get(header, "") for header in headers.种子表头_自动更新_en]
-        for torrent_info in torrent_info_list
-    ]
-
-    return (anime_data, episode_data, torrent_data)
-
-
 def 获取下载种子url列表(work_book: Workbook, 下载种子参数: list[tuple[str, str]]) -> list[str]:
 
     torrent_download_url_list: list[str] = []
@@ -270,6 +226,43 @@ def 获取下载种子url列表(work_book: Workbook, 下载种子参数: list[tu
     return torrent_download_url_list
 
 
+def 通过映射获取数据(bgm_url_rss_映射: dict[str, str]) -> tuple[list[list[str]], list[list[str]], list[list[str]]]:
+    # 批量获取远程数据并更新数据库
+
+    # 批量获取番组及单集数据
+    anime_info_list, episode_info_list = 批量获取番组及单集数据(bgm_url_rss_映射.keys())
+    torrent_info_list = 批量获取种子数据(bgm_url_rss_映射)
+
+    # 翻译
+    anime_info_list = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in anime_info_list]
+    episode_info_list = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in episode_info_list]
+    torrent_info_list = [{headers.字段字典.get(k, k): v for k, v in row.items()} for row in torrent_info_list]
+
+    # 转换数据
+    # 第一行是表头
+    anime_data = [[headers.番组表头_主键_en] + headers.番组表头_自动更新_en.copy()]  # 表头
+    episode_data = [[headers.单集表头_主键_en] + headers.单集表头_自动更新_en.copy()]  # 表头
+    torrent_data = [[headers.种子表头_主键_en] + headers.种子表头_自动更新_en.copy()]  # 表头
+
+    # 剩下的行是数据
+    anime_data = anime_data + [
+        [anime_info[headers.番组表头_主键_en]] + [anime_info.get(header, "") for header in headers.番组表头_自动更新_en]
+        for anime_info in anime_info_list
+    ]
+    episode_data = episode_data + [
+        [episode_info[headers.单集表头_主键_en]]
+        + [episode_info.get(header, "") for header in headers.单集表头_自动更新_en]
+        for episode_info in episode_info_list
+    ]
+    torrent_data = torrent_data + [
+        [torrent_info[headers.种子表头_主键_en]]
+        + [torrent_info.get(header, "") for header in headers.种子表头_自动更新_en]
+        for torrent_info in torrent_info_list
+    ]
+
+    return (anime_data, episode_data, torrent_data)
+
+
 if __name__ == "__main__":
 
     kumigumiPrint("开始执行脚本...")
@@ -292,7 +285,12 @@ if __name__ == "__main__":
         data: list[list[str]] = 获取工作表数据(work_book, 工作表名)
         更新数据库(参数.数据库地址, 数据库表名, data)
 
-    ani_data, ep_data, tor_data = 批量获取远程数据并更新数据库(work_book, 参数.获取数据参数)
+    # 获取工作表中的 bgm_url 和 rss_url 映射
+    bgm_url_rss_映射: dict[str, str] = {}
+    for sheet名 in 参数.获取数据参数:
+        bgm_url_rss_映射.update(读取sheet获取bgm_url_rss_映射(work_book, sheet名))
+
+    ani_data, ep_data, tor_data = 通过映射获取数据(bgm_url_rss_映射)
     # 更新 Access 数据库
     if len(ani_data) > 1:
         更新数据库(参数.数据库地址, 参数.数据库anime表名, ani_data)
