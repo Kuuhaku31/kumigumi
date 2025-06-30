@@ -1,20 +1,66 @@
 # main.py
 
+import os
 import shutil
 import tempfile
 import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Tuple
 
-import pyodbc
-from openpyxl import load_workbook
-from tqdm import tqdm
-
 import bangumi
 import headers
 import mikananime.mikananime as mikananime
+import pyodbc
+import requests
 import utils
+from openpyxl import load_workbook
+from tqdm import tqdm
 from utils import kumigumiPrint
+
+
+def 批量下载种子(种子下载链接列表: list[str]):
+    """
+    批量下载种子
+    :param 种子下载链接列表: 包含多个种子下载链接的列表
+    :return: None
+    """
+
+    download_path = utils.获取用户默认下载路径() + "/dt/"
+    os.makedirs(download_path, exist_ok=True)
+
+    # 单个种子下载函数
+    def download_torrent(种子下载链接: str):
+        try:
+            file_name = os.path.basename(种子下载链接)
+            file_path = os.path.join(download_path, file_name)
+            resp = requests.get(种子下载链接, timeout=30)
+            resp.raise_for_status()
+            with open(file_path, "wb") as f:
+                f.write(resp.content)
+        except Exception as e:
+            raise RuntimeError(f"下载失败: {种子下载链接}，原因: {e}")
+
+    fail_url_list = []
+
+    # 使用多线程批量下载种子
+    with ThreadPoolExecutor() as executor:
+        futures = {executor.submit(download_torrent, url): url for url in 种子下载链接列表}
+
+        for future in tqdm(as_completed(futures), total=len(futures), desc="下载种子文件进度"):
+            url = futures[future]
+            try:
+                future.result()  # 等待下载完成
+            except Exception as e:
+                print(f"❌ 下载种子 {url} 时发生错误: {e}")
+                fail_url_list.append(url)
+
+    # 将下载失败的链接保存到文件
+    if fail_url_list:
+        fail_file_path = os.path.join(download_path, "failed_downloads.txt")
+        with open(fail_file_path, "w", encoding="utf-8") as f:
+            for url in fail_url_list:
+                f.write(url + "\n")
+        print(f"❌ {len(fail_url_list)} 个种子下载失败，已保存到 {fail_file_path}")
 
 
 def 批量获取数据(url_list: list[str]) -> Tuple[List[dict], List[dict]]:
@@ -180,6 +226,10 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
     excel_episode_sheet_store_list: list[str] = []
     excel_torrent_sheet_store_list: list[str] = []
 
+    要下载的种子的状态: str = ""
+    torrent_download_sheet_name: str = ""  # 用于存储种子下载链接的工作表名
+    torrent_download_url_list: list[str] = []  # 用于存储种子下载链接
+
     # 解析 main 工作表
     行指针: int = 1
     while True:
@@ -201,6 +251,10 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
             数据库episode表名 = sheet_main.cell(行指针, 2).value
         elif cell_Ax == "_torrent_table":
             数据库torrent表名 = sheet_main.cell(行指针, 2).value
+
+        elif cell_Ax == "_download_torrent":
+            torrent_download_sheet_name = sheet_main.cell(行指针, 2).value
+            要下载的种子的状态 = sheet_main.cell(行指针, 3).value
 
         elif cell_Ax == "_store":
             数据库表类型 = sheet_main.cell(行指针, 2).value
@@ -225,13 +279,13 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
         raise ValueError("❌ 请确保在 main 工作表中定义了数据库地址和表名")
 
     # 更新 Access 数据库
-    kumigumiPrint("🔄 更新 Access 数据库...")
     for 数据库表名, 工作表名_list in zip(
         [数据库anime表名, 数据库episode表名, 数据库torrent表名],
         [excel_anime_sheet_store_list, excel_episode_sheet_store_list, excel_torrent_sheet_store_list],
     ):
         for 工作表名 in 工作表名_list:
-            sheet = wb[工作表名]
+            kumigumiPrint("🔄 更新 Access 数据库...")
+            sheet_download_torrent = wb[工作表名]
 
             起始行: int = 0
             结束行: int = 0
@@ -240,8 +294,8 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
 
             行指针: int = 1
             while True:
-                键: str = sheet.cell(row=行指针, column=1).value
-                值: str = sheet.cell(row=行指针, column=2).value
+                键: str = sheet_download_torrent.cell(row=行指针, column=1).value
+                值: str = sheet_download_torrent.cell(row=行指针, column=2).value
 
                 if 键 is None:
                     pass
@@ -270,7 +324,7 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
             for 行号 in range(起始行, 结束行):
                 row_data: dict[str, int] = {}
                 for 字段名, 列号 in 字段字典.items():
-                    单元格值 = sheet.cell(row=行号, column=列号).value
+                    单元格值 = sheet_download_torrent.cell(row=行号, column=列号).value
                     row_data[字段名] = 单元格值 if 单元格值 is not None else ""
                 data.append(row_data)
 
@@ -278,8 +332,8 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
             更新数据库(data, 主键, [k for k in 字段字典.keys() if k != 主键], 数据库地址, 数据库表名)
 
     # 批量获取远程数据并更新数据库
-    kumigumiPrint("🔄 批量获取远程数据并更新数据库...")
     for 源sheet in excel_anime_sheet_fetch_list:
+        kumigumiPrint("🔄 批量获取远程数据并更新数据库...")
 
         bgm_url_column: int = 0
         rss_url_column: int = 0
@@ -287,35 +341,36 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
         结束行: int = 0
 
         # 读取源工作表
-        sheet = wb[源sheet]
+        print(f"📖 读取源工作表: {源sheet}")
+        sheet_download_torrent = wb[源sheet]
         行指针 = 1
         while True:
-            cell_Ax = sheet.cell(行指针, 1).value
+            cell_Ax = sheet_download_torrent.cell(行指针, 1).value
 
             # 仅获取番组链接和RSS订阅链接
             if cell_Ax == "_end":
                 break
             elif cell_Ax == "_to":  # 跳到指定行
-                行指针 = int(sheet.cell(行指针, 2).value)
+                行指针 = int(sheet_download_torrent.cell(行指针, 2).value)
                 continue
             elif cell_Ax is None:
                 pass
             elif cell_Ax == "_start_row":
-                起始行 = int(sheet.cell(行指针, 2).value)
+                起始行 = int(sheet_download_torrent.cell(行指针, 2).value)
             elif cell_Ax == "_end_row":
-                结束行 = int(sheet.cell(行指针, 2).value)
+                结束行 = int(sheet_download_torrent.cell(行指针, 2).value)
             elif cell_Ax == "番组bangumi链接":
-                bgm_url_column = sheet.cell(行指针, 2).value
+                bgm_url_column = sheet_download_torrent.cell(行指针, 2).value
             elif cell_Ax == "番组RSS订阅链接":
-                rss_url_column = sheet.cell(行指针, 2).value
+                rss_url_column = sheet_download_torrent.cell(行指针, 2).value
 
             行指针 += 1
 
         # 读取信息
         bgm_url_rss_映射: dict[str, str] = {}  # 番组链接 : RSS订阅链接
         for 行号 in range(起始行, 结束行):
-            bgm_url = sheet.cell(行号, bgm_url_column).value
-            rss_url = sheet.cell(行号, rss_url_column).value
+            bgm_url = sheet_download_torrent.cell(行号, bgm_url_column).value
+            rss_url = sheet_download_torrent.cell(行号, rss_url_column).value
             bgm_url_rss_映射[bgm_url] = rss_url
 
         anime_info_list, episode_info_list = 批量获取数据(bgm_url_rss_映射.keys())
@@ -350,6 +405,52 @@ def 读取EXCEL并更新数据库(EXCEL文件地址):
             数据库地址,
             数据库torrent表名,
         )
+
+    # 下载种子链接
+    if torrent_download_sheet_name != "":
+        kumigumiPrint("🔄 下载种子链接...")
+
+        # 获取种子下载链接工作表
+        sheet_download_torrent = wb[torrent_download_sheet_name]
+
+        起始行: int = 0
+        结束行: int = 0
+        种子下载链接_column: int = 0
+        种子下载情况_column: int = 0
+
+        # 读取种子下载链接
+        行指针 = 1
+        while True:
+            cell_Ax = sheet_download_torrent.cell(行指针, 1).value
+
+            if cell_Ax == "_end":
+                break
+            elif cell_Ax == "_to":
+                行指针 = int(sheet_download_torrent.cell(行指针, 2).value)
+                continue
+            elif cell_Ax is None:
+                pass
+
+            elif cell_Ax == "_start_row":
+                起始行 = int(sheet_download_torrent.cell(行指针, 2).value)
+            elif cell_Ax == "_end_row":
+                结束行 = int(sheet_download_torrent.cell(行指针, 2).value)
+
+            elif cell_Ax == "种子下载链接":
+                种子下载链接_column = sheet_download_torrent.cell(行指针, 2).value
+            elif cell_Ax == "种子下载情况":
+                种子下载情况_column = sheet_download_torrent.cell(行指针, 2).value
+
+            行指针 += 1
+
+        # 读取种子下载链接
+        for 行号 in range(起始行, 结束行):
+            torrent_download_url = sheet_download_torrent.cell(行号, 种子下载链接_column).value
+            torrent_download_status = sheet_download_torrent.cell(行号, 种子下载情况_column).value
+            if torrent_download_status == 要下载的种子的状态:
+                torrent_download_url_list.append(torrent_download_url)
+
+        批量下载种子(torrent_download_url_list)
 
 
 def safe_load_excel(path) -> str:
