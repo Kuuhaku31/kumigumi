@@ -1,7 +1,6 @@
 # excel_reader.py
 
 from openpyxl import Workbook, load_workbook
-from utils import kumigumiPrint
 
 
 class ExcelReader:
@@ -77,7 +76,7 @@ class ExcelReader:
         其他字符串是字段名
         """
 
-        kumigumiPrint(f"🔄 读取 {工作表名} ...", "")
+        己.ExcelReaderPrint(f"🔄 读取 {工作表名} ...", "")
 
         工作表 = 己.work_book[工作表名]
 
@@ -166,7 +165,7 @@ class ExcelReader:
 
             # 下载种子链接
             if 工作表名 != "":
-                kumigumiPrint(f"🔄 下载 {工作表名} 的种子链接...")
+                己.ExcelReaderPrint(f"🔄 获取 {工作表名} 需要下载的种子链接...")
 
                 # 获取种子下载链接工作表
                 sheet_download_torrent = 己.work_book[工作表名]
@@ -209,3 +208,6 @@ class ExcelReader:
                         torrent_download_url_list.append(torrent_download_url)
 
         return torrent_download_url_list
+
+    def ExcelReaderPrint(己, str: str, end: str = "\n") -> None:
+        print(f"\033[92m[ExcelReader]\033[0m: {str}", end=end)

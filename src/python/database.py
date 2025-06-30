@@ -18,7 +18,7 @@ def 更新数据库(accdb_path: str, table_name: str, data: list[list[str]]) -> 
     """
 
     def database_print(msg: str, end: str = "\n"):
-        print(f"\033[92m[数据库操作]:\033[0m {msg}", end=end)
+        print(f"\033[34m[数据库操作]:\033[0m {msg}", end=end)
 
     if not data or not data[0] or not data[0][0]:
         raise ValueError("❌ 数据为空或无效，或表头缺失主键字段")
