@@ -163,3 +163,28 @@ def safe_load(path) -> Path:
     shutil.copy2(path, temp_path)
 
     return temp_path
+
+
+def 合并数据(data_a: list[list[str]], data_b: list[list[str]]) -> list[list[str]]:
+
+    # 去除重复的表头
+    合并后的表头 = list(dict.fromkeys(data_a[0] + data_b[0]))
+    合并后的数据: list[list[str]] = [合并后的表头]
+
+    # 遍历data_a和data_b，合并数据
+    索引字典: dict[str, int] = {header: i for i, header in enumerate(合并后的表头)}  # 创建一个索引字典，方便查找
+    for row in data_a[1:]:
+        new_row = [""] * len(合并后的表头)
+        for i, value in enumerate(row):
+            if data_a[0][i] in 索引字典:
+                new_row[索引字典[data_a[0][i]]] = value
+        合并后的数据.append(new_row)
+
+    for row in data_b[1:]:
+        new_row = [""] * len(合并后的表头)
+        for i, value in enumerate(row):
+            if data_b[0][i] in 索引字典:
+                new_row[索引字典[data_b[0][i]]] = value
+        合并后的数据.append(new_row)
+
+    return 合并后的数据
