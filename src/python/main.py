@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
     warnings.filterwarnings("ignore", category=UserWarning)
 
-    excel_path = "D:/OneDrive/kumigumi.xlsx"
+    excel_path = "C:/Users/admin-kh/OneDrive/kumigumi.xlsx"
     kumigumiPrint(f"📖 读取 Excel 文件: {excel_path}")
 
     excel_reader = ExcelReader(safe_load(excel_path))
