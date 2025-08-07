@@ -7,7 +7,7 @@ import headers
 from database import 更新数据库
 from excel_reader import ExcelReader
 from fetch import 批量下载种子, 批量获取番组及单集数据, 批量获取种子数据
-from utils import kumigumiPrint, safe_load, 合并数据
+from utils import kumigumiPrint, safe_load, 合并数据, 获取OneDrive路径
 
 
 def 通过映射获取数据(bgm_url_rss_映射: dict[str, str]) -> tuple[list[list[str]], list[list[str]], list[list[str]]]:
@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
     warnings.filterwarnings("ignore", category=UserWarning)
 
-    excel_path = "C:/Users/admin-kh/OneDrive/kumigumi.xlsx"
+    excel_path = 获取OneDrive路径() / "kumigumi.xlsx"
     kumigumiPrint(f"📖 读取 Excel 文件: {excel_path}")
 
     excel_reader = ExcelReader(safe_load(excel_path))

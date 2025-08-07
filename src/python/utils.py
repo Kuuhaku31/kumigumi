@@ -111,6 +111,40 @@ def 获取用户默认下载路径():
         return os.path.join(os.path.expanduser("~"), "Downloads") + os.sep
 
 
+def 获取OneDrive路径() -> Path:
+    """
+    获取当前用户的OneDrive路径
+    """
+    try:
+        # 尝试从注册表获取OneDrive路径
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\OneDrive") as key:
+            onedrive_path, _ = winreg.QueryValueEx(key, "UserFolder")
+            return Path(onedrive_path)
+    except Exception:
+        # 回退到用户主目录下的OneDrive
+        return Path(os.path.expanduser("~")) / "OneDrive"
+
+
+def 查找Excel文件(文件名: str = "kumigumi.xlsx") -> Path:
+    """
+    在常见位置查找Excel文件
+    """
+    可能的路径 = [
+        获取OneDrive路径() / 文件名,
+        Path(os.path.expanduser("~")) / "OneDrive" / 文件名,
+        Path(os.path.expanduser("~")) / "Documents" / 文件名,
+        Path(os.path.expanduser("~")) / "Desktop" / 文件名,
+        Path(".") / 文件名,  # 当前目录
+    ]
+
+    for 路径 in 可能的路径:
+        if 路径.exists():
+            return 路径
+
+    # 如果都找不到，返回默认的OneDrive路径
+    return 获取OneDrive路径() / 文件名
+
+
 def 配置变量(配置参数列表: list[str]):
 
     print("设置配置变量")
@@ -159,8 +193,27 @@ def safe_load(path) -> Path:
     然后加载临时文件以避免文件被占用
     """
 
+    # 确保路径是 Path 对象
+    source_path = Path(path)
+
+    # 检查源文件是否存在
+    if not source_path.exists():
+        raise FileNotFoundError(f"源文件不存在: {source_path}")
+
+    # 检查是否有读取权限
+    if not os.access(source_path, os.R_OK):
+        raise PermissionError(f"没有读取权限: {source_path}")
+
     temp_path: Path = Path(tempfile.mktemp(suffix=".xlsx"))
-    shutil.copy2(path, temp_path)
+    print(f"创建临时文件: {temp_path}")
+    print(f"复制文件: {source_path} -> {temp_path}")
+
+    try:
+        shutil.copy2(source_path, temp_path)
+        print("文件复制成功")
+    except Exception as e:
+        print(f"文件复制失败: {e}")
+        raise
 
     return temp_path
 
