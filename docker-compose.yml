@@ -1,0 +1,27 @@
+services:
+  backend:
+    depends_on:
+      - database
+    build: ./backend
+    ports:
+      - "8000:8000"
+      # http://localhost:8000
+    volumes:
+      - ./backend/src:/var/www/html/src
+
+    environment:
+      MYSQL_ROOT_PASSWORD: kuuhaku-kzr
+      MYSQL_DATABASE: kumigumi
+      MYSQL_USER: kuuhaku-kzr
+      MYSQL_PASSWORD: kuuhaku-kzr
+
+  database:
+    image: mysql
+    volumes:
+      - ./db:/var/lib/mysql
+
+    environment:
+      MYSQL_ROOT_PASSWORD: kuuhaku-kzr
+      MYSQL_DATABASE: kumigumi
+      MYSQL_USER: kuuhaku-kzr
+      MYSQL_PASSWORD: kuuhaku-kzr

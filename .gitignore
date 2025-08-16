@@ -1,5 +1,8 @@
 
-/.vscode
+.vscode
+
+/db/
+
 /helps
 /ignore
 data
