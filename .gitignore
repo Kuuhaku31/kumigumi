@@ -11,6 +11,10 @@ torrents
 
 __pycache__
 
-*.json
-*.db
-*.xlsx
+/helps
+/ignore
+/target
+/log
+/data
+
+/kumigumi.json
