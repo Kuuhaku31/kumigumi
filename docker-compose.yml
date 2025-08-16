@@ -21,7 +21,7 @@ services:
       - ./backend/src:/var/www/html/src
 
     environment:
-      MYSQL_ROOT_PASSWORD: kuuhaku-kzr
+      MYSQL_HOST: database
       MYSQL_DATABASE: kumigumi
       MYSQL_USER: kuuhaku-kzr
       MYSQL_PASSWORD: kuuhaku-kzr
