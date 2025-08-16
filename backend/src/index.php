@@ -12,3 +12,11 @@ $text .= "MYSQL_USER: $MYSQL_USER<br>";
 $text .= "MYSQL_PASSWORD: $MYSQL_PASSWORD<br>";
 
 print_r($text);
+
+$jsonString = file_get_contents("../config/config.json");
+
+$config = json_decode($jsonString, true);
+
+echo "<hr>";
+echo "<h2>Config Data</h2>";
+print_r($config);

@@ -1,4 +1,13 @@
+version: "3.9"
+
 services:
+  main:
+    build: ./main
+    volumes:
+      - ./main/src:/app/src
+
+    command: tail -f /dev/null # 容器保持“开机”状态，方便调试
+
   backend:
     depends_on:
       - database
@@ -7,6 +16,7 @@ services:
       - "8000:8000"
       # http://localhost:8000
     volumes:
+      - ./config:/var/www/html/config
       - ./backend/src:/var/www/html/src
 
     environment:
