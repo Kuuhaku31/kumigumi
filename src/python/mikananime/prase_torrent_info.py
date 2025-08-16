@@ -1,6 +1,6 @@
 # prase_torrent_info.py
 
-import mikananime.torrent_headers as 种子信息表头
+import headers as 种子信息表头
 
 # 解析整理种子信息
 
