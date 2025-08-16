@@ -1,5 +1,12 @@
 # app.py
+import json
 import time
+
+
+def 读取json文件(file_path):
+    with open(file_path, "r", encoding="utf-8") as f:
+        config = json.load(f)
+        print("读取配置:", config)
 
 
 def loop():
@@ -15,4 +22,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+    读取json文件("/app/config/config.json")
     # loop()

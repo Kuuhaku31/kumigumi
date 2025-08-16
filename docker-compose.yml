@@ -5,6 +5,7 @@ services:
     build: ./main
     volumes:
       - ./main/src:/app/src
+      - ./config:/app/config
 
     command: tail -f /dev/null # 容器保持“开机”状态，方便调试
 
