@@ -26,6 +26,7 @@ $config = json_decode($jsonString, true);
 echo "<hr>";
 echo "<h2>Config Data</h2>";
 print_r($config);
+
 echo "<hr>";
 
 // 链接到数据库
@@ -35,12 +36,24 @@ try {
 
     // 获取所有数据库列表
     $stmt = $pdo->query("SHOW DATABASES");
-    // while ($row = $stmt->fetch()) {
-    //     $list[] = $row[0];
-    // }
     echo "<h2>Databases</h2>";
     print_r($stmt->fetchAll(PDO::FETCH_COLUMN));
 } catch (PDOException $e) {
     echo "数据库连接失败: " . $e->getMessage();
     exit;
 }
+
+echo "<hr>";
+
+$data = ["value" => 123];
+$options = [
+    "http" => [
+        "header"  => "Content-Type: application/json\r\n",
+        "method"  => "POST",
+        "content" => json_encode($data),
+    ],
+];
+$context  = stream_context_create($options);
+$response = file_get_contents("http://main:5000/predict", false, $context);
+
+echo "Python 返回: " . $response;
