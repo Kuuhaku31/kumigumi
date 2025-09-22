@@ -3,29 +3,41 @@
 import csv  # noqa: E402
 import json  # noqa: E402
 import os  # noqa: E402
+import random
 import shutil
+import sys
 import tempfile
 import urllib.request  # noqa: E402
 import winreg  # noqa: E402
 from pathlib import Path
 
-import fake_useragent
+# 固定 User-Agent 列表，避免运行时依赖与打包问题
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:119.0) Gecko/20100101 Firefox/119.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+]
 
 
 # 获取html页面
-def request_html(url: str) -> str:
-
-    # 随机请求头池
+def request_html(url: str, timeout: float = 15.0) -> str | None:
     headers = {
-        "User-Agent": fake_useragent.UserAgent().random,
+        "User-Agent": random.choice(USER_AGENTS),
         "Connection": "keep-alive",
     }
-
-    res = urllib.request.urlopen(urllib.request.Request(url, headers=headers))
-    if res.status != 200:
+    req = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as res:
+            if res.status != 200:
+                return None
+            return res.read().decode("utf-8", errors="replace")
+    except Exception as e:
+        kumigumiPrint(f"请求失败: {url} - {e}")
         return None
-    else:
-        return res.read().decode("utf-8")
 
 
 # 保存csv文件
@@ -183,8 +195,23 @@ def 读取工作目录() -> Path:
     return 工作目录
 
 
-def kumigumiPrint(str: str, end: str = "\n") -> None:
-    print(f"\033[35m[kumigumi]\033[0m: {str}", end=end)
+def kumigumiPrint(message: str, end: str = "\n", *, strip_unencodable: bool = True) -> None:
+    prefix = "\033[35m[kumigumi]\033[0m: "
+    try:
+        print(f"{prefix}{message}", end=end)
+    except UnicodeEncodeError:
+        encoding = (getattr(sys.stdout, "encoding", None) or "utf-8").lower()
+        if strip_unencodable:
+            try:
+                safe = message.encode(encoding, errors="ignore").decode(encoding, errors="ignore")
+            except Exception:
+                safe = message.encode("utf-8", errors="ignore").decode("utf-8", errors="ignore")
+        else:
+            try:
+                safe = message.encode(encoding, errors="replace").decode(encoding, errors="replace")
+            except Exception:
+                safe = message
+        print(f"{prefix}{safe}", end=end)
 
 
 def safe_load(path) -> Path:

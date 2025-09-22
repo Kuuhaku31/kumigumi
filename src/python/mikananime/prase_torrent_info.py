@@ -1,6 +1,6 @@
 # prase_torrent_info.py
 
-import headers as 种子信息表头
+import database.headers as 种子信息表头
 
 # 解析整理种子信息
 
