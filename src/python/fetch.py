@@ -11,7 +11,7 @@ import requests
 from bangumi.bangumi import 解析BangumiHTML_str
 from mikananime.mikananime import 解析mikanRSS_XML
 from tqdm import tqdm
-from utils import request_html
+from utils.utils import request_html
 
 # 获取数据
 
