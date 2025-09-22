@@ -3,9 +3,9 @@
 
 import lxml
 import lxml.etree
-from lxml import etree
 
-import utils as utils
+# import utils as utils
+from lxml import etree
 
 """
 ## ✅`torrent` 表字段对应

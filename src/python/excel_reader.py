@@ -209,5 +209,22 @@ class ExcelReader:
 
         return torrent_download_url_list
 
-    def ExcelReaderPrint(己, str: str, end: str = "\n") -> None:
-        print(f"\033[92m[ExcelReader]\033[0m: {str}", end=end)
+    def ExcelReaderPrint(己, message: str, end: str = "\n", *, strip_unencodable: bool = True) -> None:
+        import sys
+
+        prefix = "\033[92m[ExcelReader]\033[0m: "
+        try:
+            print(f"{prefix}{message}", end=end)
+        except UnicodeEncodeError:
+            encoding = (getattr(sys.stdout, "encoding", None) or "utf-8").lower()
+            if strip_unencodable:
+                try:
+                    safe = message.encode(encoding, errors="ignore").decode(encoding, errors="ignore")
+                except Exception:
+                    safe = message.encode("utf-8", errors="ignore").decode("utf-8", errors="ignore")
+            else:
+                try:
+                    safe = message.encode(encoding, errors="replace").decode(encoding, errors="replace")
+                except Exception:
+                    safe = message
+            print(f"{prefix}{safe}", end=end)
