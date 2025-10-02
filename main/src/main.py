@@ -2,6 +2,7 @@
 # import json
 # import time
 
+import database
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
@@ -11,7 +12,10 @@ app = Flask(__name__)
 def predict():
     data = request.json
     obj = {"value": data["value"] * 2, "list": [1, 2, 3]}
-    return jsonify({"msg": f"预测结果: {obj}"})
+
+    database_data = database.获取数据("../../accdb/kumigumi.accdb", "anime")
+
+    return jsonify({"msg": f"预测结果: {obj}", "database": database_data})
 
 
 app.run(host="0.0.0.0", port=5000)

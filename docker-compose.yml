@@ -6,6 +6,7 @@ services:
     volumes:
       - ./main/src:/app/src
       - ./config:/app/config
+      - ./accdb:/app/accdb
 
     command: tail -f /dev/null # 容器保持“开机”状态，方便调试
 
