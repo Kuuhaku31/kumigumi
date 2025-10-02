@@ -6,7 +6,6 @@ import warnings
 from database.database import 数据处理, 更新数据库
 from excel_reader import ExcelReader
 from fetch import 批量下载种子, 批量获取番组及单集数据, 批量获取种子数据
-
 from utils.utils import kumigumiPrint, safe_load, 合并数据, 获取OneDrive路径
 
 if __name__ == "__main__":
