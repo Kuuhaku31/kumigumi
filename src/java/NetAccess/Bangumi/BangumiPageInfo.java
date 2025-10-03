@@ -1,6 +1,6 @@
 // BangumiPageInfo.java
 
-package Bangumi;
+package NetAccess.Bangumi;
 
 import utils.AnimeInfo;
 import utils.EpisodeInfo;

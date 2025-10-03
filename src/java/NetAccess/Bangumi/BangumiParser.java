@@ -1,6 +1,6 @@
 // Bangumi.java
 
-package Bangumi;
+package NetAccess.Bangumi;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -19,7 +19,7 @@ class BangumiParser
 {
     public static
     BangumiPageInfo
-    ParseBangumiHtml(String html)
+    ParseBangumiHTML(String html)
     {
         Document doc = Jsoup.parse(html);
         AnimeInfo animeInfo = new AnimeInfo();
