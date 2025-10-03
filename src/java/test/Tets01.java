@@ -2,6 +2,7 @@
 
 package test;
 
+import Database.DB;
 import NetAccess.Bangumi.BangumiPageInfo;
 import NetAccess.Bangumi.BangumiParser;
 import NetAccess.MikanAnime.MikanParser;
@@ -85,12 +86,22 @@ class Tets01
         info_set.PrintInfo();
     }
 
+    private
+    void TestDB()
+    {
+        // DB test
+        IO.println("TestDB");
+        DB db = new DB("D:/def/db/test.accdb", "user_list");
+        db.CreateTable();
+    }
+
     void main(String[] args)
     {
         IO.println(Arrays.toString(args));
         // Test0(args);
         // Test1();
         // Test2(args[1]);
-        Test3(args[0], args[1]);
+        // Test3(args[0], args[1]);
+        TestDB();
     }
 }
