@@ -16,4 +16,10 @@ class EpisodeInfo
             System.out.println(entry.getKey() + ": " + entry.getValue());
         }
     }
+
+    public
+    void Translate()
+    {
+        info = Translate.TranslateMap(info);
+    }
 }

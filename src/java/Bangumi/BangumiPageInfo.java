@@ -11,13 +11,13 @@ public
 class BangumiPageInfo
 {
     public AnimeInfo animeInfo;
-    public List<EpisodeInfo> episodeList;
+    public List<EpisodeInfo> episodeInfoList;
 
     public
     BangumiPageInfo(AnimeInfo animeInfo, List<EpisodeInfo> episodeList)
     {
         this.animeInfo = animeInfo;
-        this.episodeList = episodeList;
+        this.episodeInfoList = episodeList;
     }
 
     public
@@ -29,7 +29,7 @@ class BangumiPageInfo
 
         IO.println("=================================");
         IO.println("Episodes:");
-        for(EpisodeInfo ep : episodeList)
+        for(EpisodeInfo ep : episodeInfoList)
         {
             IO.println("---------------------------------");
             ep.PrintInfo();

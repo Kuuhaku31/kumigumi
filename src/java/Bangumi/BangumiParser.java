@@ -102,7 +102,7 @@ class BangumiParser
             if(span != null)
             {
                 String tipText = span.html().replaceAll("<span.*?>|</span>|\\s|\\n", "").trim();
-                String[] lines = tipText.split("<br/>");
+                String[] lines = tipText.split("<br>");
                 for(String line : lines)
                 {
                     if(!line.contains(":")) continue;
