@@ -98,10 +98,10 @@ class Tets01
     void main(String[] args)
     {
         IO.println(Arrays.toString(args));
-        // Test0(args);
+        Test0(args);
         // Test1();
         // Test2(args[1]);
         // Test3(args[0], args[1]);
-        TestDB();
+        // TestDB();
     }
 }

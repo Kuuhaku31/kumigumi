@@ -10,8 +10,8 @@ import java.util.Map;
 public
 class DB
 {
-    public String accdb_file_path = "";
-    public String table_name = "";
+    public String accdb_file_path;
+    public String table_name;
 
     public
     DB(String accdb_file_path, String table_name)
