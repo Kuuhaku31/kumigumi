@@ -86,34 +86,38 @@ class MySQLDemo
     }
 
     static
-    void PrintData(String[] args, String table_name)
+    void PrintData(String[] args)
     {
         IO.println("打印数据");
         try(Connection conn = get_connection(args))
         {
             if(conn == null) return;
+
+            String query = "SELECT * FROM users LIMIT 5";
+
             var stmt = conn.createStatement();
-            var rs = stmt.executeQuery("SELECT * FROM " + table_name);
-            var meta = rs.getMetaData();
-            int columnCount = meta.getColumnCount();
-
-            // 打印列名
-            for(int i = 1; i <= columnCount; i++)
+            try(var rs = stmt.executeQuery(query))
             {
-                IO.print(meta.getColumnName(i) + "\t");
-            }
-            IO.println();
+                var meta = rs.getMetaData();
+                int columnCount = meta.getColumnCount();
 
-            // 打印行数据
-            while(rs.next())
-            {
+                // 打印列名
                 for(int i = 1; i <= columnCount; i++)
                 {
-                    IO.print(rs.getString(i) + "\t");
+                    IO.print(meta.getColumnName(i) + "\t");
                 }
                 IO.println();
+
+                // 打印行数据
+                while(rs.next())
+                {
+                    for(int i = 1; i <= columnCount; i++)
+                    {
+                        IO.print(rs.getString(i) + "\t");
+                    }
+                    IO.println();
+                }
             }
-            rs.close();
             stmt.close();
         }
         catch(SQLException e)
@@ -131,6 +135,6 @@ class MySQLDemo
         PrintDatabaseList(args);
         PrintTableList(args);
         IO.println("================================");
-        PrintData(args, args[3]);
+        PrintData(args);
     }
 }
