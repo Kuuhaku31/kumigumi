@@ -9,7 +9,9 @@ import java.sql.SQLException;
 public
 class MySQLDemo
 {
-    static
+    private Connection conn;
+
+    private static
     Connection get_connection(String[] args) throws SQLException
     {
         if(args.length < 3)
@@ -86,47 +88,6 @@ class MySQLDemo
     }
 
     static
-    void PrintData(String[] args)
-    {
-        IO.println("打印数据");
-        try(Connection conn = get_connection(args))
-        {
-            if(conn == null) return;
-
-            String query = "SELECT * FROM users LIMIT 5";
-
-            var stmt = conn.createStatement();
-            try(var rs = stmt.executeQuery(query))
-            {
-                var meta = rs.getMetaData();
-                int columnCount = meta.getColumnCount();
-
-                // 打印列名
-                for(int i = 1; i <= columnCount; i++)
-                {
-                    IO.print(meta.getColumnName(i) + "\t");
-                }
-                IO.println();
-
-                // 打印行数据
-                while(rs.next())
-                {
-                    for(int i = 1; i <= columnCount; i++)
-                    {
-                        IO.print(rs.getString(i) + "\t");
-                    }
-                    IO.println();
-                }
-            }
-            stmt.close();
-        }
-        catch(SQLException e)
-        {
-            IO.println("SQL异常: " + e.getMessage());
-        }
-    }
-
-    static
     void main(String[] args)
     {
         IO.println("MySQLDemo");
@@ -135,6 +96,76 @@ class MySQLDemo
         PrintDatabaseList(args);
         PrintTableList(args);
         IO.println("================================");
-        PrintData(args);
+    }
+
+    public
+    void PrintData()
+    {
+        if(conn == null) return;
+
+        String query = "SELECT * FROM users LIMIT 5";
+
+        try
+        {
+            var stmt = conn.createStatement();
+
+            var rs = stmt.executeQuery(query);
+            var meta = rs.getMetaData();
+            int columnCount = meta.getColumnCount();
+
+            // 打印列名
+            for(int i = 1; i <= columnCount; i++)
+            {
+                IO.print(meta.getColumnName(i) + "\t");
+            }
+            IO.println();
+
+            // 打印行数据
+            while(rs.next())
+            {
+                for(int i = 1; i <= columnCount; i++)
+                {
+                    IO.print(rs.getString(i) + "\t");
+                }
+                IO.println();
+            }
+
+            stmt.close();
+        }
+        catch(SQLException e)
+        {
+            IO.println("SQL异常: " + e.getMessage());
+        }
+    }
+
+    public
+    void Connect()
+    {
+        String url = "jdbc:mysql://localhost:3306/st-mysql";
+        String user = "kuuhaku-kzr";
+        String psw = "kuuhaku-kzr";
+        try
+        {
+            conn = DriverManager.getConnection(url, user, psw);
+        }
+        catch(SQLException e)
+        {
+            IO.println("连接数据库失败: " + e.getMessage());
+        }
+        IO.println("连接数据库成功");
+    }
+
+    public
+    void Disconnect()
+    {
+        try
+        {
+            if(conn != null && !conn.isClosed()) conn.close();
+        }
+        catch(SQLException e)
+        {
+            IO.println("断开连接失败: " + e.getMessage());
+        }
+        IO.println("断开连接");
     }
 }
