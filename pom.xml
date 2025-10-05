@@ -24,6 +24,9 @@
   </dependencies>
   
   <build>
+    <directory>${basedir}/out</directory>
+    <sourceDirectory>src/java/main</sourceDirectory>
+    <testSourceDirectory>src/java/test</testSourceDirectory>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

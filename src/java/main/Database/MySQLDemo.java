@@ -1,6 +1,6 @@
 // MySQLDemo.java
 
-package test;
+package Database;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
