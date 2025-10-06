@@ -107,10 +107,10 @@ class MySQLDemo
 
         try
         {
-            var stmt = conn.createStatement();
+            var stmt = conn.createStatement();  // 向数据库发送 SQL 语句的接口
 
-            var rs = stmt.executeQuery(query);
-            var meta = rs.getMetaData();
+            var rs = stmt.executeQuery(query);  // 执行了查询语句，并返回一个 ResultSet 对象 rs，用于保存查询结果
+            var meta = rs.getMetaData();        // 获取结果集的元数据 meta，可以用来获取列的信息，如列数和列名
             int columnCount = meta.getColumnCount();
 
             // 打印列名
