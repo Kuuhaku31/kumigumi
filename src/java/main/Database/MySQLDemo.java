@@ -9,6 +9,8 @@ import java.sql.SQLException;
 public
 class MySQLDemo
 {
+    private String database_name;
+    private String table_name;
     private Connection conn;
 
     private static
@@ -103,10 +105,18 @@ class MySQLDemo
     {
         if(conn == null) return;
 
-        String query = "SELECT * FROM users LIMIT 5";
+
+        if(database_name == null || database_name.isEmpty() || table_name == null || table_name.isEmpty())
+        {
+            IO.println("Error: 数据库名或表名未设置");
+            return;
+        }
 
         try
         {
+            conn.setCatalog(database_name);  // 切换到指定的数据库
+            String query = "SELECT * FROM " + table_name;
+
             var stmt = conn.createStatement();  // 向数据库发送 SQL 语句的接口
 
             var rs = stmt.executeQuery(query);  // 执行了查询语句，并返回一个 ResultSet 对象 rs，用于保存查询结果
@@ -139,11 +149,18 @@ class MySQLDemo
     }
 
     public
+    void SetConnection(String database_name, String table_name)
+    {
+        this.database_name = database_name;
+        this.table_name = table_name;
+    }
+
+    public
     void Connect()
     {
-        String url = "jdbc:mysql://localhost:3306/st-mysql";
-        String user = "kuuhaku-kzr";
-        String psw = "kuuhaku-kzr";
+        String url = "jdbc:mysql://localhost:3306";
+        String user = "root";
+        String psw = "root-password";
         try
         {
             conn = DriverManager.getConnection(url, user, psw);

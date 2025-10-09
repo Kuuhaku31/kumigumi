@@ -18,6 +18,7 @@ class TestDB
 
         MySQLDemo demo = new MySQLDemo();
         demo.Connect();
+        demo.SetConnection("st_school", "students");
         demo.PrintData();
         demo.Disconnect();
     }
