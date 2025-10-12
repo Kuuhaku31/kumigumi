@@ -5,6 +5,7 @@ package NetAccess;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import utils.AnimeInfo;
+import utils.BangumiInfoSet;
 import utils.EpisodeInfo;
 
 import java.time.LocalDate;
@@ -18,7 +19,42 @@ class BangumiAPI
     private static final String bangumi_server = "https://api.bgm.tv";
 
     public static
-    String GetInfo(QueryType type, int anime_id)
+    BangumiInfoSet BangumiInfoSet(int anime_id)
+    {
+        BangumiInfoSet bangumi_info_set = new BangumiInfoSet();
+
+        // 获取番剧信息和剧集json信息
+        JSONObject ani_info_json = BangumiAPI.GetInfo(BangumiAPI.QueryType.anime_info, anime_id);
+        JSONObject ep_info_list = BangumiAPI.GetInfo(BangumiAPI.QueryType.episode_list, anime_id);
+
+        // 解析 anime 信息
+        if(ani_info_json != null)
+        {
+            bangumi_info_set.anime_info = BangumiAPI.ParseAnimeInfo(ani_info_json);
+        }
+
+        // 解析 episode 信息
+        if(ep_info_list != null)
+        {
+            JSONArray ep_list;
+
+            ep_list = ep_info_list.getJSONArray("data");
+            if(ep_list != null) for(int i = 0; i < ep_list.length(); i++)
+            {
+                // 解析单个剧集信息
+                JSONObject ep_info_json = ep_list.getJSONObject(i);
+                EpisodeInfo episode_info = BangumiAPI.ParseEpisodeInfo(ep_info_json);
+
+                // 添加到列表
+                bangumi_info_set.episode_info_list.add(episode_info);
+            }
+        }
+
+        return bangumi_info_set;
+    }
+
+    public static
+    JSONObject GetInfo(QueryType type, int anime_id)
     {
         String format_str;
         switch(type)
@@ -32,16 +68,18 @@ class BangumiAPI
         }
         }
         String url_str = String.format(format_str, bangumi_server, anime_id);
+        String res_str = Net.Get(url_str);
 
-        return Net.Get(url_str);
+        // 检测返回结果是否合法
+        JSONObject res_json = null;
+        if(res_str != null) res_json = new JSONObject(res_str);
+
+        return res_json;
     }
 
     public static
     EpisodeInfo ParseEpisodeInfo(JSONObject episode_info_json)
     {
-        // 空检查
-        if(episode_info_json == null) return null;
-
         // 处理 json 格式字符串
         EpisodeInfo episode_info = new EpisodeInfo();
 
@@ -75,9 +113,6 @@ class BangumiAPI
     public static
     AnimeInfo ParseAnimeInfo(JSONObject anime_info_json)
     {
-        // 空检查
-        if(anime_info_json == null) return null;
-
         // 处理 json 格式字符串
         AnimeInfo anime_info = new AnimeInfo();
 

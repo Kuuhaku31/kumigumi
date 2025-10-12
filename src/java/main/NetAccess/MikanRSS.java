@@ -38,8 +38,10 @@ class MikanRSS
             System.out.println("发布日期: " + item.getPubDate().orElse(null));
 
             // enclosure 是可选字段，用 Optional 包装
+            // 包装类（wrapper class），用来安全地表示“可能存在也可能不存在”的值
             item.getEnclosure().ifPresent(enclosure ->
             {
+                // 如果存在 enclosure，则打印其信息
                 System.out.println("附件链接: " + enclosure.getUrl());
                 System.out.println("附件类型: " + enclosure.getType());
                 System.out.println("附件大小: " + enclosure.getLength().orElse(0L));

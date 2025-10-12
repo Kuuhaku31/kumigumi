@@ -87,19 +87,19 @@
 
 ## ✅`torrent` 表字段对应
 
-| 中文键名          | 英文键名                  |          |
-| ----------------- | ------------------------- | -------- |
-| `种子下载链接`    | `torrent_download_url`    | 主键     |
-| `番组bangumi链接` | `anime_bangumi_url`       |          |
-| `发布日期`        | `air_date`                |          |
-| `种子页面链接`    | `torrent_page_url`        |          |
-| `种子字幕组`      | `torrent_subtitle_group`  |          |
-| `种子标题`        | `torrent_title`           |          |
-| `种子描述`        | `torrent_description`     |          |
-| `种子大小`        | `torrent_size`            |          |
-| `种子大小_字节`   | `torrent_size_bytes`      |          |
-| `种子下载情况`    | `torrent_download_status` | 手动维护 |
-| `备注`            | `note`                    | 手动维护 |
+| 英文键名                  | 数据类型 | 中文解释         | 备注     |
+| ------------------------- | -------- | ---------------- | -------- |
+| `torrent_download_url`    | String   | 种子下载链接     | 主键     |
+| `anime_bangumi_id`        | String   | 番组 bangumi ID  |          |
+| `air_date`                | Date     | 发布日期         |          |
+| `torrent_page_url`        | String   | 种子页面链接     |          |
+| `torrent_subtitle_group`  | String   | 种子字幕组       |          |
+| `torrent_title`           | String   | 种子标题         |          |
+| `torrent_description`     | String   | 种子描述         |          |
+| `torrent_size`            | String   | 种子大小         |          |
+| `torrent_size_bytes`      | Integer  | 种子大小（字节） |          |
+| `torrent_download_status` | String   | 种子下载情况     | 手动维护 |
+| `remark`                  | String   | 备注             | 手动维护 |
 
 ---
 
