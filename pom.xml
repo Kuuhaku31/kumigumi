@@ -47,6 +47,11 @@
       <version>RELEASE</version>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>com.apptasticsoftware</groupId>
+      <artifactId>rssreader</artifactId>
+      <version>3.10.0</version>
+    </dependency>
   </dependencies>
   
   <build>
