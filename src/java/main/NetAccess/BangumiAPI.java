@@ -8,6 +8,8 @@ import utils.AnimeInfo;
 import utils.BangumiInfoSet;
 import utils.EpisodeInfo;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -19,7 +21,7 @@ class BangumiAPI
     private static final String bangumi_server = "https://api.bgm.tv";
 
     public static
-    BangumiInfoSet BangumiInfoSet(int anime_id)
+    BangumiInfoSet GetBangumiInfoSet(int anime_id) throws URISyntaxException, IOException
     {
         BangumiInfoSet bangumi_info_set = new BangumiInfoSet();
 
@@ -28,53 +30,37 @@ class BangumiAPI
         JSONObject ep_info_list = BangumiAPI.GetInfo(BangumiAPI.QueryType.episode_list, anime_id);
 
         // 解析 anime 信息
-        if(ani_info_json != null)
-        {
-            bangumi_info_set.anime_info = BangumiAPI.ParseAnimeInfo(ani_info_json);
-        }
+        bangumi_info_set.anime_info = BangumiAPI.ParseAnimeInfo(ani_info_json);
 
         // 解析 episode 信息
-        if(ep_info_list != null)
+        JSONArray ep_list = ep_info_list.getJSONArray("data");
+        if(ep_list != null) for(int i = 0; i < ep_list.length(); i++)
         {
-            JSONArray ep_list;
+            // 解析单个剧集信息
+            JSONObject ep_info_json = ep_list.getJSONObject(i);
+            EpisodeInfo episode_info = BangumiAPI.ParseEpisodeInfo(ep_info_json);
 
-            ep_list = ep_info_list.getJSONArray("data");
-            if(ep_list != null) for(int i = 0; i < ep_list.length(); i++)
-            {
-                // 解析单个剧集信息
-                JSONObject ep_info_json = ep_list.getJSONObject(i);
-                EpisodeInfo episode_info = BangumiAPI.ParseEpisodeInfo(ep_info_json);
-
-                // 添加到列表
-                bangumi_info_set.episode_info_list.add(episode_info);
-            }
+            // 添加到列表
+            bangumi_info_set.episode_info_list.add(episode_info);
         }
 
         return bangumi_info_set;
     }
 
-    public static
-    JSONObject GetInfo(QueryType type, int anime_id)
+    private static
+    JSONObject GetInfo(QueryType type, int anime_id) throws URISyntaxException, IOException
     {
         String format_str;
         switch(type)
         {
-        case anime_info -> format_str = "%s/v0/subjects/%d"; // 获取番剧信息
-        case episode_list -> format_str = "%s/v0/episodes?subject_id=%d"; // 获取剧集列表
-        default ->
-        {
-            System.err.println("Error: 未知的查询类型");
-            return null;
-        }
+        case anime_info -> format_str = "%s/v0/subjects/%d";
+        case episode_list -> format_str = "%s/v0/episodes?subject_id=%d";
+        default -> throw new UnsupportedOperationException("BangumiAPI GetInfo: 未知的查询类型");
         }
         String url_str = String.format(format_str, bangumi_server, anime_id);
         String res_str = Net.Get(url_str);
 
-        // 检测返回结果是否合法
-        JSONObject res_json = null;
-        if(res_str != null) res_json = new JSONObject(res_str);
-
-        return res_json;
+        return new JSONObject(res_str);
     }
 
     public static
@@ -157,18 +143,6 @@ class BangumiAPI
         return anime_info;
     }
 
-    public static
-    QueryType ParseQueryType(String type_str)
-    {
-        return switch(type_str)
-        {
-            case "anime_info" -> QueryType.anime_info;
-            case "episode_list" -> QueryType.episode_list;
-            default -> null;
-        };
-    }
-
-
     // 获取 info_box 中指定 key 的项
     private static
     Object parse_info_box(JSONObject anime_info_json, String key)
@@ -191,7 +165,7 @@ class BangumiAPI
     }
 
 
-    public
+    private
     enum QueryType
     {
         anime_info,

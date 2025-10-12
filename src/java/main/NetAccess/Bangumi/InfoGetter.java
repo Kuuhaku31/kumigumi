@@ -1,9 +1,9 @@
 // InfoGetter.java
 
-package NetAccess;
+package NetAccess.Bangumi;
 
-import NetAccess.Bangumi.BangumiParser;
 import NetAccess.MikanAnime.MikanParser;
+import NetAccess.Net;
 import utils.InfoSet;
 
 public

@@ -3,6 +3,7 @@
 package test;
 
 import Database.DB;
+import NetAccess.Bangumi.InfoGetter;
 import NetAccess.MikanAnime.MikanParser;
 import NetAccess.Net;
 import utils.InfoSet;
@@ -79,7 +80,7 @@ class Tets01
     private
     void Test3(String bangumi_url, String mikan_url)
     {
-        InfoSet info_set = NetAccess.InfoGetter.GetInfo(bangumi_url, mikan_url);
+        InfoSet info_set = InfoGetter.GetInfo(bangumi_url, mikan_url);
         info_set.Translate();
         info_set.PrintInfo();
     }
