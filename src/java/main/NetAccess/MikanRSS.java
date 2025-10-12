@@ -121,7 +121,7 @@ class MikanRSS
             IO.println("Mikan GetTorrentInfoList Error: " + e.getMessage());
         }
 
-        return torrent_info_list;
+        return torrent_info_list.isEmpty() ? null : torrent_info_list;
     }
 
 
