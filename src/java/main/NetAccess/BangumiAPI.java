@@ -5,8 +5,10 @@ package NetAccess;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import utils.AnimeInfo;
+import utils.EpisodeInfo;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 
@@ -35,13 +37,48 @@ class BangumiAPI
     }
 
     public static
-    AnimeInfo ParseAnimeInfo(String anime_info_json_str)
+    EpisodeInfo ParseEpisodeInfo(JSONObject episode_info_json)
     {
-        // 处理 json 格式字符串
-        if(anime_info_json_str == null) return null;
-        JSONObject anime_info_json = new JSONObject(anime_info_json_str);
-        IO.println(anime_info_json.toString(2));
+        // 空检查
+        if(episode_info_json == null) return null;
 
+        // 处理 json 格式字符串
+        EpisodeInfo episode_info = new EpisodeInfo();
+
+        // 解析番剧ID
+        episode_info.ani_id = episode_info_json.getInt("subject_id");
+
+        // 解析剧集ID
+        episode_info.ep_id = episode_info_json.getInt("id");
+
+        // 解析放送日期
+        String date_str = episode_info_json.getString("airdate");
+        episode_info.air_date = LocalDate.parse(date_str, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+        // 解析集数
+        String ep_str = episode_info_json.getNumber("ep").toString();
+        String sort_str = episode_info_json.getNumber("sort").toString();
+        episode_info.index = ep_str.equals("0") ? "SP: " + sort_str : sort_str;
+
+        // 解析标题
+        episode_info.title = episode_info_json.getString("name");
+        episode_info.title_cn = episode_info_json.getString("name_cn");
+
+        // 解析时长
+        String duration_str = episode_info_json.getString("duration");
+        if(!duration_str.isEmpty()) episode_info.duration = LocalTime.parse(duration_str);
+
+        return episode_info;
+    }
+
+
+    public static
+    AnimeInfo ParseAnimeInfo(JSONObject anime_info_json)
+    {
+        // 空检查
+        if(anime_info_json == null) return null;
+
+        // 处理 json 格式字符串
         AnimeInfo anime_info = new AnimeInfo();
 
         // 解析ID

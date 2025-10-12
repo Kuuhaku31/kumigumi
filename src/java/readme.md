@@ -52,7 +52,7 @@
 
 | 英文键名                  | 数据类型 | 中文解释          | 备注     |
 | ------------------------- | -------- | ----------------- | -------- |
-| `anime_bangumi_id`        | Integer  | 番组 bangumi 链接 | 主键     |
+| `anime_bangumi_id`        | Integer  | 番组 bangumi ID   | 主键     |
 | `air_date`                | Date     | 发布日期          |          |
 | `anime_title`             | String   | 番组原名          |          |
 | `anime_title_cn`          | String   | 番组译名          |          |
@@ -69,18 +69,19 @@
 
 ## ✅`episode` 表字段对应
 
-| 中文键名          | 英文键名                  |          |
-| ----------------- | ------------------------- | -------- |
-| `话bangumiURL`    | `episode_bangumi_url`     | 主键     |
-| `番组bangumi链接` | `anime_bangumi_url`       |          |
-| `发布日期`        | `air_date`                |          |
-| `话索引`          | `episode_index`           |          |
-| `话标题`          | `episode_title`           |          |
-| `话标题译名`      | `episode_title_cn`        |          |
-| `话时长`          | `episode_duration`        |          |
-| `话下载情况`      | `episode_download_status` | 手动维护 |
-| `话观看情况`      | `episode_view_status`     | 手动维护 |
-| `备注`            | `note`                    | 手动维护 |
+| 英文键名                  | 数据类型 | 中文解释        | 备注       |
+| ------------------------- | -------- | --------------- | ---------- |
+| `episode_bangumi_id`      | String   | 话 bangumi ID   | 主键       |
+| `anime_bangumi_id`        | Integer  | 番组 bangumi ID | 外键       |
+| `air_date`                | Date     | 发布日期        |            |
+| `episode_index`           | String   | 话索引          |            |
+| `episode_title`           | String   | 话标题          |            |
+| `episode_title_cn`        | String   | 话标题译名      |            |
+| `episode_duration`        | String   | 话时长          | 单位（秒） |
+| `episode_rating`          | int      | 话评分          | 新加       |
+| `episode_download_status` | String   | 话下载情况      | 手动维护   |
+| `episode_view_status`     | String   | 话观看情况      | 手动维护   |
+| `remark`                  | String   | 备注            | 手动维护   |
 
 ---
 

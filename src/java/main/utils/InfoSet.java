@@ -17,7 +17,7 @@ class InfoSet
         // anime_info.Translate();
         for(EpisodeInfo ep : episode_info_list)
         {
-            ep.Translate();
+            // ep.Translate();
         }
         for(TorrentInfo ti : torrent_info_list)
         {
