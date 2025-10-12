@@ -70,7 +70,7 @@ class Tets01
 
         for(var torrent : info_list)
         {
-            torrent.Translate();
+            // torrent.Translate();
             torrent.PrintInfo();
             IO.println("=================================");
         }

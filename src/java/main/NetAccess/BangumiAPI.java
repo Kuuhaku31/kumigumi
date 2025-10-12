@@ -117,7 +117,7 @@ class BangumiAPI
         AnimeInfo anime_info = new AnimeInfo();
 
         // 解析ID
-        anime_info.bangumi_id = anime_info_json.getInt("id");
+        anime_info.ani_id = anime_info_json.getInt("id");
 
         // 解析放送日期
         String date_str = anime_info_json.getString("date");

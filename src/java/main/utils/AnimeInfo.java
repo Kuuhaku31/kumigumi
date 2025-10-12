@@ -5,7 +5,7 @@ import java.time.LocalDate;
 public
 class AnimeInfo
 {
-    public int bangumi_id;
+    public int ani_id;
     public LocalDate air_date;
     public String title;
     public String title_cn;
@@ -22,7 +22,7 @@ class AnimeInfo
     public
     void PrintInfo()
     {
-        IO.println("bangumi_id: " + bangumi_id);
+        IO.println("ani_id: " + ani_id);
         IO.println("air_date: " + air_date);
         IO.println("title: " + title);
         IO.println("title_cn: " + title_cn);

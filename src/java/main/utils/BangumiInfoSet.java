@@ -13,6 +13,12 @@ class BangumiInfoSet
     public
     void PrintInfo()
     {
+        if(anime_info == null)
+        {
+            IO.println("BangumiInfoSet is null");
+            return;
+        }
+
         IO.println("=== BangumiInfoSet ===");
         anime_info.PrintInfo();
         for(EpisodeInfo ep : episode_info_list)

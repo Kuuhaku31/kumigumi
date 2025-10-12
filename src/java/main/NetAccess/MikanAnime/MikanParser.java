@@ -58,7 +58,7 @@ class MikanParser
 
             // 新建 TorrentInfo 并添加到结果列表
             TorrentInfo torrentInfo = new TorrentInfo();
-            torrentInfo.info = info;
+            // torrentInfo.info = info;
             result.add(torrentInfo);
         }
         return result;

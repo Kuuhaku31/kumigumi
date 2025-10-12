@@ -21,7 +21,7 @@ class InfoSet
         }
         for(TorrentInfo ti : torrent_info_list)
         {
-            ti.Translate();
+            // ti.Translate();
         }
     }
 

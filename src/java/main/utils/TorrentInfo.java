@@ -1,25 +1,34 @@
 package utils;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.time.LocalDateTime;
 
 public
 class TorrentInfo
 {
-    public Map<String, String> info = new HashMap<>();
+    public String torrent_url;
+    public int ani_id;
+    public LocalDateTime air_date_time;
+    public String page_url;
+    public String subtitle_group;
+    public String title;
+    public String description;
+    public long size;
+    public String download_status;
+    public String remark;
 
     public
     void PrintInfo()
     {
-        for(Map.Entry<String, String> entry : info.entrySet())
-        {
-            System.out.println(entry.getKey() + ": " + entry.getValue());
-        }
+        IO.println("torrent_url: " + torrent_url);
+        IO.println("ani_id: " + ani_id);
+        IO.println("air_date: " + air_date_time);
+        IO.println("page_url: " + page_url);
+        IO.println("subtitle_group: " + subtitle_group);
+        IO.println("title: " + title);
+        IO.println("description: " + description);
+        IO.println("size: " + size);
+        IO.println("download_status: " + download_status);
+        IO.println("remark: " + remark);
     }
 
-    public
-    void Translate()
-    {
-        info = Translate.TranslateMap(info);
-    }
 }
