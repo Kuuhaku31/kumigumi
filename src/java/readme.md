@@ -46,22 +46,24 @@
 
 ---
 
+### 使用 MySQL 数据库
+
 ## ✅`anime` 表字段对应
 
-| 中文键名          | 英文键名                  | 备注     |
-| ----------------- | ------------------------- | -------- |
-| `番组bangumi链接` | `anime_bangumi_url`       | 主键     |
-| `发布日期`        | `air_date`                |          |
-| `番组原名`        | `anime_title`             |          |
-| `番组译名`        | `anime_title_cn`          |          |
-| `番组别名`        | `anime_aliases`           |          |
-| `番组话数`        | `anime_episode_count`     |          |
-| `番组官网链接`    | `anime_official_site_url` |          |
-| `番组封面链接`    | `anime_cover_url`         |          |
-| `番组观前评分`    | `anime_pre_view_rating`   | 手动维护 |
-| `番组观后评分`    | `anime_after_view_rating` | 手动维护 |
-| `番组RSS订阅链接` | `anime_rss_url`           | 手动维护 |
-| `备注`            | `note`                    | 手动维护 |
+| 英文键名                  | 数据类型 | 中文解释          | 备注     |
+| ------------------------- | -------- | ----------------- | -------- |
+| `anime_bangumi_id`        | Integer  | 番组 bangumi 链接 | 主键     |
+| `air_date`                | Date     | 发布日期          |          |
+| `anime_title`             | String   | 番组原名          |          |
+| `anime_title_cn`          | String   | 番组译名          |          |
+| `anime_aliases`           | String   | 番组别名          |          |
+| `anime_episode_count`     | Integer  | 番组话数          |          |
+| `anime_official_site_url` | String   | 番组官网链接      |          |
+| `anime_cover_url`         | String   | 番组封面链接      |          |
+| `anime_pre_view_rating`   | Integer  | 番组观前评分      | 手动维护 |
+| `anime_after_view_rating` | Integer  | 番组观后评分      | 手动维护 |
+| `anime_rss_url`           | String   | 番组 RSS 订阅链接 | 手动维护 |
+| `remark`                  | String   | 备注              | 手动维护 |
 
 ---
 

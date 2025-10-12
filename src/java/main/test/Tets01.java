@@ -3,8 +3,6 @@
 package test;
 
 import Database.DB;
-import NetAccess.Bangumi.BangumiPageInfo;
-import NetAccess.Bangumi.BangumiParser;
 import NetAccess.MikanAnime.MikanParser;
 import NetAccess.Net;
 import utils.InfoSet;
@@ -21,26 +19,26 @@ class Tets01
     private
     void Test0(String[] args)
     {
-        String url = args[0];
-        String html_str;
-        try
-        {
-            html_str = Net.GetHTML(url);
-        }
-        catch(IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-
-        BangumiPageInfo page_info = BangumiParser.ParseBangumiHTML(html_str);
-        IO.println("打印结果: ");
-        page_info.animeInfo.Translate();
-        for(var episode : page_info.episodeInfoList)
-        {
-            episode.Translate();
-        }
-
-        page_info.PrintInfo();
+        // String url = args[0];
+        // String html_str;
+        // try
+        // {
+        //     html_str = Net.GetHTML(url);
+        // }
+        // catch(IOException e)
+        // {
+        //     throw new RuntimeException(e);
+        // }
+        //
+        // BangumiPageInfo page_info = BangumiParser.ParseBangumiHTML(html_str);
+        // IO.println("打印结果: ");
+        // page_info.animeInfo.Translate();
+        // for(var episode : page_info.episodeInfoList)
+        // {
+        //     episode.Translate();
+        // }
+        //
+        // page_info.PrintInfo();
     }
 
     private

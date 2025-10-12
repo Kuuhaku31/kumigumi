@@ -14,7 +14,7 @@ class InfoSet
     public
     void Translate()
     {
-        anime_info.Translate();
+        // anime_info.Translate();
         for(EpisodeInfo ep : episode_info_list)
         {
             ep.Translate();
