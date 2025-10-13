@@ -6,17 +6,17 @@ import java.time.LocalTime;
 public
 class EpisodeInfo
 {
-    public int ani_id;
-    public int ep_id;
-    public LocalDate air_date;
-    public String index;
-    public String title;
-    public String title_cn;
-    public LocalTime duration;
-    public int rating;
-    public String download_status;
-    public String view_status;
-    public String remark;
+    public int ani_id = 0;
+    public int ep_id = 0;
+    public LocalDate air_date = null;
+    public String index = "";
+    public String title = "";
+    public String title_cn = "";
+    public LocalTime duration = LocalTime.MIN;
+    public int rating = 0;
+    public String download_status = "";
+    public String view_status = "";
+    public String remark = "";
 
     public
     void PrintInfo()

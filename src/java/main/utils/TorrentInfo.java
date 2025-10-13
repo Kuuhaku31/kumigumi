@@ -5,16 +5,16 @@ import java.time.LocalDateTime;
 public
 class TorrentInfo
 {
-    public String torrent_url;
-    public int ani_id;
+    public String torrent_url = "";
+    public int ani_id = 0;
     public LocalDateTime air_date_time;
-    public String page_url;
-    public String subtitle_group;
-    public String title;
-    public String description;
-    public long size;
-    public String download_status;
-    public String remark;
+    public String page_url = "";
+    public String subtitle_group = "";
+    public String title = "";
+    public String description = "";
+    public long size = 0;
+    public String download_status = "";
+    public String remark = "";
 
     public
     void PrintInfo()

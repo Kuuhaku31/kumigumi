@@ -56,13 +56,17 @@ class Task
         {
             MySQL mysql = new MySQL();
             mysql.Open();
+
             mysql.Upsert(anime_info);
+            for(var episode : episode_list) mysql.Upsert(episode);
+            for(var torrent : torrent_info_list) mysql.Upsert(torrent);
+
             mysql.Close();
         }
         catch(SQLException e)
         {
-            // IO.println(e.getMessage());
-            // 打印详细信息
+            // 打印异常信息
+            IO.println("数据库操作异常: " + e.getMessage());
             e.printStackTrace();
         }
     }

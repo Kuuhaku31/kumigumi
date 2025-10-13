@@ -71,7 +71,7 @@
 
 | 英文键名                  | 数据类型 | 中文解释        | 备注       |
 | ------------------------- | -------- | --------------- | ---------- |
-| `episode_bangumi_id`      | String   | 话 bangumi ID   | 主键       |
+| `ep_id`                   | Integer  | 话 bangumi ID   | 主键       |
 | `anime_bangumi_id`        | Integer  | 番组 bangumi ID | 外键       |
 | `air_date`                | Date     | 发布日期        |            |
 | `episode_index`           | String   | 话索引          |            |
@@ -90,7 +90,7 @@
 | 英文键名                  | 数据类型 | 中文解释         | 备注     |
 | ------------------------- | -------- | ---------------- | -------- |
 | `torrent_download_url`    | String   | 种子下载链接     | 主键     |
-| `anime_bangumi_id`        | Integer  | 番组 bangumi ID  |          |
+| `anime_bangumi_id`        | Integer  | 番组 bangumi ID  | 外键     |
 | `air_date`                | Date     | 发布日期         |          |
 | `torrent_page_url`        | String   | 种子页面链接     |          |
 | `torrent_subtitle_group`  | String   | 种子字幕组       |          |

@@ -5,19 +5,19 @@ import java.time.LocalDate;
 public
 class AnimeInfo
 {
-    public int ani_id;
+    public int ani_id = 0;
     public LocalDate air_date;
-    public String title;
-    public String title_cn;
-    public String aliases;
-    public int episode_count;
-    public String official_site_url;
-    public String cover_url;
+    public String title = "";
+    public String title_cn = "";
+    public String aliases = "";
+    public int episode_count = 0;
+    public String official_site_url = "";
+    public String cover_url = "";
 
-    public int pre_view_rating;
-    public int after_view_rating;
-    public String rss_url;
-    public String remark;
+    public int pre_view_rating = 0;
+    public int after_view_rating = 0;
+    public String rss_url = "";
+    public String remark = "";
 
     public
     void PrintInfo()

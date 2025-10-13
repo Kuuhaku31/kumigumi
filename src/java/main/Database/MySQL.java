@@ -3,6 +3,8 @@
 package Database;
 
 import utils.AnimeInfo;
+import utils.EpisodeInfo;
+import utils.TorrentInfo;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -11,10 +13,6 @@ import java.sql.SQLException;
 public
 class MySQL
 {
-    private final String table_name_anime = "anime";
-    private final String table_name_episode = "episode";
-    private final String table_name_torrent = "torrent";
-
     private Connection conn;
 
     public
@@ -38,16 +36,10 @@ class MySQL
     public
     void Upsert(AnimeInfo ani_info) throws SQLException
     {
-        if(conn == null)
-        {
-            IO.println("数据库未连接，无法更新");
-            return;
-        }
-
         // 更新逻辑
-        String sql_str = String.format(
+        String sql_str =
             """
-            INSERT INTO %s
+            INSERT INTO anime
             (
                 bangumi_id,
                 air_date,
@@ -74,9 +66,8 @@ class MySQL
             pre_view_rating   = VALUES(pre_view_rating),
             after_view_rating = VALUES(after_view_rating),
             rss_url           = VALUES(rss_url),
-            remark            = VALUES(remark);""",
-            table_name_anime
-        );
+            remark            = VALUES(remark);
+            """;
 
         // 创建预编译语句
         var stmt = conn.prepareStatement(sql_str);
@@ -99,10 +90,105 @@ class MySQL
     }
 
     public
-    enum TableName
+    void Upsert(EpisodeInfo episode_info) throws SQLException
     {
-        anime,
-        episode,
-        torrent
+        // 更新逻辑
+        String sql_str =
+            """
+            INSERT INTO episode
+            (
+                 episode_id,
+                 anime_id,
+                 air_date,
+                 episode_index,
+                 episode_title,
+                 episode_title_cn,
+                 episode_duration,
+                 episode_rating,
+                 episode_download_status,
+                 episode_view_status,
+                 remark
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+            anime_id                = VALUES(anime_id),
+            air_date                = VALUES(air_date),
+            episode_index           = VALUES(episode_index),
+            episode_title           = VALUES(episode_title),
+            episode_title_cn        = VALUES(episode_title_cn),
+            episode_duration        = VALUES(episode_duration),
+            episode_rating          = VALUES(episode_rating),
+            episode_download_status = VALUES(episode_download_status),
+            episode_view_status     = VALUES(episode_view_status),
+            remark                  = VALUES(remark);
+            """;
+
+        // 创建预编译语句
+        var stmt = conn.prepareStatement(sql_str);
+        stmt.setInt(1, episode_info.ep_id);
+        stmt.setInt(2, episode_info.ani_id);
+        stmt.setObject(3, episode_info.air_date);
+        stmt.setString(4, episode_info.index);
+        stmt.setString(5, episode_info.title);
+        stmt.setString(6, episode_info.title_cn);
+        stmt.setObject(7, episode_info.duration.toSecondOfDay());
+        stmt.setInt(8, episode_info.rating);
+        stmt.setString(9, episode_info.download_status);
+        stmt.setString(10, episode_info.view_status);
+        stmt.setString(11, episode_info.remark);
+
+        // 执行更新
+        stmt.executeUpdate();
+        stmt.close();
+    }
+
+    public
+    void Upsert(TorrentInfo torrent_info) throws SQLException
+    {
+        // 更新逻辑
+        String sql_str =
+            """
+            INSERT INTO torrent
+            (
+                torrent_download_url,
+                anime_id,
+                air_date,
+                page_url,
+                subtitle_group,
+                title,
+                description,
+                size_bytes,
+                download_status,
+                remark
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+            anime_id       = VALUES(anime_id),
+            air_date       = VALUES(air_date),
+            page_url       = VALUES(page_url),
+            subtitle_group = VALUES(subtitle_group),
+            title          = VALUES(title),
+            description    = VALUES(description),
+            size_bytes     = VALUES(size_bytes),
+            download_status= VALUES(download_status),
+            remark         = VALUES(remark);
+            """;
+
+        // 创建预编译语句
+        var stmt = conn.prepareStatement(sql_str);
+        stmt.setString(1, torrent_info.torrent_url);
+        stmt.setInt(2, torrent_info.ani_id);
+        stmt.setObject(3, torrent_info.air_date_time);
+        stmt.setString(4, torrent_info.page_url);
+        stmt.setString(5, torrent_info.subtitle_group);
+        stmt.setString(6, torrent_info.title);
+        stmt.setString(7, torrent_info.description);
+        stmt.setLong(8, torrent_info.size);
+        stmt.setString(9, torrent_info.download_status);
+        stmt.setString(10, torrent_info.remark);
+
+        // 执行更新
+        stmt.executeUpdate();
+        stmt.close();
     }
 }

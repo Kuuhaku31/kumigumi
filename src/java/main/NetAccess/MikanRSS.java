@@ -87,7 +87,7 @@ class MikanRSS
             String page_link = item.getLink().orElse("");
             String description = item.getDescription().orElse("");
             String guid = item.getGuid().orElse("");
-            String pub_date_str = item.getPubDate().orElse(null);
+            String pub_date_str = item.getPubDate().orElse("");
 
             // 如果 enclosure 不存在，就抛异常
             Enclosure enclosure = item.getEnclosure().orElseThrow(() -> new RuntimeException("RSS 条目缺少附件 enclosure"));
@@ -104,15 +104,9 @@ class MikanRSS
             torrent_info.description = description;
             torrent_info.size = size;
             torrent_info.download_status = "<未下载>";
-            torrent_info.remark = guid;
 
             // 解析发布日期
-            LocalDateTime ldt = null;
-            if(pub_date_str != null)
-            {
-                ldt = LocalDateTime.parse(pub_date_str, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-            }
-            torrent_info.air_date_time = ldt;
+            torrent_info.air_date_time = LocalDateTime.parse(pub_date_str, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 
             // 解析字幕组
             torrent_info.subtitle_group = parse_subtitle_group(title);

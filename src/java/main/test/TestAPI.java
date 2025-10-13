@@ -15,7 +15,7 @@ class TestAPI
         IO.println(Arrays.toString(args));
         IO.println("----- Creating Task -----");
         Task task = new Task(455454, "https://mikanani.me/RSS/Bangumi?bangumiId=3698");
-        // Task task = new Task(507634, "https://mikanani.me/RSS/Bangumi?bangumiId=3698");
+        // Task task = new Task(507634, "https://mikanani.me/RSS/Bangumi?bangumiId=3774");
         task.PrintInfo();
         IO.println("----- Running Task -----");
         task.Run();
