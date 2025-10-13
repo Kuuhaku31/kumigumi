@@ -6,7 +6,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import utils.TorrentInfo;
+import utils.Info.TorrentInfo;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -2,6 +2,9 @@
 
 package utils;
 
+import utils.Info.AnimeInfo;
+import utils.Info.EpisodeInfo;
+
 import java.util.ArrayList;
 
 public

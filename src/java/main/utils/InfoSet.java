@@ -2,6 +2,10 @@
 
 package utils;
 
+import utils.Info.AnimeInfo;
+import utils.Info.EpisodeInfo;
+import utils.Info.TorrentInfo;
+
 import java.util.List;
 
 public

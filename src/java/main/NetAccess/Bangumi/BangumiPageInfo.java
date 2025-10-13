@@ -2,8 +2,8 @@
 
 package NetAccess.Bangumi;
 
-import utils.AnimeInfo;
-import utils.EpisodeInfo;
+import utils.Info.AnimeInfo;
+import utils.Info.EpisodeInfo;
 
 import java.util.List;
 

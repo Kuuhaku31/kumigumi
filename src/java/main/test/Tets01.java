@@ -6,8 +6,8 @@ import Database.DB;
 import NetAccess.Bangumi.InfoGetter;
 import NetAccess.MikanAnime.MikanParser;
 import NetAccess.Net;
+import utils.Info.TorrentInfo;
 import utils.InfoSet;
-import utils.TorrentInfo;
 import utils.Translate;
 
 import java.io.IOException;

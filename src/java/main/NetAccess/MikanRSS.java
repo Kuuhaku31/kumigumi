@@ -5,7 +5,7 @@ package NetAccess;
 import com.apptasticsoftware.rssreader.Enclosure;
 import com.apptasticsoftware.rssreader.Item;
 import com.apptasticsoftware.rssreader.RssReader;
-import utils.TorrentInfo;
+import utils.Info.TorrentInfo;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

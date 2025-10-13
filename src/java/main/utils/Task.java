@@ -5,6 +5,9 @@ package utils;
 import Database.MySQL;
 import NetAccess.BangumiAPI;
 import NetAccess.MikanRSS;
+import utils.Info.AnimeInfo;
+import utils.Info.EpisodeInfo;
+import utils.Info.TorrentInfo;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -71,7 +74,6 @@ class Task
         {
             // 打印异常信息
             IO.println("数据库操作异常: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 

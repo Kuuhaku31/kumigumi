@@ -2,9 +2,9 @@
 
 package Database;
 
-import utils.AnimeInfo;
-import utils.EpisodeInfo;
-import utils.TorrentInfo;
+import utils.Info.AnimeInfo;
+import utils.Info.EpisodeInfo;
+import utils.Info.TorrentInfo;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

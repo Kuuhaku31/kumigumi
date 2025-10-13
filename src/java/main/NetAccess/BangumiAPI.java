@@ -4,9 +4,9 @@ package NetAccess;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import utils.AnimeInfo;
 import utils.BangumiInfoSet;
-import utils.EpisodeInfo;
+import utils.Info.AnimeInfo;
+import utils.Info.EpisodeInfo;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
