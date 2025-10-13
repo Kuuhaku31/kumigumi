@@ -2,11 +2,13 @@
 
 package utils;
 
+import Database.MySQL;
 import NetAccess.BangumiAPI;
 import NetAccess.MikanRSS;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,6 +47,24 @@ class Task
             IO.println("发生异常: " + e.getMessage());
         }
 
+    }
+
+    public
+    void UpsertToDB()
+    {
+        try
+        {
+            MySQL mysql = new MySQL();
+            mysql.Open();
+            mysql.Upsert(anime_info);
+            mysql.Close();
+        }
+        catch(SQLException e)
+        {
+            // IO.println(e.getMessage());
+            // 打印详细信息
+            e.printStackTrace();
+        }
     }
 
     // 打印任务信息
