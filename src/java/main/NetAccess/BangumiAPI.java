@@ -63,7 +63,7 @@ class BangumiAPI
         return new JSONObject(res_str);
     }
 
-    public static
+    private static
     EpisodeInfo ParseEpisodeInfo(JSONObject episode_info_json)
     {
         // 处理 json 格式字符串
@@ -96,7 +96,7 @@ class BangumiAPI
     }
 
 
-    public static
+    private static
     AnimeInfo ParseAnimeInfo(JSONObject anime_info_json)
     {
         // 处理 json 格式字符串

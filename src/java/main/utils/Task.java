@@ -37,10 +37,14 @@ class Task
     {
         try
         {
+            // 获取 anime_info, episode_list, torrent_info_list
             BangumiInfoSet bangumi_info_set = BangumiAPI.GetBangumiInfoSet(ani_id);
             anime_info = bangumi_info_set.anime_info;
             episode_list = bangumi_info_set.episode_info_list;
-            torrent_info_list = MikanRSS.GetTorrentInfoList(rss_url, ani_id);
+            torrent_info_list = MikanRSS.GetTorrentInfoList(rss_url);
+
+            // 添加 ani_id
+            for(var torrent_info : torrent_info_list) torrent_info.ani_id = ani_id;
         }
         catch(URISyntaxException | IOException e)
         {

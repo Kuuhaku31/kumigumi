@@ -65,7 +65,7 @@ class MikanRSS
     // 需要提供 RSS 链接和番剧 ID
     // 返回值：种子信息列表，如果获取失败或没有种子则返回 null
     public static
-    ArrayList<TorrentInfo> GetTorrentInfoList(String rss_url, int ani_id) throws IOException
+    ArrayList<TorrentInfo> GetTorrentInfoList(String rss_url) throws IOException
     {
 
         HttpClient client = HttpClient.newBuilder()
@@ -98,7 +98,6 @@ class MikanRSS
 
             // 填充 TorrentInfo 对象
             torrent_info.torrent_url = torrent_url;
-            torrent_info.ani_id = ani_id;
             torrent_info.page_url = page_link;
             torrent_info.title = title;
             torrent_info.description = description;
@@ -115,7 +114,7 @@ class MikanRSS
             torrent_info_list.add(torrent_info);
         }
 
-        return torrent_info_list.isEmpty() ? null : torrent_info_list;
+        return torrent_info_list;
     }
 
 
