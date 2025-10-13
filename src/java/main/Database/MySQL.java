@@ -197,4 +197,38 @@ class MySQL
         stmt.executeUpdate();
         stmt.close();
     }
+
+    /**
+     * 删除指定番组 ID 下，所有不在 exist_info_id 列表中的剧集信息。
+     */
+    public
+    void DeleteInvalidEpisodeInfo(int ani_id, int[] exist_info_id) throws SQLException
+    {
+        if(exist_info_id == null || exist_info_id.length == 0)
+        {
+            // 若 exist_info_id 为空，则直接删除该番组下的所有剧集
+            try(var stmt = conn.prepareStatement("DELETE FROM `episode` WHERE `ANI_ID` = ?"))
+            {
+                stmt.setInt(1, ani_id);
+                stmt.executeUpdate();
+            }
+        }
+        else // exist_info_id 非空
+        {
+            // 构建 SQL —— 直接使用 NOT IN 一步删除，不必手动循环查询
+            StringBuilder sql = new StringBuilder("DELETE FROM `episode` WHERE `ANI_ID` = ? AND `EPI_ID` NOT IN (");
+            sql.append("?,".repeat(exist_info_id.length));           // 为每个 exist_info_id 元素添加一个占位符
+            sql.setCharAt(sql.length() - 1, ')');// 将最后一个逗号替换为右括号
+
+            // 创建预编译语句并执行
+            try(var stmt = conn.prepareStatement(sql.toString()))
+            {
+                // 第 1 个占位符是 ani_id
+                stmt.setInt(1, ani_id);
+                for(int i = 0; i < exist_info_id.length; i++) stmt.setInt(i + 2, exist_info_id[i]);
+                stmt.executeUpdate();
+            }
+        }
+    }
+
 }

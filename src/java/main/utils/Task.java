@@ -42,12 +42,11 @@ class Task
         {
             // 获取 anime_info, episode_list, torrent_info_list
             BangumiInfoSet bangumi_info_set = BangumiAPI.GetBangumiInfoSet(ani_id);
-            anime_info        = bangumi_info_set.anime_info;
-            episode_list      = bangumi_info_set.episode_info_list;
-            torrent_info_list = MikanRSS.GetTorrentInfoList(rss_url);
+            anime_info   = bangumi_info_set.anime_info;
+            episode_list = bangumi_info_set.episode_info_list;
 
-            // 添加 ani_id
-            for(var torrent_info : torrent_info_list) torrent_info.ani_id = ani_id;
+            torrent_info_list = MikanRSS.GetTorrentInfoList(rss_url);
+            for(var torrent_info : torrent_info_list) torrent_info.ani_id = ani_id; // 添加 ani_id
         }
         catch(URISyntaxException | IOException e)
         {
@@ -64,9 +63,17 @@ class Task
             MySQL mysql = new MySQL();
             mysql.Open();
 
+            // 插入更新数据
             mysql.Upsert(anime_info);
             for(var episode : episode_list) mysql.Upsert(episode);
             for(var torrent : torrent_info_list) mysql.Upsert(torrent);
+
+            // 从数据库删除无效的 episode_info
+            int ani_id = this.ani_id;
+
+            // 从一个 List<Episode> 中提取出每个对象的 ep_id 字段，并转成一个 int[] 数组
+            int[] valid_ep_ids = episode_list.stream().mapToInt(ep -> ep.ep_id).toArray();
+            mysql.DeleteInvalidEpisodeInfo(ani_id, valid_ep_ids);
 
             mysql.Close();
         }
