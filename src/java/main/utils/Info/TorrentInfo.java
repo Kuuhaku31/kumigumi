@@ -13,7 +13,7 @@ class TorrentInfo
     public String title = "";
     public String description = "";
     public long size = 0;
-    public String download_status = "";
+    public String download_status = "未下载";
     public String remark = "";
 
     public

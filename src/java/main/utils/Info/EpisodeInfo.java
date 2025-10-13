@@ -13,9 +13,10 @@ class EpisodeInfo
     public String title = "";
     public String title_cn = "";
     public LocalTime duration = LocalTime.MIN;
+    public String description = "";
     public int rating = 0;
-    public String download_status = "";
-    public String view_status = "";
+    public String download_status = "未下载";
+    public String view_status = "未观看";
     public String remark = "";
 
     public

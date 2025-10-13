@@ -102,7 +102,7 @@ class MikanRSS
             torrent_info.title = title;
             torrent_info.description = description;
             torrent_info.size = size;
-            torrent_info.download_status = "<未下载>";
+            torrent_info.download_status = "未下载";
 
             // 解析发布日期
             torrent_info.air_date_time = LocalDateTime.parse(pub_date_str, DateTimeFormatter.ISO_LOCAL_DATE_TIME);

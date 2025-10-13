@@ -35,5 +35,6 @@ class AnimeInfo
         IO.println("rss_url: " + rss_url);
         IO.println("remark: " + remark);
     }
+    
 
 }

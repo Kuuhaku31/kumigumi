@@ -74,6 +74,7 @@ class Task
         {
             // 打印异常信息
             IO.println("数据库操作异常: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

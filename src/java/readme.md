@@ -12,37 +12,11 @@
 
 ## 各个细节
 
-## 字段一览
+anime - ani
 
-| 中文键名          | 英文键名                  | 备注                 |
-| ----------------- | ------------------------- | -------------------- |
-| `番组bangumi链接` | `anime_bangumi_url`       | bangumi 网页链接     |
-| `番组RSS订阅链接` | `anime_rss_url`           | rss 订阅源链接       |
-| `番组原名`        | `anime_title`             |
-| `番组译名`        | `anime_title_cn`          |
-| `番组别名`        | `anime_aliases`           |
-| `番组话数`        | `anime_episode_count`     |
-| `番组官网链接`    | `anime_official_site_url` |
-| `番组封面链接`    | `anime_cover_url`         |
-| `番组观前评分`    | `anime_pre_view_rating`   |
-| `番组观后评分`    | `anime_after_view_rating` |
-| `话bangumiURL`    | `episode_bangumi_url`     |
-| `话索引`          | `episode_index`           |
-| `话标题`          | `episode_title`           |
-| `话标题译名`      | `episode_title_cn`        |
-| `话时长`          | `episode_duration`        |
-| `话下载情况`      | `episode_download_status` | 单集下载情况         |
-| `话观看情况`      | `episode_view_status`     | 单集观看情况         |
-| `种子下载链接`    | `torrent_download_url`    |
-| `种子页面链接`    | `torrent_page_url`        |
-| `种子字幕组`      | `torrent_subtitle_group`  |
-| `种子标题`        | `torrent_title`           |
-| `种子描述`        | `torrent_description`     |
-| `种子大小`        | `torrent_size`            | 种子文件大小         |
-| `种子大小_字节`   | `torrent_size_bytes`      | 种子文件大小（字节） |
-| `种子下载情况`    | `torrent_download_status` | 种子下载情况         |
-| `发布日期`        | `air_date`                |
-| `备注`            | `note`                    |
+episode - eps
+
+torrent - tor
 
 ---
 
@@ -50,55 +24,62 @@
 
 ## ✅`anime` 表字段对应
 
-| 英文键名                  | 数据类型 | 中文解释          | 备注     |
-| ------------------------- | -------- | ----------------- | -------- |
-| `anime_bangumi_id`        | Integer  | 番组 bangumi ID   | 主键     |
-| `air_date`                | Date     | 发布日期          |          |
-| `anime_title`             | String   | 番组原名          |          |
-| `anime_title_cn`          | String   | 番组译名          |          |
-| `anime_aliases`           | String   | 番组别名          |          |
-| `anime_episode_count`     | Integer  | 番组话数          |          |
-| `anime_official_site_url` | String   | 番组官网链接      |          |
-| `anime_cover_url`         | String   | 番组封面链接      |          |
-| `anime_pre_view_rating`   | Integer  | 番组观前评分      | 手动维护 |
-| `anime_after_view_rating` | Integer  | 番组观后评分      | 手动维护 |
-| `anime_rss_url`           | String   | 番组 RSS 订阅链接 | 手动维护 |
-| `remark`                  | String   | 备注              | 手动维护 |
+| 英文键名            | 数据类型 | 中文解释          | 备注     |
+| ------------------- | -------- | ----------------- | -------- |
+| `ANI_ID`            | Integer  | 番组 bangumi ID   | 主键     |
+| `air_date`          | Date     | 放送开始日期      |          |
+| `title`             | String   | 番组原名          |          |
+| `title_cn`          | String   | 番组译名          |          |
+| `aliases`           | String   | 番组别名          |          |
+| `episode_count`     | Integer  | 番组话数          |          |
+| `url_official_site` | String   | 番组官网链接      |          |
+| `url_cover`         | String   | 番组封面链接      |          |
+| `url_rss`           | String   | 番组 RSS 订阅链接 | 手动维护 |
+| `rating_before`     | Integer  | 番组观前预期      | 手动维护 |
+| `rating_after`      | Integer  | 番组观后评分      | 手动维护 |
+| `remark`            | String   | 备注              | 手动维护 |
 
 ---
 
 ## ✅`episode` 表字段对应
 
-| 英文键名                  | 数据类型 | 中文解释        | 备注       |
-| ------------------------- | -------- | --------------- | ---------- |
-| `ep_id`                   | Integer  | 话 bangumi ID   | 主键       |
-| `anime_bangumi_id`        | Integer  | 番组 bangumi ID | 外键       |
-| `air_date`                | Date     | 发布日期        |            |
-| `episode_index`           | String   | 话索引          |            |
-| `episode_title`           | String   | 话标题          |            |
-| `episode_title_cn`        | String   | 话标题译名      |            |
-| `episode_duration`        | String   | 话时长          | 单位（秒） |
-| `episode_rating`          | int      | 话评分          | 新加       |
-| `episode_download_status` | String   | 话下载情况      | 手动维护   |
-| `episode_view_status`     | String   | 话观看情况      | 手动维护   |
-| `remark`                  | String   | 备注            | 手动维护   |
+| 英文键名          | 数据类型 | 中文解释        | 备注       |
+| ----------------- | -------- | --------------- | ---------- |
+| `EPI_ID`          | Integer  | 话 bangumi ID   | 主键       |
+| `ANI_ID`          | Integer  | 番组 bangumi ID | 外键       |
+| `air_date`        | Date     | 放送日期        |            |
+| `duration`        | Integer  | 话时长          | 单位（秒） |
+| `index`           | String   | 话索引          |            |
+| `title`           | String   | 话标题          |            |
+| `title_cn`        | String   | 话标题译名      |            |
+| `description`     | String   | 单集介绍        |            |
+| `status_download` | Enum     | 话下载情况      | 手动维护   |
+| `status_view`     | Enum     | 话观看情况      | 手动维护   |
+| `rating`          | int      | 话评分          | 手动维护   |
+| `remark`          | String   | 备注            | 手动维护   |
+
+`status_download`: 0 : `未下载`, 1 : `已下载`, 2 : `不下载`
+
+`status_view`: 0 : `未观看`, 1 : `已观看`, 2 : `不观看`
 
 ---
 
 ## ✅`torrent` 表字段对应
 
-| 英文键名                  | 数据类型 | 中文解释         | 备注     |
-| ------------------------- | -------- | ---------------- | -------- |
-| `torrent_download_url`    | String   | 种子下载链接     | 主键     |
-| `anime_bangumi_id`        | Integer  | 番组 bangumi ID  | 外键     |
-| `air_date`                | Date     | 发布日期         |          |
-| `torrent_page_url`        | String   | 种子页面链接     |          |
-| `torrent_subtitle_group`  | String   | 种子字幕组       |          |
-| `torrent_title`           | String   | 种子标题         |          |
-| `torrent_description`     | String   | 种子描述         |          |
-| `torrent_size_bytes`      | Integer  | 种子大小（字节） |          |
-| `torrent_download_status` | String   | 种子下载情况     | 手动维护 |
-| `remark`                  | String   | 备注             | 手动维护 |
+| 英文键名          | 数据类型 | 中文解释         | 备注     |
+| ----------------- | -------- | ---------------- | -------- |
+| `TOR_URL`         | String   | 种子下载链接     | 主键     |
+| `ANI_ID`          | Integer  | 番组 bangumi ID  | 外键     |
+| `air_datetime`    | DateTime | 发布日期时间     |          |
+| `size`            | Integer  | 种子大小（字节） |          |
+| `url_page`        | String   | 种子页面链接     |          |
+| `title`           | String   | 种子标题         |          |
+| `subtitle_group`  | String   | 种子字幕组       |          |
+| `description`     | text     | 种子描述         |          |
+| `status_download` | String   | 种子下载情况     | 手动维护 |
+| `remark`          | String   | 备注             | 手动维护 |
+
+`status_download`: 0 : `未下载`, 1 : `已下载`, 2 : `不下载`
 
 ---
 

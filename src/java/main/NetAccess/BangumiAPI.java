@@ -92,6 +92,9 @@ class BangumiAPI
         String duration_str = episode_info_json.getString("duration");
         if(!duration_str.isEmpty()) episode_info.duration = LocalTime.parse(duration_str);
 
+        // 解析概述
+        episode_info.description = episode_info_json.getString("desc");
+
         return episode_info;
     }
 
