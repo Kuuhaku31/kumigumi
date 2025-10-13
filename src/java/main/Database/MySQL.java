@@ -18,11 +18,11 @@ class MySQL
     public
     void Open() throws SQLException
     {
-        String database_url = "jdbc:mysql://localhost:3306/";
+        String database_url  = "jdbc:mysql://localhost:3306/";
         String database_name = "kumigumi-new";
-        String url = database_url + database_name + "?allowPublicKeyRetrieval=true&useSSL=false";
-        String username = "root";
-        String password = "root-password";
+        String url           = database_url + database_name + "?allowPublicKeyRetrieval=true&useSSL=false";
+        String username      = "root";
+        String password      = "root-password";
 
         conn = DriverManager.getConnection(url, username, password);
     }
@@ -78,9 +78,9 @@ class MySQL
         stmt.setString(4, ani_info.title_cn);
         stmt.setString(5, ani_info.aliases);
         stmt.setInt(6, ani_info.episode_count);
-        stmt.setString(7, ani_info.official_site_url);
-        stmt.setString(8, ani_info.cover_url);
-        stmt.setString(9, ani_info.rss_url);
+        stmt.setString(7, ani_info.url_official_site);
+        stmt.setString(8, ani_info.url_cover);
+        stmt.setString(9, ani_info.url_rss);
         stmt.setInt(10, ani_info.pre_view_rating);
         stmt.setInt(11, ani_info.after_view_rating);
         stmt.setString(12, ani_info.remark);
@@ -137,8 +137,8 @@ class MySQL
         stmt.setString(6, episode_info.title);
         stmt.setString(7, episode_info.title_cn);
         stmt.setString(8, episode_info.description);
-        stmt.setString(9, episode_info.download_status);
-        stmt.setString(10, episode_info.view_status);
+        stmt.setString(9, episode_info.status_download.toString());
+        stmt.setString(10, episode_info.status_view.toString());
         stmt.setInt(11, episode_info.rating);
         stmt.setString(12, episode_info.remark);
 
@@ -182,15 +182,15 @@ class MySQL
 
         // 创建预编译语句
         var stmt = conn.prepareStatement(sql_str);
-        stmt.setString(1, torrent_info.torrent_url);
+        stmt.setString(1, torrent_info.tor_url);
         stmt.setInt(2, torrent_info.ani_id);
-        stmt.setObject(3, torrent_info.air_date_time);
+        stmt.setObject(3, torrent_info.air_datetime);
         stmt.setLong(4, torrent_info.size);
-        stmt.setString(5, torrent_info.page_url);
+        stmt.setString(5, torrent_info.url_page);
         stmt.setString(6, torrent_info.title);
         stmt.setString(7, torrent_info.subtitle_group);
         stmt.setString(8, torrent_info.description);
-        stmt.setString(9, torrent_info.download_status);
+        stmt.setString(9, torrent_info.status_download.toString());
         stmt.setString(10, torrent_info.remark);
 
         // 执行更新

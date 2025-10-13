@@ -20,8 +20,8 @@ class MikanParser
     List<TorrentInfo> ParseMikanRssXML(String bangumiUrl, String rssHtmlStr)
     {
         List<TorrentInfo> result = new ArrayList<>();
-        Document doc = Jsoup.parse(rssHtmlStr, "", org.jsoup.parser.Parser.xmlParser());
-        Elements items = doc.select("item");
+        Document          doc    = Jsoup.parse(rssHtmlStr, "", org.jsoup.parser.Parser.xmlParser());
+        Elements          items  = doc.select("item");
         for(Element item : items)
         {
             Map<String, String> info = new HashMap<>();
@@ -33,7 +33,7 @@ class MikanParser
             info.put("种子描述", item.selectFirst("description") != null ? item.selectFirst("description").text() : "");
 
             // 字幕组提取
-            String title = info.get("种子标题");
+            String title     = info.get("种子标题");
             String groupName = "未知字幕组";
             if(title != null && !title.isEmpty())
             {
@@ -50,16 +50,15 @@ class MikanParser
 
             // 大小提取
             Element contentLengthElem = item.selectFirst("torrent > contentlength");
-            long contentLengthLong = contentLengthElem != null ? Long.parseLong(contentLengthElem.text()) : -1;
+            long    contentLengthLong = contentLengthElem != null ? Long.parseLong(contentLengthElem.text()) : -1;
             info.put("种子大小_字节", String.valueOf(contentLengthLong));
 
             String contentLengthStr = getString(contentLengthLong);
             info.put("种子大小", contentLengthStr);
 
             // 新建 TorrentInfo 并添加到结果列表
-            TorrentInfo torrentInfo = new TorrentInfo();
-            // torrentInfo.info = info;
-            result.add(torrentInfo);
+            // TorrentInfo torrentInfo = new TorrentInfo();
+            // result.add(torrentInfo);
         }
         return result;
     }

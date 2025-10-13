@@ -81,12 +81,9 @@ class MikanRSS
         ArrayList<TorrentInfo> torrent_info_list = new ArrayList<>();
         for(Item item : items)
         {
-            TorrentInfo torrent_info = new TorrentInfo();
-
-            String title = item.getTitle().orElse("");
-            String page_link = item.getLink().orElse("");
-            String description = item.getDescription().orElse("");
-            String guid = item.getGuid().orElse("");
+            String title        = item.getTitle().orElse("");
+            String page_link    = item.getLink().orElse("");
+            String description  = item.getDescription().orElse("");
             String pub_date_str = item.getPubDate().orElse("");
 
             // 如果 enclosure 不存在，就抛异常
@@ -94,18 +91,17 @@ class MikanRSS
 
             // enclosure 存在
             String torrent_url = enclosure.getUrl();
-            long size = enclosure.getLength().orElse(0L);
+            long   size        = enclosure.getLength().orElse(0L);
 
             // 填充 TorrentInfo 对象
-            torrent_info.torrent_url = torrent_url;
-            torrent_info.page_url = page_link;
-            torrent_info.title = title;
+            TorrentInfo torrent_info = new TorrentInfo(torrent_url);
+            torrent_info.url_page    = page_link;
+            torrent_info.title       = title;
             torrent_info.description = description;
-            torrent_info.size = size;
-            torrent_info.download_status = "未下载";
+            torrent_info.size        = size;
 
             // 解析发布日期
-            torrent_info.air_date_time = LocalDateTime.parse(pub_date_str, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            torrent_info.air_datetime = LocalDateTime.parse(pub_date_str, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 
             // 解析字幕组
             torrent_info.subtitle_group = parse_subtitle_group(title);
@@ -122,7 +118,7 @@ class MikanRSS
     private static
     String parse_subtitle_group(String title)
     {
-        String[] left_brackets = {"[", "【", "(", "{"};
+        String[] left_brackets  = {"[", "【", "(", "{"};
         String[] right_brackets = {"]", "】", ")", "}"};
 
         for(int i = 0; i < left_brackets.length; i++)

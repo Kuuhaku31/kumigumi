@@ -19,18 +19,18 @@ public
 class Task
 {
     // 参数
-    private final int ani_id;
+    private final int    ani_id;
     private final String rss_url;
 
     // 结果
-    private AnimeInfo anime_info = null;
-    private ArrayList<EpisodeInfo> episode_list = null;
+    private AnimeInfo              anime_info        = null;
+    private ArrayList<EpisodeInfo> episode_list      = null;
     private ArrayList<TorrentInfo> torrent_info_list = null;
 
     public
     Task(int ani_id, String rss_url)
     {
-        this.ani_id = ani_id;
+        this.ani_id  = ani_id;
         this.rss_url = rss_url;
     }
 
@@ -42,8 +42,8 @@ class Task
         {
             // 获取 anime_info, episode_list, torrent_info_list
             BangumiInfoSet bangumi_info_set = BangumiAPI.GetBangumiInfoSet(ani_id);
-            anime_info = bangumi_info_set.anime_info;
-            episode_list = bangumi_info_set.episode_info_list;
+            anime_info        = bangumi_info_set.anime_info;
+            episode_list      = bangumi_info_set.episode_info_list;
             torrent_info_list = MikanRSS.GetTorrentInfoList(rss_url);
 
             // 添加 ani_id
@@ -97,7 +97,6 @@ class Task
             for(var episode : episode_list)
             {
                 episode.PrintInfo();
-                System.out.println("-------------------------");
             }
         }
         else IO.println("Episode info not fetched yet.");
@@ -107,7 +106,6 @@ class Task
             for(var torrent : torrent_info_list)
             {
                 torrent.PrintInfo();
-                System.out.println("-------------------------");
             }
         }
         else IO.println("Torrent info not fetched yet.");
@@ -123,11 +121,9 @@ class Task
         // 打印番剧信息
         if(anime_info != null) anime_info.PrintInfo();
         else IO.println("Bangumi info not fetched yet.");
-        IO.println("==========================");
 
         // 打印剧集列表
         printListInfo("Episode", episode_list);
-        IO.println("==========================");
 
         // 打印种子列表
         printListInfo("Torrent", torrent_info_list);
@@ -160,7 +156,6 @@ class Task
             {
                 IO.println("[Error] Unable to print " + title + " info: " + e.getMessage());
             }
-            System.out.println("-------------------------");
         }
 
         if(list.size() > 3)
