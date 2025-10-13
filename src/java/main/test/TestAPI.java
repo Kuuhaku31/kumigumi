@@ -18,7 +18,7 @@ class TestAPI
         // Task task = new Task(507634, "https://mikanani.me/RSS/Bangumi?bangumiId=3774");
         task.PrintInfo();
         IO.println("----- Running Task -----");
-        task.Run();
+        task.GetInfo();
         IO.println("----- Finished Task -----");
         task.PrintInfoShort();
         IO.println("----- Upsert to MySQL -----");
