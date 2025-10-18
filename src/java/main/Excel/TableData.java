@@ -27,6 +27,12 @@ class TableData
         data            = new ArrayList<>();
         headers         = new ArrayList<>();
 
+        // 获取表头
+        for(var column_map : list)
+        {
+            headers.add(column_map.column_name());
+        }
+
         // 遍历表格每一行
         for(int row_idx = start_row; row_idx < end_row; row_idx++)
         {

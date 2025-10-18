@@ -11,7 +11,8 @@ class TestEX
         String file_path = args[0];
 
         Excel.ExcelReader reader = new Excel.ExcelReader(file_path);
-        reader.TestTableData();
+        reader.ReadData();
+        // reader.TestTableData();
 
         // var res = reader.ReadShell("main");
         //
