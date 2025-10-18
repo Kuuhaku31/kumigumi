@@ -1,0 +1,26 @@
+// ColumnList.java
+
+
+package Excel;
+
+import java.util.ArrayList;
+
+public
+class ColumnList
+{
+    private final ArrayList<ColumnMap> list = new ArrayList<>();
+
+    public
+    void Add(String column_name, int column_index)
+    {
+        list.add(new ColumnMap(column_name, column_index));
+    }
+
+    // 迭代器
+    public
+    Iterable<ColumnMap> GetList()
+    {
+        return list;
+    }
+}
+

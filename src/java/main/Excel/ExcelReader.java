@@ -50,4 +50,18 @@ class ExcelReader
 
         return result;
     }
+
+    public
+    void TestTableData()
+    {
+        Sheet sheet = workbook.getSheet("test");
+
+        ColumnList column_list = new ColumnList();
+        column_list.Add("Main", 0);
+        column_list.Add("name", 1);
+
+        TableData td = new TableData(sheet, "test", 8, 12, column_list);
+
+        td.PrintInfo();
+    }
 }
