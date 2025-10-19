@@ -7,6 +7,6 @@ package Excel;
 // 记录类
 public
 record
-ColumnMap(String column_name, int column_index)
+ColumnMap(String column_name, int column_index, String data_type)
 {
 }

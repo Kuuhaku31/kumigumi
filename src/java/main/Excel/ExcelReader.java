@@ -13,13 +13,33 @@ import java.util.ArrayList;
 public
 class ExcelReader
 {
-    private final Workbook workbook;
+    private final Workbook         workbook;
+    private final FormulaEvaluator evaluator;
 
     public
     ExcelReader(String file_path) throws IOException
     {
-        workbook = new XSSFWorkbook(new FileInputStream(file_path));
+        workbook  = new XSSFWorkbook(new FileInputStream(file_path));
+        evaluator = workbook.getCreationHelper().createFormulaEvaluator();
     }
+
+    static
+    void main(String[] args) throws IOException
+    {
+        FileInputStream fis      = new FileInputStream("D:/repositories/kumigumi/ignore/test.xlsx");
+        Workbook        workbook = WorkbookFactory.create(fis);
+        Sheet           sheet    = workbook.getSheetAt(0);
+        Row             row      = sheet.getRow(0);
+        Cell            cell     = row.getCell(0);
+
+
+        // String value_str = GetCellValueAsString(cell);
+
+        // IO.println(value_str);
+
+        // workbook.close();
+    }
+
 
     // 以键值对返回前两列的数据
     public
@@ -52,7 +72,7 @@ class ExcelReader
     }
 
     public
-    void ReadData()
+    ArrayList<TableData> ReadData() //
     {
         String sheet_main = "main";
         Sheet  sheet      = workbook.getSheet(sheet_main);
@@ -81,16 +101,8 @@ class ExcelReader
                 switch(key)
                 {
                 case "_table_end": // 结束表格信息读取
-
                     // 创建表格数据对象并添加到列表
-                    IO.println("Creating TableData for table: " + table_name);
-                    IO.println("start_row: " + start_row + ", end_row: " + end_row);
-                    for(var col_map : column_list_buf.GetList())
-                    {
-                        IO.println("  Column: " + col_map.column_name() + " at index " + col_map.column_index());
-                    }
-
-                    TableData td = new TableData(dst_sheet, table_name, start_row, end_row, column_list_buf);
+                    TableData td = new TableData(dst_sheet, evaluator, table_name, start_row, end_row, column_list_buf);
                     table_data_list.add(td);
 
                     is_table = false;
@@ -110,7 +122,9 @@ class ExcelReader
 
                 default:
                     int column_idx = (int) row.getCell(1).getNumericCellValue();
-                    column_list_buf.Add(key, column_idx);
+                    Cell cell = row.getCell(2);
+                    String string_type = cell == null ? "" : cell.toString().trim();
+                    column_list_buf.Add(key, column_idx, string_type);
                     break;
                 }
             }
@@ -123,24 +137,6 @@ class ExcelReader
             }
         }
 
-        // 打印所有表格信息
-        for(var td : table_data_list)
-        {
-            td.PrintInfo();
-        }
-    }
-
-    public
-    void TestTableData()
-    {
-        Sheet sheet = workbook.getSheet("test");
-
-        ColumnList column_list = new ColumnList();
-        column_list.Add("Main", 0);
-        column_list.Add("name", 1);
-
-        TableData td = new TableData(sheet, "test", 8, 12, column_list);
-
-        td.PrintInfo();
+        return table_data_list;
     }
 }
