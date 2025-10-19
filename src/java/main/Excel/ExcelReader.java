@@ -7,8 +7,9 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.AbstractMap;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 public
 class ExcelReader
@@ -23,52 +24,95 @@ class ExcelReader
         evaluator = workbook.getCreationHelper().createFormulaEvaluator();
     }
 
-    static
-    void main(String[] args) throws IOException
+    // 解析字符串
+    private static
+    String ParseString(String value, StringType type)
     {
-        FileInputStream fis      = new FileInputStream("D:/repositories/kumigumi/ignore/test.xlsx");
-        Workbook        workbook = WorkbookFactory.create(fis);
-        Sheet           sheet    = workbook.getSheetAt(0);
-        Row             row      = sheet.getRow(0);
-        Cell            cell     = row.getCell(0);
+        if(value == null || value.isEmpty()) return "";
+        if(type == StringType.Bool) return "0".equals(value) ? "FALSE" : "TRUE";
 
+        return switch(type)
+        {
+            case Date, Time, Datetime ->
+            {
+                double excelSerial = Double.parseDouble(value);
+                Date   date        = DateUtil.getJavaDate(excelSerial);
 
-        // String value_str = GetCellValueAsString(cell);
+                String pattern = switch(type)
+                {
+                    case Date -> "yyyy-MM-dd";
+                    case Time -> "HH:mm:ss";
+                    default -> "yyyy-MM-dd HH:mm:ss";
+                };
+                yield new SimpleDateFormat(pattern).format(date);
+            }
+            default -> value;
 
-        // IO.println(value_str);
-
-        // workbook.close();
+        };
     }
 
-
-    // 以键值对返回前两列的数据
-    public
-    ArrayList<AbstractMap.SimpleEntry<String, String>> ReadShell(String sheetName)
+    private
+    TableData CreateTableData(Sheet sheet, String table_name, int start_row, int end_row, ColumnList column_list)
     {
-        // 检查工作簿或工作表是否存在
-        Sheet sheet = workbook.getSheet(sheetName);
-        if(sheet == null) throw new IllegalArgumentException("Sheet \"" + sheetName + "\" does not exist.");
+        ArrayList<String>            headers = new ArrayList<>();
+        ArrayList<ArrayList<String>> data    = new ArrayList<>();
 
-        // 读取数据
-        var result = new ArrayList<AbstractMap.SimpleEntry<String, String>>();
-        for(Row row : sheet)
+        // 获取表头
+        for(ColumnMap column_map : column_list.GetList())
         {
-            // 跳过空行
-            if(row == null) continue;
-
-            Cell keyCell   = row.getCell(0);
-            Cell valueCell = row.getCell(1);
-
-            // 跳过空键
-            if(keyCell == null || keyCell.getCellType() == CellType.BLANK) continue;
-
-            String key   = keyCell.toString().trim();
-            String value = (valueCell != null) ? valueCell.toString().trim() : "";
-
-            result.add(new AbstractMap.SimpleEntry<>(key, value));
+            headers.add(column_map.column_name());
         }
 
-        return result;
+        // 遍历表格每一行
+        for(int row_idx = start_row; row_idx < end_row; row_idx++)
+        {
+            // 跳过空行
+            Row row = sheet.getRow(row_idx);
+            if(row == null) continue;
+
+            // 遍历每一列（仅考虑 column_list 中定义的列）
+            ArrayList<String> row_data = new ArrayList<>();
+            for(ColumnMap column_map : column_list.GetList())
+            {
+                String cell_value = "";
+
+                // 跳过空单元格
+                Cell cell = row.getCell(column_map.column_index());
+                if(cell != null)
+                {
+
+                    // 提取显示值
+                    CellValue value = evaluator.evaluate(cell);
+                    cell_value = switch(value.getCellType())
+                    {
+                        case BOOLEAN -> value.getBooleanValue() ? "1" : "0";
+                        case NUMERIC -> Double.toString(value.getNumberValue());
+                        case STRING -> value.getStringValue();
+                        default -> "";
+                    };
+
+                    // 解析
+                    StringType type = switch(column_map.data_type().toLowerCase())
+                    {
+                        case "date" -> StringType.Date;
+                        case "time" -> StringType.Time;
+                        case "datetime" -> StringType.Datetime;
+                        case "bool" -> StringType.Bool;
+                        default -> StringType.Text;
+                    };
+                    cell_value = ParseString(cell_value, type);
+                }
+
+                // 添加单元格数据到 行数据
+                row_data.add(cell_value);
+            }
+
+            // 添加行数据到 表格数据
+            data.add(row_data);
+        }
+
+        // 创建表格数据对象
+        return new TableData(table_name, headers, data);
     }
 
     public
@@ -101,8 +145,7 @@ class ExcelReader
                 switch(key)
                 {
                 case "_table_end": // 结束表格信息读取
-                    // 创建表格数据对象并添加到列表
-                    TableData td = new TableData(dst_sheet, evaluator, table_name, start_row, end_row, column_list_buf);
+                    TableData td = CreateTableData(dst_sheet, table_name, start_row, end_row, column_list_buf);
                     table_data_list.add(td);
 
                     is_table = false;
@@ -138,5 +181,15 @@ class ExcelReader
         }
 
         return table_data_list;
+    }
+
+    private
+    enum StringType
+    {
+        Date,
+        Time,
+        Datetime,
+        Bool,
+        Text
     }
 }

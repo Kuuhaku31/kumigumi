@@ -31,9 +31,9 @@ class MySQLAccess
     public
     void Upsert(TableData table_data) throws SQLException
     {
-        String                       table_name = table_data.table_name;
-        ArrayList<String>            headers    = table_data.headers;
-        ArrayList<ArrayList<String>> data       = table_data.data;
+        String                       table_name = table_data.table_name();
+        ArrayList<String>            headers    = table_data.headers();
+        ArrayList<ArrayList<String>> data       = table_data.data();
 
         for(var row_data : data)
         {

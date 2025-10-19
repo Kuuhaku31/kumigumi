@@ -22,8 +22,8 @@ class TestEX
 
         for(var table_data : res)
         {
-            // dba.Upsert(table_data);
             table_data.PrintInfo();
+            dba.Upsert(table_data);
         }
     }
 }
