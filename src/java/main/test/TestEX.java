@@ -1,6 +1,7 @@
 package test;
 
 import Database.MySQLAccess;
+import Excel.ExcelReader;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -11,19 +12,14 @@ class TestEX
     void main(String[] args) throws IOException, SQLException
     {
         IO.println("TestEX:");
-        String file_path = args[0];
 
-        Excel.ExcelReader reader = new Excel.ExcelReader(file_path);
-
-        var res = reader.ReadData();
+        var res = ExcelReader.ReadData(args[0]);
 
         MySQLAccess dba = new MySQLAccess();
         dba.Open();
 
-        for(var table_data : res)
-        {
-            table_data.PrintInfo();
-            dba.Upsert(table_data);
-        }
+        dba.Upsert(res);
+
+        dba.Close();
     }
 }

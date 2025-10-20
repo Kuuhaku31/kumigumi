@@ -48,6 +48,19 @@ class MySQLAccess
         conn = DriverManager.getConnection(url, username, password);
     }
 
+    public
+    void Close() throws SQLException
+    {
+        if(conn != null && !conn.isClosed()) conn.close();
+    }
+
+    // 插入更新表格
+    public
+    void Upsert(ArrayList<TableData> table_data_list) throws SQLException
+    {
+        for(TableData table_data : table_data_list) Upsert(table_data);
+    }
+
     // 插入更新表格
     public
     void Upsert(TableData table_data) throws SQLException
@@ -65,10 +78,7 @@ class MySQLAccess
             // 2️⃣ 遍历所有行数据
             for(ArrayList<String> row_data : table_data.data())
             {
-                for(int i = 0; i < column_count; i++)
-                {
-                    stmt.setString(i + 1, row_data.get(i));
-                }
+                for(int i = 0; i < column_count; i++) stmt.setString(i + 1, row_data.get(i));
                 stmt.addBatch(); // 加入批量
             }
 
