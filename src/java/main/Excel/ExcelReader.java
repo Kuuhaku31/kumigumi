@@ -4,12 +4,36 @@ package Excel;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import utils.TableData;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+
+
+enum StringType
+{
+    Date,
+    Time,
+    Datetime,
+    Bool,
+    Text;
+
+    public static
+    StringType FromString(String str)
+    {
+        return switch(str.toLowerCase())
+        {
+            case "date" -> Date;
+            case "time" -> Time;
+            case "datetime" -> Datetime;
+            case "bool" -> Bool;
+            default -> Text;
+        };
+    }
+}
 
 public
 class ExcelReader
@@ -51,68 +75,56 @@ class ExcelReader
         };
     }
 
+    // 提取单元格值
+    private
+    String GetCellValue(Cell cell)
+    {
+        if(cell == null) return "";
+
+        CellValue value = evaluator.evaluate(cell);
+        return switch(value.getCellType())
+        {
+            case BOOLEAN -> value.getBooleanValue() ? "1" : "0";
+            case NUMERIC -> Double.toString(value.getNumberValue());
+            case STRING -> value.getStringValue();
+            default -> "";
+        };
+    }
+
+
+    /**
+     * 创建表格数据对象
+     */
     private
     TableData CreateTableData(Sheet sheet, String table_name, int start_row, int end_row, ColumnList column_list)
     {
         ArrayList<String>            headers = new ArrayList<>();
         ArrayList<ArrayList<String>> data    = new ArrayList<>();
 
-        // 获取表头
-        for(ColumnMap column_map : column_list.GetList())
-        {
-            headers.add(column_map.column_name());
-        }
 
-        // 遍历表格每一行
-        for(int row_idx = start_row; row_idx < end_row; row_idx++)
+        for(ColumnMap column_map : column_list.GetList()) headers.add(column_map.column_name()); // 获取表头
+        for(int row_idx = start_row; row_idx < end_row; row_idx++) // 遍历表格每一行
         {
-            // 跳过空行
             Row row = sheet.getRow(row_idx);
-            if(row == null) continue;
+            if(row == null) continue; // 跳过空行
 
             // 遍历每一列（仅考虑 column_list 中定义的列）
             ArrayList<String> row_data = new ArrayList<>();
             for(ColumnMap column_map : column_list.GetList())
             {
-                String cell_value = "";
-
                 // 跳过空单元格
-                Cell cell = row.getCell(column_map.column_index());
+                String cell_value = "";
+                Cell   cell       = row.getCell(column_map.column_index());
                 if(cell != null)
                 {
-
-                    // 提取显示值
-                    CellValue value = evaluator.evaluate(cell);
-                    cell_value = switch(value.getCellType())
-                    {
-                        case BOOLEAN -> value.getBooleanValue() ? "1" : "0";
-                        case NUMERIC -> Double.toString(value.getNumberValue());
-                        case STRING -> value.getStringValue();
-                        default -> "";
-                    };
-
-                    // 解析
-                    StringType type = switch(column_map.data_type().toLowerCase())
-                    {
-                        case "date" -> StringType.Date;
-                        case "time" -> StringType.Time;
-                        case "datetime" -> StringType.Datetime;
-                        case "bool" -> StringType.Bool;
-                        default -> StringType.Text;
-                    };
-                    cell_value = ParseString(cell_value, type);
+                    cell_value = GetCellValue(cell); // 提取单元格值
+                    cell_value = ParseString(cell_value, StringType.FromString(column_map.data_type())); // 解析出显示值
                 }
-
-                // 添加单元格数据到 行数据
-                row_data.add(cell_value);
+                row_data.add(cell_value); // 添加单元格数据到 行数据
             }
-
-            // 添加行数据到 表格数据
-            data.add(row_data);
+            data.add(row_data); // 添加行数据到 表格数据
         }
-
-        // 创建表格数据对象
-        return new TableData(table_name, headers, data);
+        return new TableData(table_name, headers, data);// 创建表格数据对象
     }
 
     public
@@ -183,13 +195,28 @@ class ExcelReader
         return table_data_list;
     }
 
-    private
-    enum StringType
+
+}
+
+
+class ColumnList
+{
+    private final ArrayList<ColumnMap> list = new ArrayList<>();
+
+    public
+    void Add(String column_name, int column_index, String data_type)
     {
-        Date,
-        Time,
-        Datetime,
-        Bool,
-        Text
+        list.add(new ColumnMap(column_name, column_index, data_type));
     }
+
+    // 迭代器
+    public
+    Iterable<ColumnMap> GetList()
+    {
+        return list;
+    }
+}
+
+record ColumnMap(String column_name, int column_index, String data_type)
+{
 }
