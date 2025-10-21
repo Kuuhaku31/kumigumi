@@ -11,6 +11,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import static utils.Headers.TableName;
+
 public
 class TestAPI
 {
@@ -53,7 +55,7 @@ class TestAPI
                 anime_table_data[i][j] = anime_info_list.get(i).get(j);
             }
         }
-        TableData anime_table = new TableData("anime", Headers.ANIME_HEADERS_SRC, anime_table_data);
+        TableData anime_table = new TableData(TableName.anime, Headers.ANIME_HEADERS_SRC, anime_table_data);
 
         String[][] episode_table_data = new String[episode_info_list.size()][Headers.EPISODE_HEADERS_SRC.length];
         for(int i = 0; i < episode_info_list.size(); i++)
@@ -63,7 +65,7 @@ class TestAPI
                 episode_table_data[i][j] = episode_info_list.get(i).get(j);
             }
         }
-        TableData episode_table = new TableData("episode", Headers.EPISODE_HEADERS_SRC, episode_table_data);
+        TableData episode_table = new TableData(TableName.episode, Headers.EPISODE_HEADERS_SRC, episode_table_data);
 
         String[][] torrent_table_data = new String[torrent_info_list.size()][Headers.TORRENT_HEADERS_SRC.length];
         for(int i = 0; i < torrent_info_list.size(); i++)
@@ -73,7 +75,7 @@ class TestAPI
                 torrent_table_data[i][j] = torrent_info_list.get(i).get(j);
             }
         }
-        TableData torrent_table = new TableData("torrent", Headers.TORRENT_HEADERS_SRC, torrent_table_data);
+        TableData torrent_table = new TableData(TableName.torrent, Headers.TORRENT_HEADERS_SRC, torrent_table_data);
 
         // 插入数据库
         MySQLAccess dba = new MySQLAccess();
