@@ -5,17 +5,15 @@ package NetAccess;
 import com.apptasticsoftware.rssreader.Enclosure;
 import com.apptasticsoftware.rssreader.Item;
 import com.apptasticsoftware.rssreader.RssReader;
-import utils.Info.TorrentInfo;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.http.HttpClient;
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public
@@ -65,9 +63,8 @@ class MikanRSS
     // 需要提供 RSS 链接和番剧 ID
     // 返回值：种子信息列表，如果获取失败或没有种子则返回 null
     public static
-    ArrayList<TorrentInfo> GetTorrentInfoList(String rss_url) throws IOException
+    ArrayList<ArrayList<String>> GetTorrentInfoList(String rss_url, int ani_id) throws IOException
     {
-
         HttpClient client = HttpClient.newBuilder()
             .proxy(ProxySelector.of(new InetSocketAddress("127.0.0.1", 10809))) // 例：Clash 代理
             .connectTimeout(Duration.ofSeconds(30))
@@ -78,35 +75,34 @@ class MikanRSS
         List<Item> items = reader.read(rss_url).toList();
 
         // 遍历 RSS 条目，提取种子信息
-        ArrayList<TorrentInfo> torrent_info_list = new ArrayList<>();
+        ArrayList<ArrayList<String>> torrent_info_list = new ArrayList<>();
         for(Item item : items)
         {
-            String title        = item.getTitle().orElse("");
-            String page_link    = item.getLink().orElse("");
-            String description  = item.getDescription().orElse("");
-            String pub_date_str = item.getPubDate().orElse("");
-
             // 如果 enclosure 不存在，就抛异常
             Enclosure enclosure = item.getEnclosure().orElseThrow(() -> new RuntimeException("RSS 条目缺少附件 enclosure"));
 
-            // enclosure 存在
-            String torrent_url = enclosure.getUrl();
-            long   size        = enclosure.getLength().orElse(0L);
+            // 填充信息
+            String TOR_URL        = enclosure.getUrl();
+            String ANI_ID         = String.valueOf(ani_id);
+            String air_datetime   = item.getPubDate().orElse("");
+            String size           = String.valueOf(enclosure.getLength().orElse(0L));
+            String url_page       = item.getLink().orElse("");
+            String title          = item.getTitle().orElse("");
+            String subtitle_group = parse_subtitle_group(title);
+            String description    = item.getDescription().orElse("");
 
-            // 填充 TorrentInfo 对象
-            TorrentInfo torrent_info = new TorrentInfo(torrent_url);
-            torrent_info.url_page    = page_link;
-            torrent_info.title       = title;
-            torrent_info.description = description;
-            torrent_info.size        = size;
-
-            // 解析发布日期
-            torrent_info.air_datetime = LocalDateTime.parse(pub_date_str, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-
-            // 解析字幕组
-            torrent_info.subtitle_group = parse_subtitle_group(title);
-
-            // 添加到列表
+            ArrayList<String> torrent_info = new ArrayList<>();
+            Collections.addAll(
+                torrent_info,
+                TOR_URL,
+                ANI_ID,
+                air_datetime,
+                size,
+                url_page,
+                title,
+                subtitle_group,
+                description
+            );
             torrent_info_list.add(torrent_info);
         }
 

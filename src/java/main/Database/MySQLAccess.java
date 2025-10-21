@@ -11,7 +11,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.stream.Collectors;
 
 public
 class MySQLAccess
@@ -22,16 +21,19 @@ class MySQLAccess
      * 构建 INSERT ... ON DUPLICATE KEY UPDATE SQL 模板
      */
     private static
-    String BuildUpsertSQL(String table_name, ArrayList<String> headers)
+    String BuildUpsertSQL(String table_name, String[] headers)
     {
-        String columns      = String.join(", ", headers);
-        String placeholders = String.join(", ", Collections.nCopies(headers.size(), "?"));
-        String update_part = headers.stream()
-            .map(h -> h + " = VALUES(" + h + ")")
-            .collect(Collectors.joining(", "));
+        String columns      = String.join("`, `", headers);
+        String placeholders = String.join(", ", Collections.nCopies(headers.length, "?"));
+        String update_part = String.join(", ",
+            java.util.Arrays.stream(headers)
+                .map(h -> "`" + h + "`" + " = VALUES(`" + h + "`)")
+                .toArray(String[]::new)
+        );
+
 
         return String.format(
-            "INSERT INTO %s (%s) VALUES (%s) ON DUPLICATE KEY UPDATE %s",
+            "INSERT INTO %s (`%s`) VALUES (%s) ON DUPLICATE KEY UPDATE %s",
             table_name, columns, placeholders, update_part
         );
     }
@@ -65,20 +67,21 @@ class MySQLAccess
     public
     void Upsert(TableData table_data) throws SQLException
     {
-        String            tableName    = table_data.table_name();
-        ArrayList<String> headers      = table_data.headers();
-        int               column_count = headers.size();
+        String   tableName    = table_data.table_name();
+        String[] headers      = table_data.headers();
+        int      column_count = headers.length;
 
         // 1️⃣ 构建通用 SQL 语句模板
         String sql = BuildUpsertSQL(tableName, headers);
+        IO.println(sql);
         try(PreparedStatement stmt = conn.prepareStatement(sql))
         {
             conn.setAutoCommit(false); // 启用事务
 
             // 2️⃣ 遍历所有行数据
-            for(ArrayList<String> row_data : table_data.data())
+            for(String[] row_data : table_data.data())
             {
-                for(int i = 0; i < column_count; i++) stmt.setString(i + 1, row_data.get(i));
+                for(int i = 0; i < column_count; i++) stmt.setString(i + 1, row_data[i]);
                 stmt.addBatch(); // 加入批量
             }
 

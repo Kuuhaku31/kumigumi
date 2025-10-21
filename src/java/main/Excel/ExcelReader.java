@@ -155,17 +155,17 @@ class ExcelReader
         ColumnList column_list
     )
     {
-        ArrayList<String>            headers = new ArrayList<>();
-        ArrayList<ArrayList<String>> data    = new ArrayList<>();
+        String[]   headers = new String[column_list.GetLength()];
+        String[][] data    = new String[end_row - start_row][column_list.GetLength()];
 
-
-        for(ColumnMap column_map : column_list.GetList()) headers.add(column_map.column_name()); // 获取表头
-        for(int row_idx = start_row; row_idx < end_row; row_idx++) // 遍历表格每一行
-        {
-            Row row = sheet.getRow(row_idx);
+        int header_idx = 0;
+        for(ColumnMap column_map : column_list.GetList()) headers[header_idx++] = column_map.column_name(); // 获取表头
+        for(int row_index = 0, sheet_row_idx = start_row; sheet_row_idx < end_row; row_index++, sheet_row_idx++)
+        { // 遍历表格每一行
+            Row row = sheet.getRow(sheet_row_idx);
 
             // 遍历每一列（仅考虑 column_list 中定义的列）
-            ArrayList<String> row_data = new ArrayList<>();
+            int column_index = 0;
             for(ColumnMap column_map : column_list.GetList())
             {
                 Cell cell = row.getCell(column_map.column_index());
@@ -174,9 +174,8 @@ class ExcelReader
                 cell_value = GetCellValue(evaluator, cell);                                          // 提取单元格值
                 cell_value = ParseString(cell_value, StringType.FromString(column_map.data_type())); // 解析出显示值
 
-                row_data.add(cell_value); // 添加单元格数据到 行数据
+                data[row_index][column_index++] = cell_value; // 添加单元格数据到 行数据
             }
-            data.add(row_data); // 添加行数据到 表格数据
         }
         return new TableData(table_name, headers, data);// 创建表格数据对象
     }
@@ -210,6 +209,12 @@ class ColumnList
     void Add(String column_name, int column_index, String data_type)
     {
         list.add(new ColumnMap(column_name, column_index, data_type));
+    }
+
+    public
+    int GetLength()
+    {
+        return list.size();
     }
 
     // 迭代器

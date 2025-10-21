@@ -2,18 +2,12 @@
 
 package utils;
 
-import Database.MySQL;
 import NetAccess.BangumiAPI;
 import NetAccess.MikanRSS;
-import utils.Info.AnimeInfo;
-import utils.Info.EpisodeInfo;
-import utils.Info.TorrentInfo;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.List;
 
 public
 class Task
@@ -23,9 +17,9 @@ class Task
     private final String rss_url;
 
     // 结果
-    private AnimeInfo              anime_info        = null;
-    private ArrayList<EpisodeInfo> episode_list      = null;
-    private ArrayList<TorrentInfo> torrent_info_list = null;
+    public ArrayList<ArrayList<String>> anime_info_list   = new ArrayList<>();
+    public ArrayList<ArrayList<String>> episode_info_list = new ArrayList<>();
+    public ArrayList<ArrayList<String>> torrent_info_list = new ArrayList<>();
 
     public
     Task(int ani_id, String rss_url)
@@ -41,133 +35,49 @@ class Task
         try
         {
             // 获取 anime_info, episode_list, torrent_info_list
-            BangumiInfoSet bangumi_info_set = BangumiAPI.GetBangumiInfoSet(ani_id);
-            anime_info   = bangumi_info_set.anime_info;
-            episode_list = bangumi_info_set.episode_info_list;
-
-            torrent_info_list = MikanRSS.GetTorrentInfoList(rss_url);
-            for(var torrent_info : torrent_info_list) torrent_info.ani_id = ani_id; // 添加 ani_id
+            anime_info_list   = BangumiAPI.GetAnimeData(ani_id);
+            episode_info_list = BangumiAPI.GetEpisodeData(ani_id);
+            torrent_info_list = MikanRSS.GetTorrentInfoList(rss_url, ani_id);
         }
         catch(URISyntaxException | IOException e)
         {
             IO.println("发生异常: " + e.getMessage());
         }
-
     }
 
-    public
-    void UpsertToDB()
-    {
-        try
-        {
-            MySQL mysql = new MySQL();
-            mysql.Open();
-
-            // 插入更新数据
-            mysql.Upsert(anime_info);
-            for(var episode : episode_list) mysql.Upsert(episode);
-            for(var torrent : torrent_info_list) mysql.Upsert(torrent);
-
-            // 从数据库删除无效的 episode_info
-            int ani_id = this.ani_id;
-
-            // 从一个 List<Episode> 中提取出每个对象的 ep_id 字段，并转成一个 int[] 数组
-            int[] valid_ep_ids = episode_list.stream().mapToInt(ep -> ep.ep_id).toArray();
-            mysql.DeleteInvalidEpisodeInfo(ani_id, valid_ep_ids);
-
-            mysql.Close();
-        }
-        catch(SQLException e)
-        {
-            // 打印异常信息
-            IO.println("数据库操作异常: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
 
     // 打印任务信息
     public
     void PrintInfo()
     {
+        String header      = "======" + this + "======";
+        int    header_long = header.length();
+
+        IO.println(header);
+
         IO.println("ani_id: " + ani_id);
         IO.println("rss_url: " + rss_url);
 
-        if(anime_info != null)
+        for(int i = 0; i < header_long; i++) IO.print("-");
+        IO.println();
+
+        // 打印三个数组
+        for(ArrayList<String> strings : anime_info_list)
         {
-            anime_info.PrintInfo();
-        }
-        else IO.println("Bangumi info not fetched yet.");
-
-        if(episode_list != null)
-        {
-            IO.println("Episode List:");
-            for(var episode : episode_list)
-            {
-                episode.PrintInfo();
-            }
-        }
-        else IO.println("Episode info not fetched yet.");
-
-        if(torrent_info_list != null)
-        {
-            for(var torrent : torrent_info_list)
-            {
-                torrent.PrintInfo();
-            }
-        }
-        else IO.println("Torrent info not fetched yet.");
-    }
-
-    // 打印任务信息（简短）
-    public
-    void PrintInfoShort()
-    {
-        IO.println("ani_id: " + ani_id);
-        IO.println("rss_url: " + rss_url);
-
-        // 打印番剧信息
-        if(anime_info != null) anime_info.PrintInfo();
-        else IO.println("Bangumi info not fetched yet.");
-
-        // 打印剧集列表
-        printListInfo("Episode", episode_list);
-
-        // 打印种子列表
-        printListInfo("Torrent", torrent_info_list);
-    }
-
-
-    // 通用的列表打印逻辑（限制前3项）
-    private
-    <T> void printListInfo(String title, List<T> list)
-    {
-        // 如果列表为空，打印提示信息
-        if(list == null || list.isEmpty())
-        {
-            IO.println(title + " info not fetched yet.");
-            return;
+            for(String string : strings) IO.println(string + "\t");
+            IO.println();
         }
 
-        IO.println(title + " List:");
-
-        int limit = Math.min(list.size(), 3);
-        for(int i = 0; i < limit; i++)
+        for(ArrayList<String> strings : episode_info_list)
         {
-            var item = list.get(i);
-            try
-            {
-                // 假设每个对象都有 PrintInfo() 方法
-                item.getClass().getMethod("PrintInfo").invoke(item);
-            }
-            catch(Exception e)
-            {
-                IO.println("[Error] Unable to print " + title + " info: " + e.getMessage());
-            }
+            for(String string : strings) IO.println(string + "\t");
+            IO.println();
         }
 
-        if(list.size() > 3)
+        for(ArrayList<String> strings : torrent_info_list)
         {
-            IO.println("... and more ...");
+            for(String string : strings) IO.println(string + "\t");
+            IO.println();
         }
 
     }

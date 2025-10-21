@@ -2,10 +2,8 @@
 
 package utils;
 
-import java.util.ArrayList;
-
 public
-record TableData(String table_name, ArrayList<String> headers, ArrayList<ArrayList<String>> data)
+record TableData(String table_name, String[] headers, String[][] data)
 {
     public
     void PrintInfo()
