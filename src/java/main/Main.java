@@ -193,10 +193,10 @@ void main(String[] args) throws IOException
         var data_list = ExcelReader.ReadData(args.length > 1 ? args[1] : def_excel_path);
 
         // 分拣出 _table 是 fetch 的数据块
-        ArrayList<TableData> fetch_data = new ArrayList<>();
-        for(TableData data : data_list) if(!data.table_name().equals("fetch")) fetch_data.add(data);
+        ArrayList<TableData> import_data = new ArrayList<>();
+        for(TableData data : data_list) if(!data.table_name().equals("fetch")) import_data.add(data);
 
-        UpsertDatabase(fetch_data);
+        UpsertDatabase(import_data);
         break;
     }
     case "fetch_excel":
