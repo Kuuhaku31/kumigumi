@@ -11,6 +11,8 @@ import java.sql.SQLException;
 
 // 控制台进度条显示函数
 
+String def_excel_path = "D:/OneDrive/kumigumi.xlsx";
+
 private static synchronized
 void showProgress(int done, int total)
 {
@@ -30,14 +32,14 @@ String[][] MergeArray(String[][] a, String[][] b)
     return temp;
 }
 
-Task[] Multithreading(Task[] task_list) throws InterruptedException
+ArrayList<Task> Multithreading(ArrayList<Task> task_list) throws InterruptedException
 {
     IO.println("开始并发执行任务");
 
     // List<Task> task_list = new ArrayList<>();
     // for(int i = 1; i <= 10; i++) task_list.add(new Task(i));
 
-    int           total    = task_list.length;
+    int           total    = task_list.size();
     AtomicInteger finished = new AtomicInteger(0);
 
     // 固定大小线程池
@@ -62,8 +64,7 @@ Task[] Multithreading(Task[] task_list) throws InterruptedException
     return task_list;
 }
 
-
-TableData[] GetTableDataList(Task[] task_list)
+ArrayList<TableData> GetTableDataList(ArrayList<Task> task_list)
 {
     // 执行
     // for(Task task : task_list) task.GetInfo();
@@ -77,7 +78,7 @@ TableData[] GetTableDataList(Task[] task_list)
     }
 
     // 合并数据
-    String[][] anime_table_data   = new String[task_list.length][];
+    String[][] anime_table_data   = new String[task_list.size()][];
     String[][] episode_table_data = new String[0][];
     String[][] torrent_table_data = new String[0][];
 
@@ -91,22 +92,22 @@ TableData[] GetTableDataList(Task[] task_list)
     }
 
     // 创建 TableData 对象
-    TableData anime_table   = new TableData("anime", Headers.ANIME_HEADERS_SRC, anime_table_data);
-    TableData episode_table = new TableData("episode", Headers.EPISODE_HEADERS_SRC, episode_table_data);
-    TableData torrent_table = new TableData("torrent", Headers.TORRENT_HEADERS_SRC, torrent_table_data);
+    ArrayList<TableData> data = new ArrayList<>();
+    data.add(new TableData("anime", Headers.ANIME_HEADERS_SRC, anime_table_data));
+    data.add(new TableData("episode", Headers.EPISODE_HEADERS_SRC, episode_table_data));
+    data.add(new TableData("torrent", Headers.TORRENT_HEADERS_SRC, torrent_table_data));
 
-    return new TableData[]{anime_table, episode_table, torrent_table};
+    return data;
 }
 
-
-void UpsertDatabase(TableData[] upsert_data_list)
+void UpsertDatabase(ArrayList<TableData> upsert_data_list)
 {
     // 插入数据库
     MySQLAccess dba = new MySQLAccess();
     try
     {
         dba.Open();
-        dba.Upsert(upsert_data_list);
+        dba.Upsert(upsert_data_list.toArray(new TableData[0]));
         dba.Close();
 
     }
@@ -116,7 +117,7 @@ void UpsertDatabase(TableData[] upsert_data_list)
     }
 }
 
-Task[] PraseTasks(String[] args)
+ArrayList<Task> PraseTasks(String[] args)
 {
     ArrayList<Task> tasks = new ArrayList<>();
     for(int i = 0; i < args.length; i++)
@@ -137,10 +138,10 @@ Task[] PraseTasks(String[] args)
             tasks.add(new Task(ani_id, rss_link_str));
         }
     }
-    return tasks.toArray(new Task[0]);
+    return tasks;
 }
 
-Task[] PraseFetchData(ArrayList<TableData> data_list)
+ArrayList<Task> PraseFetchData(ArrayList<TableData> data_list)
 {
     ArrayList<Task> tasks = new ArrayList<>();
     for(var data : data_list)
@@ -161,7 +162,7 @@ Task[] PraseFetchData(ArrayList<TableData> data_list)
             tasks.add(new Task((int) Double.parseDouble(data_row[i_ani_id]), data_row[i_rss_url]));
         }
     }
-    return tasks.toArray(new Task[0]);
+    return tasks;
 }
 
 void main(String[] args) throws IOException
@@ -189,22 +190,54 @@ void main(String[] args) throws IOException
     case "import":
     {
         IO.println("Importing from Excel...");
-        var data = ExcelReader.ReadData(args.length > 1 ? args[1] : "import.xlsx");
-        UpsertDatabase(data);
+        var data_list = ExcelReader.ReadData(args.length > 1 ? args[1] : def_excel_path);
+
+        // 分拣出 _table 是 fetch 的数据块
+        ArrayList<TableData> fetch_data = new ArrayList<>();
+        for(TableData data : data_list) if(!data.table_name().equals("fetch")) fetch_data.add(data);
+
+        UpsertDatabase(fetch_data);
         break;
     }
     case "fetch_excel":
+    {
         IO.println("Fetching from Excel...");
-        var data_list = ExcelReader.ReadData(args.length > 1 ? args[1] : "import.xlsx");
+        var data_list = ExcelReader.ReadData(args.length > 1 ? args[1] : def_excel_path);
 
         // 分拣出 _table 是 fetch 的数据块
         ArrayList<TableData> fetch_data = new ArrayList<>();
         for(TableData data : data_list) if(Objects.equals(data.table_name(), "fetch")) fetch_data.add(data);
 
+        // 转成 Task 并执行生成 TableData
         var tasks = PraseFetchData(fetch_data);
-        var data = GetTableDataList(tasks);
+        var data  = GetTableDataList(tasks);
+
         UpsertDatabase(data);
         break;
+    }
+    case "all":
+    {
+        IO.println("Fetching & Importing from MySQL...");
+
+        var data_list = ExcelReader.ReadData(args.length > 1 ? args[1] : def_excel_path);
+
+        // 分拣数据块
+        ArrayList<TableData> import_data     = new ArrayList<>();
+        ArrayList<TableData> fetch_task_data = new ArrayList<>();
+        for(TableData data : data_list)
+        {
+            if(data.table_name().equals("import")) import_data.add(data);
+            else if(data.table_name().equals("fetch")) fetch_task_data.add(data);
+        }
+
+        var fetch_tasks = PraseFetchData(fetch_task_data);
+        var fetch_data  = GetTableDataList(fetch_tasks);
+
+        import_data.addAll(fetch_data);
+        UpsertDatabase(import_data);
+
+        break;
+    }
 
     default: break;
     }

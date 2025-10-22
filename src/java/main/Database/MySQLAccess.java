@@ -54,10 +54,13 @@ class MySQLAccess
         for(TableData table_data : table_data_list) Upsert(table_data);
     }
 
+
     // 插入更新表格
     public
     void Upsert(TableData table_data) throws SQLException
     {
+        IO.println(table_data.table_name());
+
         // 检查 table_name 合法性
         String table_name = null;
         for(var name : table_name_list)

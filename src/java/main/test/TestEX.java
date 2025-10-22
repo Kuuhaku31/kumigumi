@@ -1,8 +1,5 @@
 package test;
 
-import Database.MySQLAccess;
-import Excel.ExcelReader;
-
 import java.io.IOException;
 import java.sql.SQLException;
 
@@ -13,13 +10,13 @@ class TestEX
     {
         IO.println("TestEX:");
 
-        var res = ExcelReader.ReadData(args[0]);
-
-        MySQLAccess dba = new MySQLAccess();
-        dba.Open();
-
-        dba.Upsert(res);
-
-        dba.Close();
+        // var res = ExcelReader.ReadData(args[0]);
+        //
+        // MySQLAccess dba = new MySQLAccess();
+        // dba.Open();
+        //
+        // dba.Upsert(res);
+        //
+        // dba.Close();
     }
 }

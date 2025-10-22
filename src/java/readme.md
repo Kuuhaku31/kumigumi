@@ -58,9 +58,11 @@ kumigumi fetch_excel <Excel file path>
 
 ### 4. 同时执行 (2) 和 (3)
 
+参数：
+
 ```txt
 
-kumigumi <Excel file path>
+kumigumi all <Excel file path>
 
 ```
 

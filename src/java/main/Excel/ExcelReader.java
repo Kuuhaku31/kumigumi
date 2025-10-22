@@ -18,6 +18,7 @@ import java.util.Date;
 
 enum StringType
 {
+    Int,
     Date,
     Time,
     Datetime,
@@ -29,6 +30,7 @@ enum StringType
     {
         return switch(str.toLowerCase())
         {
+            case "int" -> Int;
             case "date" -> Date;
             case "time" -> Time;
             case "datetime" -> Datetime;
@@ -56,7 +58,9 @@ class ExcelReader
                 try
                 {
                     double double_value = Double.parseDouble(value);
-                    Date   date         = DateUtil.getJavaDate(double_value);
+                    if(type == StringType.Int) yield String.valueOf((int) double_value);
+
+                    Date date = DateUtil.getJavaDate(double_value);
 
                     String pattern = switch(type)
                     {
@@ -78,7 +82,7 @@ class ExcelReader
     }
 
     public static
-    TableData[] ReadData(String file_path) throws IOException //
+    ArrayList<TableData> ReadData(String file_path) throws IOException //
     {
         // 创建临时文件（系统自动放在临时目录）
         var temp_file = Files.createTempFile("Temp_", ".txt");
@@ -148,7 +152,7 @@ class ExcelReader
         }
 
         // 转换成数组
-        return table_data_list.toArray(new TableData[0]);
+        return table_data_list;
     }
 
     /**
