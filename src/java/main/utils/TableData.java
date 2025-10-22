@@ -3,7 +3,7 @@
 package utils;
 
 public
-record TableData(Headers.TableName table_name, String[] headers, String[][] data)
+record TableData(String table_name, String[] headers, String[][] data)
 {
     public
     void PrintInfo()

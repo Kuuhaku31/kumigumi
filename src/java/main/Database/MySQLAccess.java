@@ -14,12 +14,14 @@ import java.util.Collections;
 public
 class MySQLAccess
 {
-    private Connection conn;
-
+    private Connection conn            = null;
+    private String[]   table_name_list = new String[0];
 
     public
     void Open() throws SQLException
     {
+        if(conn != null) return;
+
         String database_url  = "jdbc:mysql://localhost:3706/";
         String database_name = "kumigumi-new";
         String url           = database_url + database_name + "?allowPublicKeyRetrieval=true&useSSL=false";
@@ -27,11 +29,21 @@ class MySQLAccess
         String password      = "root-password";
 
         conn = DriverManager.getConnection(url, username, password);
+
+        // 初始化 table_name_list
+        try(var stmt = conn.createStatement(); var rs = stmt.executeQuery("SHOW TABLES"))
+        {
+            ArrayList<String> table_names = new ArrayList<>();
+            while(rs.next()) table_names.add(rs.getString(1));
+
+            table_name_list = table_names.toArray(new String[0]); // 转换为数组
+        }
     }
 
     public
     void Close() throws SQLException
     {
+        table_name_list = new String[0];
         if(conn != null && !conn.isClosed()) conn.close();
     }
 
@@ -47,18 +59,19 @@ class MySQLAccess
     void Upsert(TableData table_data) throws SQLException
     {
         // 检查 table_name 合法性
-        String   table_name   = table_data.table_name().toString();
-        String[] headers      = table_data.headers();
-        int      column_count = headers.length;
+        String table_name = null;
+        for(var name : table_name_list) if(name.equals(table_data.table_name())) table_name = name;
+        if(table_name == null) throw new IllegalArgumentException("Invalid table name: " + table_data.table_name());
+
 
         if(!table_name.matches("[A-Za-z0-9_]+"))
             throw new IllegalArgumentException("Invalid SQL identifier: " + table_name);
 
         // 1️⃣ 构建通用 SQL 语句模板
-        String columns      = String.join("`, `", headers);
-        String placeholders = String.join(", ", Collections.nCopies(headers.length, "?"));
+        String columns      = String.join("`, `", table_data.headers());
+        String placeholders = String.join(", ", Collections.nCopies(table_data.headers().length, "?"));
         String update_part = String.join(", ",
-            java.util.Arrays.stream(headers)
+            java.util.Arrays.stream(table_data.headers())
                 .map(h -> "`" + h + "`" + " = new." + h)
                 .toArray(String[]::new)
         );
@@ -79,7 +92,7 @@ class MySQLAccess
             // 2️⃣ 遍历所有行数据
             for(String[] row_data : table_data.data())
             {
-                for(int i = 0; i < column_count; i++) stmt.setString(i + 1, row_data[i]);
+                for(int i = 0; i < table_data.headers().length; i++) stmt.setString(i + 1, row_data[i]);
                 stmt.addBatch(); // 加入批量
             }
 

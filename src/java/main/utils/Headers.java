@@ -28,10 +28,4 @@ class Headers
         "episode", Set.of("EPI_ID", "ANI_ID", "air_date", "duration", "index", "title", "title_cn", "description"),
         "torrent", Set.of("TOR_URL", "ANI_ID", "air_datetime", "size", "url_page", "subtitle_group", "description")
     );
-
-    public
-    enum TableName
-    {
-        anime, episode, torrent
-    }
 }

@@ -4,7 +4,6 @@ package Excel;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import utils.Headers;
 import utils.TableData;
 
 import java.io.FileInputStream;
@@ -178,7 +177,7 @@ class ExcelReader
                 data[row_index][column_index++] = cell_value; // 添加单元格数据到 行数据
             }
         }
-        return new TableData(Headers.TableName.valueOf(table_name), headers, data);// 创建表格数据对象
+        return new TableData(table_name, headers, data);// 创建表格数据对象
     }
 
     // 提取单元格值
