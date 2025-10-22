@@ -62,20 +62,47 @@ void UpsertDatabase(TableData[] upsert_data_list)
     }
 }
 
+Task[] PraseTasks(String[] args)
+{
+    ArrayList<Task> tasks = new ArrayList<>();
+
+    for(int i = 0; i < args.length; i++)
+    {
+        // 如果开头两个字符是 "-a"
+        if(args[i].startsWith("-a"))
+        {
+            String ani_id_str   = args[i].substring(2);
+            int    ani_id       = Integer.parseInt(ani_id_str);
+            String rss_link_str = null;
+
+            // 继续判断下一个参数开头是不是 "-r"
+            if(i + 1 < args.length && args[i + 1].startsWith("-r"))
+            {
+                rss_link_str = args[i + 1].substring(2);
+            }
+
+            tasks.add(new Task(ani_id, rss_link_str));
+        }
+    }
+
+    return tasks.toArray(new Task[0]);
+}
+
 
 void main(String[] args)
 {
     IO.println("Hello, kumigumi!?");
     if(args.length > 0) IO.println(Arrays.toString(args));
 
-    Task[] tasks = {
-        // new Task(455454, "https://mikanani.me/RSS/Bangumi?bangumiId=3698"),
-        // new Task(507634, "https://mikanani.me/RSS/Bangumi?bangumiId=3774"),
-        // new Task(508958, "https://mikanani.me/RSS/Bangumi?bangumiId=3783"),
-        new Task(539395)
-    };
+    // Task[] tasks = {
+    //     // new Task(455454, "https://mikanani.me/RSS/Bangumi?bangumiId=3698"),
+    //     // new Task(507634, "https://mikanani.me/RSS/Bangumi?bangumiId=3774"),
+    //     // new Task(508958, "https://mikanani.me/RSS/Bangumi?bangumiId=3783"),
+    //     new Task(539395)
+    // };
 
-    var data = GetTableDataList(tasks);
+    Task[] tasks = PraseTasks(args);
+    var    data  = GetTableDataList(tasks);
     UpsertDatabase(data);
 
     IO.println("Done.");
