@@ -59,7 +59,7 @@ class BangumiAPI
     {
         if(str == null || str.isBlank()) return null;
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-M-d");
         try
         {
             // 尝试解析为日期
