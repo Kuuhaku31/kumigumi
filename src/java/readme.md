@@ -12,11 +12,7 @@
 
 ## 实现的功能
 
-1. 从远程获取信息并保存到数据库
-2. 从 Excel 文件获取信息并保存到数据库
-3. 从 Excel 文件读取更新列表，并依据该列表执行 (1)
-
-### 功能 1
+### 1. 从远程获取信息并保存到数据库
 
 参数：
 
@@ -39,6 +35,34 @@ kumigumi fetch -a507634 -rhttps://mikanani.me/RSS/Bangumi?bangumiId=3774 -a53939
 提供 Bangumi ID 和 RSS 订阅链接（可选），程序会从远程获取该番组的信息并保存到数据库中
 
 注意：对应的 RSS 紧跟在 Bangumi ID 后面
+
+### 2. 从 Excel 文件获取信息并保存到数据库
+
+参数：
+
+```txt
+
+kumigumi import <Excel file path>
+
+```
+
+### 3. 从 Excel 文件读取更新列表，并依据该列表执行 (1)
+
+参数：
+
+```txt
+
+kumigumi fetch_excel <Excel file path>
+
+```
+
+### 4. 同时执行 (2) 和 (3)
+
+```txt
+
+kumigumi <Excel file path>
+
+```
 
 ---
 

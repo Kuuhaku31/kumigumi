@@ -8,6 +8,9 @@ import utils.TableData;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -77,11 +80,16 @@ class ExcelReader
     public static
     TableData[] ReadData(String file_path) throws IOException //
     {
-        final var workbook  = new XSSFWorkbook(new FileInputStream(file_path));
-        final var evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+        // 创建临时文件（系统自动放在临时目录）
+        var temp_file = Files.createTempFile("Temp_", ".txt");
+        Files.copy(Path.of(file_path), temp_file, StandardCopyOption.REPLACE_EXISTING); // 将原文件复制到临时文件
 
-        var sheet = workbook.getSheet("main");
+        // 访问文件
+        final var workbook   = new XSSFWorkbook(new FileInputStream(temp_file.toFile()));
+        final var evaluator  = workbook.getCreationHelper().createFormulaEvaluator();
+        final var main_sheet = workbook.getSheet("main");
 
+        // 遍历所有行
         ArrayList<TableData> table_data_list = new ArrayList<>();
 
         Sheet      dst_sheet       = null;
@@ -90,9 +98,8 @@ class ExcelReader
         int        end_row         = 0;
         ColumnList column_list_buf = null;
 
-        // 遍历所有行
         boolean is_reading_table_info = false; // 是否处于读取表格信息模式
-        for(var row : sheet)
+        for(var row : main_sheet)
         {
             // 忽略空行
             if(row == null) continue;
@@ -168,7 +175,7 @@ class ExcelReader
             int column_index = 0;
             for(ColumnMap column_map : column_list.GetList())
             {
-                Cell cell = row.getCell(column_map.column_index());
+                var cell = row.getCell(column_map.column_index());
 
                 String cell_value;
                 cell_value = GetCellValue(evaluator, cell);                                          // 提取单元格值
@@ -184,6 +191,9 @@ class ExcelReader
     private static
     String GetCellValue(FormulaEvaluator evaluator, Cell cell)
     {
+        // DataFormatter formatter = new DataFormatter();
+        // return formatter.formatCellValue(cell, null);
+
         // 处理空单元格
         CellValue value = evaluator.evaluate(cell);
         if(value == null) return "";

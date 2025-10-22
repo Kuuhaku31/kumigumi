@@ -7,6 +7,9 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 
 public
@@ -52,6 +55,24 @@ class BangumiAPI
     }
 
     private static
+    String ValidateDate(String str)
+    {
+        if(str == null || str.isBlank()) return null;
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        try
+        {
+            // 尝试解析为日期
+            LocalDate.parse(str, formatter);
+            return str; // ✅ 合法，原样返回
+        }
+        catch(DateTimeParseException e)
+        {
+            return null; // ❌ 非法格式或日期
+        }
+    }
+
+    private static
     String[] ParseEpisodeInfo(JSONObject episode_info_json)
     {
         // 处理 json 格式字符串
@@ -61,7 +82,7 @@ class BangumiAPI
         // EpisodeInfo episode_info = new EpisodeInfo(ep_id, ani_id);
 
         // 解析放送日期
-        String air_date = episode_info_json.getString("airdate");
+        String air_date = ValidateDate(episode_info_json.getString("airdate"));
 
         // 解析集数
         String ep_str   = episode_info_json.getNumber("ep").toString();
@@ -90,7 +111,7 @@ class BangumiAPI
         String ANI_ID = String.valueOf(anime_info_json.getInt("id"));
 
         // 解析放送日期
-        String air_date = anime_info_json.getString("date");
+        String air_date = ValidateDate(anime_info_json.getString("date"));
 
         // 解析标题
         String title    = anime_info_json.getString("name");
