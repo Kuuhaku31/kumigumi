@@ -11,9 +11,7 @@ import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.http.HttpClient;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 public
@@ -63,7 +61,7 @@ class MikanRSS
     // 需要提供 RSS 链接和番剧 ID
     // 返回值：种子信息列表，如果获取失败或没有种子则返回 null
     public static
-    ArrayList<ArrayList<String>> GetTorrentInfoList(String rss_url, int ani_id) throws IOException
+    String[][] GetTorrentInfoList(String rss_url, int ani_id) throws IOException
     {
         HttpClient client = HttpClient.newBuilder()
             .proxy(ProxySelector.of(new InetSocketAddress("127.0.0.1", 10809))) // 例：Clash 代理
@@ -75,7 +73,9 @@ class MikanRSS
         List<Item> items = reader.read(rss_url).toList();
 
         // 遍历 RSS 条目，提取种子信息
-        ArrayList<ArrayList<String>> torrent_info_list = new ArrayList<>();
+        String[][] torrent_info_list = new String[items.size()][0];
+
+        int i = 0;
         for(Item item : items)
         {
             // 如果 enclosure 不存在，就抛异常
@@ -91,19 +91,10 @@ class MikanRSS
             String subtitle_group = parse_subtitle_group(title);
             String description    = item.getDescription().orElse("");
 
-            ArrayList<String> torrent_info = new ArrayList<>();
-            Collections.addAll(
-                torrent_info,
-                TOR_URL,
-                ANI_ID,
-                air_datetime,
-                size,
-                url_page,
-                title,
-                subtitle_group,
-                description
-            );
-            torrent_info_list.add(torrent_info);
+            // 一条种子信息
+            String[] torrent_info = new String[]{TOR_URL, ANI_ID, air_datetime, size, url_page, title, subtitle_group, description};
+
+            torrent_info_list[i++] = (torrent_info);
         }
 
         return torrent_info_list;

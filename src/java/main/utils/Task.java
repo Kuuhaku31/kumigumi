@@ -7,7 +7,6 @@ import NetAccess.MikanRSS;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 
 public
 class Task
@@ -17,9 +16,16 @@ class Task
     private final String rss_url;
 
     // 结果
-    public ArrayList<ArrayList<String>> anime_info_list   = new ArrayList<>();
-    public ArrayList<ArrayList<String>> episode_info_list = new ArrayList<>();
-    public ArrayList<ArrayList<String>> torrent_info_list = new ArrayList<>();
+    public String[]   anime_info_list   = new String[0];
+    public String[][] episode_info_list = new String[0][];
+    public String[][] torrent_info_list = new String[0][];
+
+    public
+    Task(int ani_id)
+    {
+        this.ani_id  = ani_id;
+        this.rss_url = null;
+    }
 
     public
     Task(int ani_id, String rss_url)
@@ -37,7 +43,7 @@ class Task
             // 获取 anime_info, episode_list, torrent_info_list
             anime_info_list   = BangumiAPI.GetAnimeData(ani_id);
             episode_info_list = BangumiAPI.GetEpisodeData(ani_id);
-            torrent_info_list = MikanRSS.GetTorrentInfoList(rss_url, ani_id);
+            if(rss_url != null) torrent_info_list = MikanRSS.GetTorrentInfoList(rss_url, ani_id);
         }
         catch(URISyntaxException | IOException e)
         {
@@ -62,19 +68,19 @@ class Task
         IO.println();
 
         // 打印三个数组
-        for(ArrayList<String> strings : anime_info_list)
+        for(var strings : anime_info_list)
+        {
+            IO.println(strings + "\t");
+            IO.println();
+        }
+
+        for(var strings : episode_info_list)
         {
             for(String string : strings) IO.println(string + "\t");
             IO.println();
         }
 
-        for(ArrayList<String> strings : episode_info_list)
-        {
-            for(String string : strings) IO.println(string + "\t");
-            IO.println();
-        }
-
-        for(ArrayList<String> strings : torrent_info_list)
+        for(var strings : torrent_info_list)
         {
             for(String string : strings) IO.println(string + "\t");
             IO.println();

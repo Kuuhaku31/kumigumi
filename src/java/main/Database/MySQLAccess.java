@@ -49,7 +49,7 @@ class MySQLAccess
 
     // 插入更新表格
     public
-    void Upsert(ArrayList<TableData> table_data_list) throws SQLException
+    void Upsert(TableData[] table_data_list) throws SQLException
     {
         for(TableData table_data : table_data_list) Upsert(table_data);
     }
@@ -60,12 +60,13 @@ class MySQLAccess
     {
         // 检查 table_name 合法性
         String table_name = null;
-        for(var name : table_name_list) if(name.equals(table_data.table_name())) table_name = name;
+        for(var name : table_name_list)
+            if(name.equals(table_data.table_name()))
+            {
+                table_name = name;
+                break;
+            }
         if(table_name == null) throw new IllegalArgumentException("Invalid table name: " + table_data.table_name());
-
-
-        if(!table_name.matches("[A-Za-z0-9_]+"))
-            throw new IllegalArgumentException("Invalid SQL identifier: " + table_name);
 
         // 1️⃣ 构建通用 SQL 语句模板
         String columns      = String.join("`, `", table_data.headers());
@@ -90,7 +91,7 @@ class MySQLAccess
             conn.setAutoCommit(false); // 启用事务
 
             // 2️⃣ 遍历所有行数据
-            for(String[] row_data : table_data.data())
+            for(var row_data : table_data.data())
             {
                 for(int i = 0; i < table_data.headers().length; i++) stmt.setString(i + 1, row_data[i]);
                 stmt.addBatch(); // 加入批量

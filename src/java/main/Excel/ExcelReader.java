@@ -42,9 +42,8 @@ class ExcelReader
     private static
     String ParseString(String value, StringType type)
     {
-        // 如果不是文本类型且值为空白串，则返回 null
-        if(value.isEmpty() && type != StringType.Text) return null;
-
+        // 如果为空白串，则返回 null
+        if(value.isEmpty()) return null;
         return switch(type)
         {
             case Bool -> value.equals("0") ? "FALSE" : "TRUE";
@@ -76,12 +75,12 @@ class ExcelReader
     }
 
     public static
-    ArrayList<TableData> ReadData(String file_path) throws IOException //
+    TableData[] ReadData(String file_path) throws IOException //
     {
-        final Workbook         workbook  = new XSSFWorkbook(new FileInputStream(file_path));
-        final FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+        final var workbook  = new XSSFWorkbook(new FileInputStream(file_path));
+        final var evaluator = workbook.getCreationHelper().createFormulaEvaluator();
 
-        Sheet sheet = workbook.getSheet("main");
+        var sheet = workbook.getSheet("main");
 
         ArrayList<TableData> table_data_list = new ArrayList<>();
 
@@ -93,11 +92,11 @@ class ExcelReader
 
         // 遍历所有行
         boolean is_reading_table_info = false; // 是否处于读取表格信息模式
-        for(Row row : sheet)
+        for(var row : sheet)
         {
             // 忽略空行
             if(row == null) continue;
-            Cell key_cell = row.getCell(0);
+            var key_cell = row.getCell(0);
             if(key_cell == null || key_cell.getCellType() == CellType.BLANK) continue;
 
             // 对于每一个键
@@ -141,7 +140,8 @@ class ExcelReader
             }
         }
 
-        return table_data_list;
+        // 转换成数组
+        return table_data_list.toArray(new TableData[0]);
     }
 
     /**

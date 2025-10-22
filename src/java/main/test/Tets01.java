@@ -2,105 +2,24 @@
 
 package test;
 
-import Database.DB;
-import NetAccess.Bangumi.InfoGetter;
-import NetAccess.MikanAnime.MikanParser;
-import NetAccess.Net;
-import utils.Info.TorrentInfo;
-import utils.InfoSet;
-import utils.Translate;
-
-import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 
 public
 class Tets01
 {
-    private
-    void Test0(String[] args)
-    {
-        // String url = args[0];
-        // String html_str;
-        // try
-        // {
-        //     html_str = Net.GetHTML(url);
-        // }
-        // catch(IOException e)
-        // {
-        //     throw new RuntimeException(e);
-        // }
-        //
-        // BangumiPageInfo page_info = BangumiParser.ParseBangumiHTML(html_str);
-        // IO.println("打印结果: ");
-        // page_info.animeInfo.Translate();
-        // for(var episode : page_info.episodeInfoList)
-        // {
-        //     episode.Translate();
-        // }
-        //
-        // page_info.PrintInfo();
-    }
-
-    private
-    void Test1()
-    {
-        Translate.PrintMap();
-        String key = "种子描述";
-        String res = Translate.TranslateKey(key);
-        IO.println(key + " -> " + res);
-    }
-
-    private
-    void Test2(String url)
-    {
-        IO.println("Test2");
-        IO.println("url: " + url);
-
-        String html_str;
-        try
-        {
-            html_str = Net.GetHTML(url);
-        }
-        catch(IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-
-        List<TorrentInfo> info_list = MikanParser.ParseMikanRssXML("1234", html_str);
-
-        for(var torrent : info_list)
-        {
-            // torrent.Translate();
-            torrent.PrintInfo();
-            IO.println("=================================");
-        }
-    }
-
-    private
-    void Test3(String bangumi_url, String mikan_url)
-    {
-        InfoSet info_set = InfoGetter.GetInfo(bangumi_url, mikan_url);
-        info_set.Translate();
-        info_set.PrintInfo();
-    }
-
-    private
-    void TestDB()
-    {
-        // DB test
-        IO.println("TestDB");
-        DB db = new DB("D:/def/db/test.accdb", "user_list");
-        db.CreateTable();
-    }
-
     void main(String[] args)
     {
         IO.println(Arrays.toString(args));
-        Test0(args);
-        // Test1();
-        // Test2(args[1]);
-        // Test3(args[0], args[1]);
-        // TestDB();
+
+        String[] str_list  = new String[]{"a", "b", "c"};
+        String[] str_list2 = str_list;
+
+        IO.println(Arrays.toString(str_list));
+        IO.println(Arrays.toString(str_list2));
+
+        str_list2 = null;
+
+        IO.println(Arrays.toString(str_list));
+        IO.println(Arrays.toString(str_list2));
     }
 }

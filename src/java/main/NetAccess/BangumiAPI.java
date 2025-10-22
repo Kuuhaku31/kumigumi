@@ -7,9 +7,6 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 
 public
@@ -19,23 +16,22 @@ class BangumiAPI
 
 
     public static
-    ArrayList<ArrayList<String>> GetAnimeData(int anime_id) throws URISyntaxException, IOException
+    String[] GetAnimeData(int anime_id) throws URISyntaxException, IOException
     {
-        JSONObject ani_info_json = BangumiAPI.GetInfo(BangumiAPI.QueryType.anime_info, anime_id);
-        return new ArrayList<>(List.of(BangumiAPI.ParseAnimeInfo(ani_info_json)));
+        return ParseAnimeInfo(GetInfo(BangumiAPI.QueryType.anime_info, anime_id));
     }
 
     public static
-    ArrayList<ArrayList<String>> GetEpisodeData(int anime_id) throws URISyntaxException, IOException
+    String[][] GetEpisodeData(int anime_id) throws URISyntaxException, IOException
     {
         // 解析 episode 信息
         JSONObject ep_info_list = BangumiAPI.GetInfo(BangumiAPI.QueryType.episode_list, anime_id);
 
         JSONArray ep_list = ep_info_list.getJSONArray("data");
-        if(ep_list == null) return new ArrayList<>();
+        if(ep_list == null) return new String[0][0];
 
-        ArrayList<ArrayList<String>> ep_data = new ArrayList<>();
-        for(int i = 0; i < ep_list.length(); i++) ep_data.add(BangumiAPI.ParseEpisodeInfo(ep_list.getJSONObject(i)));
+        String[][] ep_data = new String[ep_list.length()][0];
+        for(int i = 0; i < ep_list.length(); i++) ep_data[i] = ParseEpisodeInfo(ep_list.getJSONObject(i));
         return ep_data;
     }
 
@@ -56,7 +52,7 @@ class BangumiAPI
     }
 
     private static
-    ArrayList<String> ParseEpisodeInfo(JSONObject episode_info_json)
+    String[] ParseEpisodeInfo(JSONObject episode_info_json)
     {
         // 处理 json 格式字符串
         String ANI_ID = String.valueOf(episode_info_json.getInt("subject_id"));
@@ -82,25 +78,13 @@ class BangumiAPI
         // 解析概述
         String description = episode_info_json.getString("desc");
 
-
-        ArrayList<String> ep_data = new ArrayList<>();
-        Collections.addAll(
-            ep_data,
-            EPI_ID,
-            ANI_ID,
-            air_date,
-            duration,
-            index,
-            title,
-            title_cn,
-            description
-        );
-        return ep_data;
+        // 返回
+        return new String[]{EPI_ID, ANI_ID, air_date, duration, index, title, title_cn, description};
     }
 
 
     private static
-    ArrayList<String> ParseAnimeInfo(JSONObject anime_info_json)
+    String[] ParseAnimeInfo(JSONObject anime_info_json)
     {
         // 解析 ANI_ID
         String ANI_ID = String.valueOf(anime_info_json.getInt("id"));
@@ -138,20 +122,8 @@ class BangumiAPI
         // 解析封面图片
         String url_cover = anime_info_json.getJSONObject("images").getString("large");
 
-
-        ArrayList<String> anime_data = new ArrayList<>();
-        Collections.addAll(
-            anime_data,
-            ANI_ID,
-            air_date,
-            title,
-            title_cn,
-            aliases,
-            episode_count,
-            url_official_site,
-            url_cover
-        );
-        return anime_data;
+        // 返回
+        return new String[]{ANI_ID, air_date, title, title_cn, aliases, episode_count, url_official_site, url_cover};
     }
 
     // 获取 info_box 中指定 key 的项
