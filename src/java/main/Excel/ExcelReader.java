@@ -40,14 +40,6 @@ enum StringType
     }
 }
 
-enum TableType
-{
-    Anime,
-    Episode,
-    Torrent,
-    Fetch,
-    TorrentDownload
-}
 
 public
 class ExcelReader
@@ -98,7 +90,7 @@ class ExcelReader
      *
      */
     public static
-    ArrayList<TableData> ReadData(String file_path) throws IOException //
+    ArrayList<TableData> Read(String file_path) throws IOException //
     {
         // 创建临时文件（系统自动放在临时目录）
         var temp_file = Files.createTempFile("Temp_", ".txt");

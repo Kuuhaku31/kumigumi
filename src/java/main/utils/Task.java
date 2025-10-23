@@ -36,7 +36,7 @@ class Task
 
     // 执行任务的具体逻辑
     public
-    void GetInfo()
+    void Run()
     {
         try
         {
