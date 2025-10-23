@@ -36,9 +36,6 @@ ArrayList<Task> Multithreading(ArrayList<Task> task_list) throws InterruptedExce
 {
     IO.println("开始并发执行任务");
 
-    // List<Task> task_list = new ArrayList<>();
-    // for(int i = 1; i <= 10; i++) task_list.add(new Task(i));
-
     int           total    = task_list.size();
     AtomicInteger finished = new AtomicInteger(0);
 

@@ -72,7 +72,12 @@ class MySQLAccess
         if(table_name == null) throw new IllegalArgumentException("Invalid table name: " + table_data.table_name());
 
         // 1️⃣ 构建通用 SQL 语句模板
-        String columns      = String.join("`, `", table_data.headers());
+        StringBuilder columns = new StringBuilder();
+        for(int i = 0; i < table_data.headers().length; i++)
+        {
+            columns.append("`").append(table_data.headers()[i]).append("`");
+            if(i < table_data.headers().length - 1) columns.append(", ");
+        }
         String placeholders = String.join(", ", Collections.nCopies(table_data.headers().length, "?"));
         String update_part = String.join(", ",
             java.util.Arrays.stream(table_data.headers())
@@ -82,7 +87,7 @@ class MySQLAccess
 
         String sql = String.format(
             """
-            INSERT INTO `%s` (`%s`)
+            INSERT INTO `%s` (%s)
             VALUES (%s) AS `new`
             ON DUPLICATE KEY UPDATE %s
             """,

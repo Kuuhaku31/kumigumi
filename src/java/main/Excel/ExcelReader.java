@@ -40,6 +40,15 @@ enum StringType
     }
 }
 
+enum TableType
+{
+    Anime,
+    Episode,
+    Torrent,
+    Fetch,
+    TorrentDownload
+}
+
 public
 class ExcelReader
 {
@@ -81,6 +90,13 @@ class ExcelReader
         };
     }
 
+    /**
+     *
+     * 读取 Excel 数据
+     * <p>
+     * 返回 TableData 列表
+     *
+     */
     public static
     ArrayList<TableData> ReadData(String file_path) throws IOException //
     {
@@ -213,7 +229,6 @@ class ExcelReader
 
 
 }
-
 
 class ColumnList
 {
