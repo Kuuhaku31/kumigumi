@@ -4,7 +4,6 @@
 import utils.TableData;
 
 import static Excel.ExcelReader.Read;
-import static NetAccess.MultiFileDownloader.DownloadAll;
 import static utils.Method.*;
 
 
@@ -68,9 +67,15 @@ void main(String[] args)
         }
         case "dt":
         {
-            var dt_url_list = PraseTorrentDownloadList(block_list_torrent_download);
             System.out.println("Downloading torrents...");
-            DownloadAll(dt_url_list, dt_path);
+
+            var dt_url_list = PraseTorrentDownloadList(block_list_torrent_download);
+            var failed_urls = DownloadAll(dt_url_list, dt_path);
+
+            for(var url : failed_urls)
+            {
+                System.err.println("下载失败: " + url);
+            }
 
             break;
         }
