@@ -5,8 +5,13 @@ package NetAccess;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -17,13 +22,12 @@ class BangumiAPI
 {
     private static final String bangumi_server = "https://api.bgm.tv";
 
-
     public static
     String[] GetAnimeData(int anime_id) throws URISyntaxException, IOException
     {
         return ParseAnimeInfo(GetInfo(BangumiAPI.QueryType.anime_info, anime_id));
     }
-
+    
     public static
     String[][] GetEpisodeData(int anime_id) throws URISyntaxException, IOException
     {
@@ -49,7 +53,7 @@ class BangumiAPI
         default -> throw new UnsupportedOperationException("BangumiAPI GetInfo: 未知的查询类型");
         }
         String url_str = String.format(format_str, bangumi_server, anime_id);
-        String res_str = Net.Get(url_str);
+        String res_str = Get(url_str);
 
         return new JSONObject(res_str);
     }
@@ -100,9 +104,8 @@ class BangumiAPI
         String description = episode_info_json.getString("desc");
 
         // 返回
-        return new String[]{EPI_ID, ANI_ID, air_date, duration, index, title, title_cn, description};
+        return new String[] {EPI_ID, ANI_ID, air_date, duration, index, title, title_cn, description};
     }
-
 
     private static
     String[] ParseAnimeInfo(JSONObject anime_info_json)
@@ -144,7 +147,7 @@ class BangumiAPI
         String url_cover = anime_info_json.getJSONObject("images").getString("large");
 
         // 返回
-        return new String[]{ANI_ID, air_date, title, title_cn, aliases, episode_count, url_official_site, url_cover};
+        return new String[] {ANI_ID, air_date, title, title_cn, aliases, episode_count, url_official_site, url_cover};
     }
 
     // 获取 info_box 中指定 key 的项
@@ -166,6 +169,27 @@ class BangumiAPI
             }
         }
         return null;
+    }
+
+    private static
+    String Get(String url_str) throws URISyntaxException, IOException
+    {
+        URL               url  = new URI(url_str).toURL();                  // 创建URL对象
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();  // 打开连接
+        conn.setRequestMethod("GET");                                       // 设置请求方法
+        conn.setRequestProperty("User-Agent", "Mozilla/5.0");               // 添加 User-Agent
+
+        // 读取响应
+        BufferedReader in       = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        StringBuilder  response = new StringBuilder();
+
+        // 逐行读取响应内容
+        String input_line;
+        while((input_line = in.readLine()) != null) response.append(input_line);
+
+        in.close();
+
+        return response.toString();
     }
 
 

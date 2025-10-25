@@ -2,11 +2,12 @@
 
 package utils;
 
-import NetAccess.BangumiAPI;
-import NetAccess.MikanRSS;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
+
+import static NetAccess.BangumiAPI.GetAnimeData;
+import static NetAccess.BangumiAPI.GetEpisodeData;
+import static NetAccess.MikanRSS.GetTorrentData;
 
 public
 class Task
@@ -41,9 +42,9 @@ class Task
         try
         {
             // 获取 anime_info, episode_list, torrent_info_list
-            anime_info_list   = BangumiAPI.GetAnimeData(ani_id);
-            episode_info_list = BangumiAPI.GetEpisodeData(ani_id);
-            if(rss_url != null) torrent_info_list = MikanRSS.GetTorrentInfoList(rss_url, ani_id);
+            anime_info_list   = GetAnimeData(ani_id);
+            episode_info_list = GetEpisodeData(ani_id);
+            torrent_info_list = GetTorrentData(rss_url, ani_id);
         }
         catch(URISyntaxException | IOException e)
         {
@@ -54,38 +55,41 @@ class Task
 
     // 打印任务信息
     public
-    void PrintInfo()
+    String toString()
     {
+        StringBuilder builder = new StringBuilder();
+
         String header      = "======" + this + "======";
         int    header_long = header.length();
 
-        IO.println(header);
+        builder.append(header).append("\n");
 
-        IO.println("ani_id: " + ani_id);
-        IO.println("rss_url: " + rss_url);
+        builder.append("ani_id: ").append(ani_id).append("\n");
+        builder.append("rss_url: ").append(rss_url).append("\n");
 
         for(int i = 0; i < header_long; i++) IO.print("-");
-        IO.println();
+        builder.append("\n");
 
         // 打印三个数组
         for(var strings : anime_info_list)
         {
-            IO.println(strings + "\t");
-            IO.println();
+            builder.append(strings).append("\t");
+            builder.append("\n");
         }
 
         for(var strings : episode_info_list)
         {
-            for(String string : strings) IO.println(string + "\t");
-            IO.println();
+            for(String string : strings) builder.append(string).append("\t");
+            builder.append("\n");
         }
 
         for(var strings : torrent_info_list)
         {
-            for(String string : strings) IO.println(string + "\t");
-            IO.println();
+            for(String string : strings) builder.append(string).append("\t");
+            builder.append("\n");
         }
 
+        return builder.toString();
     }
 
 
