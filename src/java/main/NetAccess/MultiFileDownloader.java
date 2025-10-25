@@ -1,9 +1,11 @@
 package NetAccess;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -12,6 +14,9 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static utils.Method.showProgress;
 
 public
 class MultiFileDownloader
@@ -45,8 +50,16 @@ class MultiFileDownloader
      * 返回下载失败的 URL 列表
      */
     public static
-    List<String> DownloadAll(List<String> urls, Path downloadDir) throws InterruptedException
+    List<String> DownloadAll(List<String> urls, Path downloadDir)
     {
+        // 创建文件夹
+        try { Files.createDirectories(downloadDir); }
+        catch(IOException e)
+        {
+            System.err.println("无法创建下载目录: " + e.getMessage());
+            return urls; // 返回所有 URL 作为失败列表
+        }
+
         var client = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.ALWAYS) // 自动跟随重定向
             .connectTimeout(Duration.ofSeconds(10))      // 设置连接超时
@@ -54,6 +67,10 @@ class MultiFileDownloader
 
         var executor   = Executors.newFixedThreadPool(THREAD_COUNT); // 固定大小线程池
         var failedUrls = new ConcurrentLinkedQueue<String>();        // 用于保存下载失败的 URL
+
+        // 进度跟踪
+        int total    = urls.size();
+        var finished = new AtomicInteger(0);
 
         // 提交下载任务
         for(String url : urls)
@@ -72,26 +89,28 @@ class MultiFileDownloader
 
                     if(response.statusCode() != 200)
                     {
-                        System.err.println("下载失败：" + url + " 状态码：" + response.statusCode());
                         failedUrls.add(url);
-                    }
-                    else
-                    {
-                        System.out.println("✅ 下载成功：" + fileName);
                     }
                 }
                 catch(Exception e)
                 {
-                    System.err.println("❌ 下载异常：" + url + " → " + e.getMessage());
+                    System.err.println("下载异常：" + url + " → " + e.getMessage());
                     failedUrls.add(url);
                 }
+
+                showProgress(finished.incrementAndGet(), total);
             });
         }
 
         // 等待所有任务完成
         executor.shutdown();
-        if(executor.awaitTermination(1, TimeUnit.HOURS)) System.out.println("所有下载任务已完成");
-        else System.out.println("下载任务超时");
+
+        try
+        {
+            if(executor.awaitTermination(1, TimeUnit.HOURS)) System.out.println("所有下载任务已完成");
+            else System.out.println("下载任务超时");
+        }
+        catch(InterruptedException e) { System.err.println("等待下载任务完成时被中断: " + e.getMessage()); }
 
         // 返回失败列表
         return new ArrayList<>(failedUrls);

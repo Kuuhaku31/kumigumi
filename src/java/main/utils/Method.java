@@ -7,6 +7,7 @@ import Database.MySQLAccess;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +29,7 @@ class Method
 
 
     // 控制台进度条显示函数
-    private static synchronized
+    public static synchronized
     void showProgress(int done, int total)
     {
         int    percent = (int) ((done * 100.0f) / total);
@@ -104,10 +105,10 @@ class Method
 
         return data;
     }
-    
+
 
     public static
-    void UpsertDatabase(ArrayList<TableData> upsert_data_list)
+    void UpsertDatabase(List<TableData> upsert_data_list)
     {
         // 插入数据库
         MySQLAccess dba = new MySQLAccess();

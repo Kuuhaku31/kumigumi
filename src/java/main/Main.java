@@ -4,14 +4,15 @@
 import utils.TableData;
 
 import static Excel.ExcelReader.Read;
+import static NetAccess.MultiFileDownloader.DownloadAll;
 import static utils.Method.*;
 
 
 // 解析出种子下载链接列表
 
-ArrayList<String> PraseTorrentDownloadList(ArrayList<TableData> block_list)
+List<String> PraseTorrentDownloadList(List<TableData> block_list)
 {
-    ArrayList<String> dt_list = new ArrayList<>();
+    var dt_list = new ArrayList<String>();
     for(var data : block_list)
     {
         // 对于每个块
@@ -31,12 +32,13 @@ ArrayList<String> PraseTorrentDownloadList(ArrayList<TableData> block_list)
 }
 
 
-void main(String[] args) throws IOException
+void main(String[] args)
 {
     System.setProperty("java.net.useSystemProxies", "true"); // 设置全局代理
-    
-    String help_msg       = "Usage: kumigumi fetch -a<anime_id> [-r<rss_link>] [...]";
-    String def_excel_path = "D:/OneDrive/kumigumi.xlsx";
+
+    var help_msg       = "Usage: kumigumi fetch -a<anime_id> [-r<rss_link>] [...]";
+    var dt_path        = Path.of("C:/Users/kuuhaku-kzs/Downloads/dt/");
+    var def_excel_path = Path.of("D:/OneDrive/kumigumi.xlsx");
 
     IO.println("Hello, kumigumi!?");
     if(args.length > 0) IO.println(Arrays.toString(args));
@@ -53,11 +55,11 @@ void main(String[] args) throws IOException
     else
     {
         // 先一次性读取 Excel 全部数据块，并分类
-        ArrayList<TableData> block_list_fetch            = new ArrayList<>();
-        ArrayList<TableData> block_list_import           = new ArrayList<>();
-        ArrayList<TableData> block_list_torrent_download = new ArrayList<>();
+        var block_list_fetch            = new ArrayList<TableData>();
+        var block_list_import           = new ArrayList<TableData>();
+        var block_list_torrent_download = new ArrayList<TableData>();
 
-        var block_list = Read(args.length > 1 ? args[1] : def_excel_path);
+        var block_list = Read(args.length > 1 ? Path.of(args[1]) : def_excel_path);
         for(var block : block_list)
         {
             switch(block.table_name())
@@ -84,13 +86,15 @@ void main(String[] args) throws IOException
         {
             IO.println("Fetching from Excel...");
 
-            ArrayList<TableData> data = RunFetchBlocks(block_list_fetch);
+            var data = RunFetchBlocks(block_list_fetch);
             UpsertDatabase(data);
             break;
         }
         case "dt":
         {
             var dt_url_list = PraseTorrentDownloadList(block_list_torrent_download);
+            System.out.println("Downloading torrents...");
+            DownloadAll(dt_url_list, dt_path);
 
             break;
         }
@@ -98,7 +102,7 @@ void main(String[] args) throws IOException
         {
             IO.println("Fetching & Importing...");
 
-            ArrayList<TableData> data = new ArrayList<>();
+            var data = new ArrayList<TableData>();
             data.addAll(block_list_import);
             data.addAll(RunFetchBlocks(block_list_fetch));
             UpsertDatabase(data);

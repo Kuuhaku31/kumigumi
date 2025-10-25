@@ -7,13 +7,13 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import utils.TableData;
 
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 
 enum StringType
@@ -90,16 +90,25 @@ class ExcelReader
      *
      */
     public static
-    ArrayList<TableData> Read(String file_path) throws IOException //
+    List<TableData> Read(Path file_path)
     {
-        // 创建临时文件（系统自动放在临时目录）
-        var temp_file = Files.createTempFile("Temp_", ".txt");
-        Files.copy(Path.of(file_path), temp_file, StandardCopyOption.REPLACE_EXISTING); // 将原文件复制到临时文件
+        XSSFWorkbook workbook;
 
-        // 访问文件
-        final var workbook   = new XSSFWorkbook(new FileInputStream(temp_file.toFile()));
-        final var evaluator  = workbook.getCreationHelper().createFormulaEvaluator();
-        final var main_sheet = workbook.getSheet("main");
+        try
+        {
+            var temp_file = Files.createTempFile("Temp_", ".txt"); // 创建临时文件（系统自动放在临时目录）
+            Files.copy(file_path, temp_file, StandardCopyOption.REPLACE_EXISTING); // 将原文件复制到临时文件
+
+            workbook = new XSSFWorkbook(new FileInputStream(temp_file.toFile()));
+        }
+        catch(Exception e)
+        {
+            e.fillInStackTrace();
+            return new ArrayList<>();
+        }
+
+        var evaluator  = workbook.getCreationHelper().createFormulaEvaluator();
+        var main_sheet = workbook.getSheet("main");
 
         // 遍历所有行
         ArrayList<TableData> table_data_list = new ArrayList<>();
