@@ -1,9 +1,9 @@
-// Method.java
+// Kumigumi.java
 
-
-package utils;
 
 import Database.MySQLAccess;
+import utils.TableData;
+import utils.Task;
 
 import java.io.IOException;
 import java.net.URI;
@@ -16,6 +16,7 @@ import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
@@ -23,22 +24,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static Excel.ExcelReader.Read;
+
+
 public
-class Method
+class Kumigumi
 {
-
-    private static
-    String[][] MergeArray(String[][] a, String[][] b)
-    {
-        String[][] temp = new String[a.length + b.length][];
-        System.arraycopy(a, 0, temp, 0, a.length);
-        System.arraycopy(b, 0, temp, a.length, b.length);
-        return temp;
-    }
-
-
     // 控制台进度条显示函数
-    public static synchronized
+    private static synchronized
     void showProgress(int done, int total)
     {
         int    percent = (int) ((done * 100.0f) / total);
@@ -49,6 +42,30 @@ class Method
         if(done == total) System.out.println();
     }
 
+    private static
+    ArrayList<TableData> RunFetchBlocks(ArrayList<TableData> block_list)
+    {
+        ArrayList<Task> tasks = new ArrayList<>();
+        for(var data : block_list)
+        {
+            // 对于每个块
+            int i_ani_id  = -1;
+            int i_rss_url = -1;
+            for(int i = 0; i < data.headers().length; i++)
+            {
+                if(data.headers()[i].equals("ANI_ID")) i_ani_id = i;
+                if(data.headers()[i].equals("url_rss")) i_rss_url = i;
+            }
+            if(i_ani_id == -1 || i_rss_url == -1) continue;
+
+            // 每个块的各个 ani_id : rss_url
+            for(var data_row : data.data())
+            {
+                tasks.add(new Task((int) Double.parseDouble(data_row[i_ani_id]), data_row[i_rss_url]));
+            }
+        }
+        return RunTasks(tasks);
+    }
 
     /**
      *
@@ -84,6 +101,23 @@ class Method
         IO.println("并发任务完成！");
     }
 
+    private static
+    void UpsertDatabase(List<TableData> upsert_data_list)
+    {
+        // 插入数据库
+        MySQLAccess dba = new MySQLAccess();
+        try
+        {
+            dba.Open();
+            dba.Upsert(upsert_data_list.toArray(new TableData[0]));
+            dba.Close();
+
+        }
+        catch(SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
 
     private static
     ArrayList<TableData> RunTasks(ArrayList<Task> task_list)
@@ -120,79 +154,17 @@ class Method
         return data;
     }
 
-
-    public static
-    void UpsertDatabase(List<TableData> upsert_data_list)
+    private static
+    String[][] MergeArray(String[][] a, String[][] b)
     {
-        // 插入数据库
-        MySQLAccess dba = new MySQLAccess();
-        try
-        {
-            dba.Open();
-            dba.Upsert(upsert_data_list.toArray(new TableData[0]));
-            dba.Close();
-
-        }
-        catch(SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-    public static
-    ArrayList<TableData> RunFetchArgs(String[] args)
-    {
-        ArrayList<Task> tasks = new ArrayList<>();
-        for(int i = 0; i < args.length; i++)
-        {
-            // 如果开头两个字符是 "-a"
-            if(args[i].startsWith("-a"))
-            {
-                String ani_id_str   = args[i].substring(2);
-                int    ani_id       = Integer.parseInt(ani_id_str);
-                String rss_link_str = null;
-
-                // 继续判断下一个参数开头是不是 "-r"
-                if(i + 1 < args.length && args[i + 1].startsWith("-r"))
-                {
-                    rss_link_str = args[i + 1].substring(2);
-                }
-
-                tasks.add(new Task(ani_id, rss_link_str));
-            }
-        }
-        return RunTasks(tasks);
-    }
-
-
-    public static
-    ArrayList<TableData> RunFetchBlocks(ArrayList<TableData> block_list)
-    {
-        ArrayList<Task> tasks = new ArrayList<>();
-        for(var data : block_list)
-        {
-            // 对于每个块
-            int i_ani_id  = -1;
-            int i_rss_url = -1;
-            for(int i = 0; i < data.headers().length; i++)
-            {
-                if(data.headers()[i].equals("ANI_ID")) i_ani_id = i;
-                if(data.headers()[i].equals("url_rss")) i_rss_url = i;
-            }
-            if(i_ani_id == -1 || i_rss_url == -1) continue;
-
-            // 每个块的各个 ani_id : rss_url
-            for(var data_row : data.data())
-            {
-                tasks.add(new Task((int) Double.parseDouble(data_row[i_ani_id]), data_row[i_rss_url]));
-            }
-        }
-        return RunTasks(tasks);
+        String[][] temp = new String[a.length + b.length][];
+        System.arraycopy(a, 0, temp, 0, a.length);
+        System.arraycopy(b, 0, temp, a.length, b.length);
+        return temp;
     }
 
     // 解析出种子下载链接列表
-    public static
+    private static
     List<String> PraseTorrentDownloadList(List<TableData> block_list)
     {
         var dt_list = new ArrayList<String>();
@@ -219,7 +191,7 @@ class Method
      * <p>
      * 返回下载失败的 URL 列表
      */
-    public static
+    private static
     List<String> DownloadAll(List<String> urls, Path downloadDir)
     {
         // 创建文件夹
@@ -284,5 +256,121 @@ class Method
 
         // 返回失败列表
         return new ArrayList<>(failedUrls);
+    }
+
+    private static
+    ArrayList<TableData> RunFetchArgs(String[] args)
+    {
+        var tasks = new ArrayList<Task>();
+        for(int i = 0; i < args.length; i++)
+        {
+            // 如果开头两个字符是 "-a"
+            if(args[i].startsWith("-a"))
+            {
+                String ani_id_str   = args[i].substring(2);
+                int    ani_id       = Integer.parseInt(ani_id_str);
+                String rss_link_str = null;
+
+                // 继续判断下一个参数开头是不是 "-r"
+                if(i + 1 < args.length && args[i + 1].startsWith("-r"))
+                {
+                    rss_link_str = args[i + 1].substring(2);
+                }
+
+                tasks.add(new Task(ani_id, rss_link_str));
+            }
+        }
+        return RunTasks(tasks);
+    }
+
+    static
+    void main(String[] args)
+    {
+        System.setProperty("java.net.useSystemProxies", "true"); // 设置全局代理
+
+        var help_msg       = "Usage: kumigumi fetch -a<anime_id> [-r<rss_link>] [...]";
+        var dt_path        = Path.of("C:/Users/kuuhaku-kzs/Downloads/dt/");
+        var def_excel_path = Path.of("D:/OneDrive/kumigumi.xlsx");
+
+        IO.println("Hello, kumigumi!?");
+        if(args.length > 0) IO.println(Arrays.toString(args));
+        else return;
+
+        String mode = args[0];
+        if(mode.equals("help")) IO.println(help_msg);
+        else if(mode.equals("fetch"))
+        {
+            IO.println("Fetching...");
+            var data = RunFetchArgs(args);
+            UpsertDatabase(data);
+        }
+        else
+        {
+            // 先一次性读取 Excel 全部数据块，并分类
+            var block_list_fetch            = new ArrayList<TableData>();
+            var block_list_import           = new ArrayList<TableData>();
+            var block_list_torrent_download = new ArrayList<TableData>();
+
+            var block_list = Read(args.length > 1 ? Path.of(args[1]) : def_excel_path);
+            for(var block : block_list)
+            {
+                switch(block.table_name())
+                {
+                case "fetch" -> block_list_fetch.add(block);
+                case "torrent" ->
+                {
+                    block_list_import.add(block);
+                    block_list_torrent_download.add(block);
+                }
+                default -> block_list_import.add(block);
+                }
+            }
+
+            switch(mode)
+            {
+            case "import":
+            {
+                IO.println("Importing from Excel...");
+                UpsertDatabase(block_list_import);
+                break;
+            }
+            case "fetch_excel":
+            {
+                IO.println("Fetching from Excel...");
+
+                var data = RunFetchBlocks(block_list_fetch);
+                UpsertDatabase(data);
+                break;
+            }
+            case "dt":
+            {
+                System.out.println("Downloading torrents...");
+
+                var dt_url_list = PraseTorrentDownloadList(block_list_torrent_download);
+                var failed_urls = DownloadAll(dt_url_list, dt_path);
+
+                for(var url : failed_urls)
+                {
+                    System.err.println("下载失败: " + url);
+                }
+
+                break;
+            }
+            case "all":
+            {
+                IO.println("Fetching & Importing...");
+
+                var data = new ArrayList<TableData>();
+                data.addAll(block_list_import);
+                data.addAll(RunFetchBlocks(block_list_fetch));
+                UpsertDatabase(data);
+                break;
+            }
+
+            default: break;
+            }
+        }
+
+        IO.println("Done.");
     }
 }
