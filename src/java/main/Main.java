@@ -8,30 +8,6 @@ import static NetAccess.MultiFileDownloader.DownloadAll;
 import static utils.Method.*;
 
 
-// 解析出种子下载链接列表
-
-List<String> PraseTorrentDownloadList(List<TableData> block_list)
-{
-    var dt_list = new ArrayList<String>();
-    for(var data : block_list)
-    {
-        // 对于每个块
-        int i_dt_url  = -1;
-        int i_t_state = -1;
-        for(int i = 0; i < data.headers().length; i++)
-        {
-            if(data.headers()[i].equals("TOR_URL")) i_dt_url = i;
-            if(data.headers()[i].equals("status_download")) i_t_state = i;
-        }
-        if(i_dt_url == -1 || i_t_state == -1) continue;
-
-        // 每个块的各个 TOR_URL : status_download
-        for(var data_row : data.data()) if(data_row[i_t_state].equals("未下载")) dt_list.add(data_row[i_dt_url]);
-    }
-    return dt_list;
-}
-
-
 void main(String[] args)
 {
     System.setProperty("java.net.useSystemProxies", "true"); // 设置全局代理
