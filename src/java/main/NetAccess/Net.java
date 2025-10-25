@@ -18,6 +18,7 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.Duration;
 
 public
 class Net
@@ -54,15 +55,13 @@ class Net
     /**
      * 下载文件
      * <p>
-     * 返回是否下载成功
+     * 返回 null 表示成功，返回 url 表示失败
      */
     public static
-    boolean DownloadFileWithProxy(String file_url, String save_path, String file_name_str)
+    String DownloadFile(HttpClient client, String file_url, String save_path, String file_name_str)
     {
-        boolean is_success = false;
         try
         {
-            var client   = HttpClient.newBuilder().build(); // 创建 HttpClient
             var request  = HttpRequest.newBuilder().uri(URI.create(file_url)).GET().build(); // 构建请求
             var response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());  // 发送请求
 
@@ -70,28 +69,30 @@ class Net
             {
                 Files.createDirectories(Paths.get(save_path)); // 创建文件夹
                 Files.copy(response.body(), Paths.get(save_path + file_name_str), StandardCopyOption.REPLACE_EXISTING);
-                is_success = true;
+
+                return null;
             }
+            else return file_url;
         }
         catch(IOException | InterruptedException e)
         {
-            return is_success;
+            return file_url;
         }
-
-        return is_success;
     }
-
 
     static
-    void main() throws IOException, InterruptedException
+    void main()
     {
-        String url_str       = "https://mikanani.me/Download/20250414/0f8ba83fc8996d6946dfee1de2019052a9623150.torrent";
-        String path_str      = "C:/Users/kuuhaku-kzs/Downloads/dt/";
-        String file_name_str = "a.torrent";
+        System.setProperty("java.net.useSystemProxies", "true"); // 启用系统代理支持
 
-        System.setProperty("java.net.useSystemProxies", "true"); // 设置全局代理
+        HttpClient client = HttpClient.newBuilder()
+            .followRedirects(HttpClient.Redirect.ALWAYS) // 自动跟随重定向
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
 
-        DownloadFileWithProxy(url_str, path_str, file_name_str);
-
+        String path_str = "C:/Users/kuuhaku-kzs/Downloads/dt/";
+        String url      = "https://mikanani.me/Download/20250414/0f8ba83fc8996d6946dfee1de2019052a9623150.torrent";
+        IO.println(DownloadFile(client, url, path_str, "a.torrent"));
     }
+
 }
