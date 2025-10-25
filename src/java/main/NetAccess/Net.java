@@ -12,6 +12,12 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 public
 class Net
@@ -19,25 +25,22 @@ class Net
     static public
     String GetHTML(String url) throws IOException
     {
-        // Document doc = Jsoup.connect(url).get();
-        Document doc = Jsoup.connect(url)
-            .proxy("127.0.0.1", 10809) // HTTP 代理地址和端口
-            .timeout(10000) // 设置超时时间
-            .get();
+        Document doc = Jsoup.connect(url).get();
         return doc.html();
     }
+
 
     static public
     String Get(String url_str) throws URISyntaxException, IOException
     {
-        URL url = new URI(url_str).toURL();                                 // 创建URL对象
+        URL               url  = new URI(url_str).toURL();                  // 创建URL对象
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();  // 打开连接
         conn.setRequestMethod("GET");                                       // 设置请求方法
         conn.setRequestProperty("User-Agent", "Mozilla/5.0");               // 添加 User-Agent
 
         // 读取响应
-        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        StringBuilder response = new StringBuilder();
+        BufferedReader in       = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        StringBuilder  response = new StringBuilder();
 
         // 逐行读取响应内容
         String input_line;
@@ -46,5 +49,49 @@ class Net
         in.close();
 
         return response.toString();
+    }
+
+    /**
+     * 下载文件
+     * <p>
+     * 返回是否下载成功
+     */
+    public static
+    boolean DownloadFileWithProxy(String file_url, String save_path, String file_name_str)
+    {
+        boolean is_success = false;
+        try
+        {
+            var client   = HttpClient.newBuilder().build(); // 创建 HttpClient
+            var request  = HttpRequest.newBuilder().uri(URI.create(file_url)).GET().build(); // 构建请求
+            var response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());  // 发送请求
+
+            if(response.statusCode() == 200) // 将响应体保存为文件
+            {
+                Files.createDirectories(Paths.get(save_path)); // 创建文件夹
+                Files.copy(response.body(), Paths.get(save_path + file_name_str), StandardCopyOption.REPLACE_EXISTING);
+                is_success = true;
+            }
+        }
+        catch(IOException | InterruptedException e)
+        {
+            return is_success;
+        }
+
+        return is_success;
+    }
+
+
+    static
+    void main() throws IOException, InterruptedException
+    {
+        String url_str       = "https://mikanani.me/Download/20250414/0f8ba83fc8996d6946dfee1de2019052a9623150.torrent";
+        String path_str      = "C:/Users/kuuhaku-kzs/Downloads/dt/";
+        String file_name_str = "a.torrent";
+
+        System.setProperty("java.net.useSystemProxies", "true"); // 设置全局代理
+
+        DownloadFileWithProxy(url_str, path_str, file_name_str);
+
     }
 }

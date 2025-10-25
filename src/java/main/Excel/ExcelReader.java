@@ -128,7 +128,7 @@ class ExcelReader
                 case "_from" -> start_row = (int) row.getCell(1).getNumericCellValue();
                 case "_to" -> end_row = (int) row.getCell(1).getNumericCellValue();
 
-                case "_table_end" ->
+                case "_block_end" ->
                 {
                     TableData td = CreateTableData(
                         evaluator, dst_sheet,
@@ -150,7 +150,7 @@ class ExcelReader
                 } // 读取表列信息
                 }
             }
-            else if(key.equals("_table")) // 开始读取表格信息
+            else if(key.equals("_block")) // 开始读取块信息
             {
                 table_name      = row.getCell(1).toString().trim();
                 column_list_buf = new ColumnList();

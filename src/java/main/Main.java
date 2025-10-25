@@ -7,8 +7,34 @@ import static Excel.ExcelReader.Read;
 import static utils.Method.*;
 
 
+// 解析出种子下载链接列表
+
+ArrayList<String> PraseTorrentDownloadList(ArrayList<TableData> block_list)
+{
+    ArrayList<String> dt_list = new ArrayList<>();
+    for(var data : block_list)
+    {
+        // 对于每个块
+        int i_dt_url  = -1;
+        int i_t_state = -1;
+        for(int i = 0; i < data.headers().length; i++)
+        {
+            if(data.headers()[i].equals("TOR_URL")) i_dt_url = i;
+            if(data.headers()[i].equals("status_download")) i_t_state = i;
+        }
+        if(i_dt_url == -1 || i_t_state == -1) continue;
+
+        // 每个块的各个 TOR_URL : status_download
+        for(var data_row : data.data()) if(data_row[i_t_state].equals("未下载")) dt_list.add(data_row[i_dt_url]);
+    }
+    return dt_list;
+}
+
+
 void main(String[] args) throws IOException
 {
+    System.setProperty("java.net.useSystemProxies", "true"); // 设置全局代理
+    
     String help_msg       = "Usage: kumigumi fetch -a<anime_id> [-r<rss_link>] [...]";
     String def_excel_path = "D:/OneDrive/kumigumi.xlsx";
 
@@ -37,7 +63,11 @@ void main(String[] args) throws IOException
             switch(block.table_name())
             {
             case "fetch" -> block_list_fetch.add(block);
-            case "dt" -> block_list_torrent_download.add(block);
+            case "torrent" ->
+            {
+                block_list_import.add(block);
+                block_list_torrent_download.add(block);
+            }
             default -> block_list_import.add(block);
             }
         }
@@ -56,6 +86,12 @@ void main(String[] args) throws IOException
 
             ArrayList<TableData> data = RunFetchBlocks(block_list_fetch);
             UpsertDatabase(data);
+            break;
+        }
+        case "dt":
+        {
+            var dt_url_list = PraseTorrentDownloadList(block_list_torrent_download);
+
             break;
         }
         case "all":
