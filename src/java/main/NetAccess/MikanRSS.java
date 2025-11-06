@@ -14,6 +14,8 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
+import static NetAccess.Util.ParseSubtitleGroup;
+
 public
 class MikanRSS
 {
@@ -54,7 +56,7 @@ class MikanRSS
             String size           = String.valueOf(enclosure.getLength().orElse(0L));
             String url_page       = item.getLink().orElse("");
             String title          = item.getTitle().orElse("");
-            String subtitle_group = parse_subtitle_group(title);
+            String subtitle_group = ParseSubtitleGroup(title);
             String description    = item.getDescription().orElse("");
 
             // 一条种子信息
@@ -66,29 +68,6 @@ class MikanRSS
         return torrent_info_list;
     }
 
-    // 解析字幕组
-    private static
-    String parse_subtitle_group(String title)
-    {
-        String[] left_brackets  = {"[", "【", "(", "{"};
-        String[] right_brackets = {"]", "】", ")", "}"};
-
-        for(int i = 0; i < left_brackets.length; i++)
-        {
-            // 如果匹配到左括号
-            if(title.startsWith(left_brackets[i]))
-            {
-                // 找到对应的右括号
-                int end_index = title.indexOf(right_brackets[i]);
-
-                // 如果找到了右括号，就提取中间的字幕组名称
-                if(end_index != -1) return title.substring(1, end_index);
-            }
-        }
-
-        // 如果没有匹配到任何括号，就返回未知字幕组
-        return "未知字幕组";
-    }
 
     void main(String[] args) throws IOException
     {
