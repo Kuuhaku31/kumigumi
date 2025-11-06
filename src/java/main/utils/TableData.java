@@ -2,6 +2,8 @@
 
 package utils;
 
+import org.jetbrains.annotations.NotNull;
+
 public
 record TableData(String table_name, String[] headers, String[][] data)
 {
@@ -32,5 +34,28 @@ record TableData(String table_name, String[] headers, String[][] data)
         IO.println();
     }
 
+    public @NotNull
+    String toString()
+    {
+        StringBuilder res = new StringBuilder();
+        res.append("Table Name: ").append(table_name).append("\n");
+        res.append("Headers: ");
+        for(String header : headers)
+        {
+            res.append(header).append("\t");
+        }
+        res.append("\nData:\n");
+        for(String[] row : data)
+        {
+            for(String cell : row)
+            {
+                res.append(cell).append("\t");
+            }
+            res.append("\n");
+        }
+
+
+        return res.toString();
+    }
 
 }

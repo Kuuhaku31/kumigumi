@@ -12,6 +12,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.sql.Time;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -27,7 +28,7 @@ class BangumiAPI
     {
         return ParseAnimeInfo(GetInfo(BangumiAPI.QueryType.anime_info, anime_id));
     }
-    
+
     public static
     String[][] GetEpisodeData(int anime_id) throws URISyntaxException, IOException
     {
@@ -98,10 +99,24 @@ class BangumiAPI
         String title_cn = episode_info_json.getString("name_cn");
 
         // 解析时长
-        String duration = episode_info_json.getString("duration");
+        String durationStr = episode_info_json.optString("duration", null);
+        Time   time        = null;
+        String duration    = null;
+        if(durationStr != null && !durationStr.isBlank())
+        {
+            try
+            {
+                time     = Time.valueOf(durationStr);
+                duration = durationStr;
+            }
+            catch(IllegalArgumentException _)
+            {
+                // duration 保持为 null
+            }
+        }
 
         // 解析概述
-        String description = episode_info_json.getString("desc");
+        String description = (time != null) ? time.toString() : null;
 
         // 返回
         return new String[] {EPI_ID, ANI_ID, air_date, duration, index, title, title_cn, description};

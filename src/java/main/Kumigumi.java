@@ -2,6 +2,7 @@
 
 
 import Database.MySQLAccess;
+import utils.DataBuffer;
 import utils.TableData;
 import utils.Task;
 
@@ -339,6 +340,7 @@ class Kumigumi
                 IO.println("Fetching from Excel...");
 
                 var data = RunFetchBlocks(block_list_fetch);
+                DataBuffer.SaveDataList(data);
                 UpsertDatabase(data);
                 break;
             }
