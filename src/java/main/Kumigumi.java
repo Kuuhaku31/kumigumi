@@ -85,7 +85,7 @@ class Kumigumi
         ExecutorService pool = Executors.newFixedThreadPool(4);
 
         // 提交任务
-        for(Task task : task_list)
+        for(var task : task_list)
         {
             pool.submit(() ->
             {

@@ -2,19 +2,21 @@
 
 package utils;
 
+import NetAccess.MikanRSS;
+import NetAccess.NyaaRSS;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 
 import static NetAccess.BangumiAPI.GetAnimeData;
 import static NetAccess.BangumiAPI.GetEpisodeData;
-import static NetAccess.MikanRSS.GetTorrentData;
 
 public
 class Task
 {
     // 参数
-    private final int    ani_id;
-    private final String rss_url;
+    public final int    ani_id;
+    public final String rss_url;
 
     // 结果
     public String[]   anime_info_list   = new String[0];
@@ -44,7 +46,13 @@ class Task
             // 获取 anime_info, episode_list, torrent_info_list
             anime_info_list   = GetAnimeData(ani_id);
             episode_info_list = GetEpisodeData(ani_id);
-            torrent_info_list = GetTorrentData(rss_url, ani_id);
+
+            // 分析域名
+            if(rss_url != null)
+            {
+                if(rss_url.startsWith("https://mikanani.me")) torrent_info_list = MikanRSS.GetTorrentData(rss_url, ani_id);
+                else if(rss_url.startsWith("https://nyaa")) torrent_info_list = NyaaRSS.GetTorrentData(rss_url, ani_id);
+            }
         }
         catch(URISyntaxException | IOException e)
         {
