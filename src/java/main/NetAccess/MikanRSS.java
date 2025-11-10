@@ -5,6 +5,7 @@ package NetAccess;
 import com.apptasticsoftware.rssreader.Enclosure;
 import com.apptasticsoftware.rssreader.Item;
 import com.apptasticsoftware.rssreader.RssReader;
+import utils.TableData;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -27,9 +28,9 @@ class MikanRSS
      * 返回值：种子信息列表，如果获取失败或没有种子则返回 null
      */
     public static
-    String[][] GetTorrentData(String rss_url, int ani_id) throws IOException
+    void GetTorrentData(TableData data, String rss_url, int ani_id) throws IOException
     {
-        if(rss_url == null) return new String[0][];
+        if(rss_url == null) return;
 
         HttpClient client = HttpClient.newBuilder()
             .proxy(ProxySelector.of(new InetSocketAddress("127.0.0.1", 10809))) // 例：Clash 代理
@@ -41,31 +42,38 @@ class MikanRSS
         List<Item> items = reader.read(rss_url).toList();
 
         // 遍历 RSS 条目，提取种子信息
-        String[][] torrent_info_list = new String[items.size()][0];
-
-        int i = 0;
         for(Item item : items)
         {
+            var recode = data.new Record();
+
             // 如果 enclosure 不存在，就抛异常
             Enclosure enclosure = item.getEnclosure().orElseThrow(() -> new RuntimeException("RSS 条目缺少附件 enclosure"));
 
             // 填充信息
-            String TOR_URL        = enclosure.getUrl();
-            String ANI_ID         = String.valueOf(ani_id);
-            String air_datetime   = item.getPubDate().orElse("");
-            String size           = String.valueOf(enclosure.getLength().orElse(0L));
-            String url_page       = item.getLink().orElse("");
-            String title          = item.getTitle().orElse("");
-            String subtitle_group = ParseSubtitleGroup(title);
-            String description    = item.getDescription().orElse("");
+            var TOR_URL = enclosure.getUrl();
+            recode.Set("TOR_URL", TOR_URL);
 
-            // 一条种子信息
-            String[] torrent_info = new String[] {TOR_URL, ANI_ID, air_datetime, size, url_page, title, subtitle_group, description};
+            var ANI_ID = String.valueOf(ani_id);
+            recode.Set("ANI_ID", ANI_ID);
 
-            torrent_info_list[i++] = (torrent_info);
+            var air_datetime = item.getPubDate().orElse("");
+            recode.Set("air_datetime", air_datetime);
+
+            var size = String.valueOf(enclosure.getLength().orElse(0L));
+            recode.Set("size", size);
+
+            var url_page = item.getLink().orElse("");
+            recode.Set("url_page", url_page);
+
+            var title = item.getTitle().orElse("");
+            recode.Set("title", title);
+
+            var subtitle_group = ParseSubtitleGroup(title);
+            recode.Set("subtitle_group", subtitle_group);
+
+            var description = item.getDescription().orElse("");
+            recode.Set("description", description);
         }
-
-        return torrent_info_list;
     }
 
 

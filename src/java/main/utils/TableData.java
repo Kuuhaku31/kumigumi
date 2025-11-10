@@ -1,61 +1,67 @@
-// TableData.java
+package utils;// utils.TableData.java
 
-package utils;
 
-import org.jetbrains.annotations.NotNull;
+import java.util.ArrayList;
+import java.util.List;
 
 public
-record TableData(String table_name, String[] headers, String[][] data)
+class TableData
 {
+    private final String[]       headers;
+    private final List<String[]> data = new ArrayList<>();
+
     public
-    void PrintInfo()
-    {
-        String header     = "================== [" + table_name + "] ==================";
-        int    header_len = header.length();
-        IO.println(header);
+    TableData(String[] headers) { this.headers = headers.clone(); }
 
-        // 打印表头
-        for(var col_name : headers) IO.print(col_name + "\t");
-        IO.println();
+    public
+    List<String[]> GetData() { return data; }
 
-        // 打印分隔线
-        for(int i = 0; i < header_len; i++) IO.print("-");
-        IO.println();
+    public
+    String[] GetHeaders() { return headers; }
 
-        // 打印数据行
-        for(var row_data : data)
-        {
-            for(var cell_value : row_data) IO.print(cell_value + "\t");
-            IO.println();
-        }
-
-        // 打印结束线
-        for(int i = 0; i < header_len; i++) IO.print("=");
-        IO.println();
-    }
-
-    public @NotNull
+    @Override
+    public
     String toString()
     {
-        StringBuilder res = new StringBuilder();
-        res.append("Table Name: ").append(table_name).append("\n");
-        res.append("Headers: ");
-        for(String header : headers)
+        var title = "===" + this.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(this)) + "===";
+
+        StringBuilder sb = new StringBuilder().append(title).append("\n");
+
+        for(var header : headers) sb.append(header).append(" ");
+        sb.append("\n");
+
+        for(var row : data)
         {
-            res.append(header).append("\t");
+            for(var value : row) sb.append(value).append(" ");
+            sb.append("\n");
         }
-        res.append("\nData:\n");
-        for(String[] row : data)
+
+        sb.append("=".repeat(title.length()));
+
+        return sb.toString();
+    }
+
+    public
+    class Record
+    {
+        private final String[] values = new String[headers.length];
+
+        public
+        Record() { data.add(values); }
+
+        // 添加记录
+        public
+        void Set(String header, String value)
         {
-            for(String cell : row)
+            for(var i = 0; i < headers.length; ++i)
             {
-                res.append(cell).append("\t");
+                if(headers[i].equals(header))
+                {
+                    values[i] = value;
+                    return;
+                }
             }
-            res.append("\n");
         }
-
-
-        return res.toString();
     }
 
 }
