@@ -1,15 +1,16 @@
-import java.sql.SQLException;
+import Excel.ExcelReader;
 
-void main() throws IOException, SQLException
+void main()
 {
-    IO.println("TestEX:");
+    System.out.println("TestEX:");
 
-    // var res = ExcelReader.ReadData(args[0]);
-    //
-    // MySQLAccess dba = new MySQLAccess();
-    // dba.Open();
-    //
-    // dba.Upsert(res);
-    //
-    // dba.Close();
+    var path_str = "D:/OneDrive/kumigumi.xlsx";
+    var path     = Path.of(path_str);
+
+    var res = ExcelReader.Read(path);
+
+    for(var row : res)
+    {
+        System.out.println(row);
+    }
 }

@@ -4,7 +4,7 @@ package Excel;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import utils.TableData;
+import utils.BlockData;
 
 import java.io.FileInputStream;
 import java.nio.file.Files;
@@ -16,40 +16,139 @@ import java.util.Date;
 import java.util.List;
 
 
-enum StringType
-{
-    Int,
-    Date,
-    Time,
-    Datetime,
-    Bool,
-    Text;
-
-    public static
-    StringType FromString(String str)
-    {
-        return switch(str.toLowerCase())
-        {
-            case "int" -> Int;
-            case "date" -> Date;
-            case "time" -> Time;
-            case "datetime" -> Datetime;
-            case "bool" -> Bool;
-            default -> Text;
-        };
-    }
-}
-
-
 public
 class ExcelReader
 {
+    /**
+     *
+     * 读取 Excel 数据
+     * <p>
+     * 返回 TableData 列表
+     *
+     */
+    public static
+    List<BlockData> Read(Path file_path)
+    {
+        XSSFWorkbook workbook;
+        try
+        {
+            var temp_file = Files.createTempFile("Temp_", ".txt"); // 创建临时文件（系统自动放在临时目录）
+            Files.copy(file_path, temp_file, StandardCopyOption.REPLACE_EXISTING); // 将原文件复制到临时文件
+            workbook = new XSSFWorkbook(new FileInputStream(temp_file.toFile()));
+        }
+        catch(Exception e)
+        {
+            e.fillInStackTrace();
+            return new ArrayList<>();
+        }
+        var evaluator  = workbook.getCreationHelper().createFormulaEvaluator();
+        var main_sheet = workbook.getSheet("main");
+        if(main_sheet == null) return new ArrayList<>();
+
+
+        // 遍历所有行
+        String          table_name      = null;
+        Sheet           dst_sheet       = null;
+        int             start_row       = 0;
+        int             end_row         = 0;
+        List<BlockData> data            = new ArrayList<>();
+        List<ColumnMap> column_list_buf = null;
+        for(var row : main_sheet)
+        {
+            // 忽略空行
+            if(row == null) continue;
+            var key_cell = row.getCell(0);
+            if(key_cell == null || key_cell.getCellType() == CellType.BLANK) continue;
+
+            // 对于每一个键
+            var key = key_cell.toString().trim();
+            if(key.equals("_end")) break;
+            else if(table_name != null) // 处于读取表格信息模式
+            {
+                switch(key)
+                {
+                case "_sheet" -> dst_sheet = workbook.getSheet(row.getCell(1).toString().trim());
+                case "_from" -> start_row = (int) row.getCell(1).getNumericCellValue();
+                case "_to" -> end_row = (int) row.getCell(1).getNumericCellValue();
+
+                // 结束表格信息读取
+                case "_block_end" ->
+                {
+                    var td = CreateTableData(
+                        table_name,
+                        evaluator, dst_sheet,
+                        start_row, end_row,
+                        column_list_buf
+                    );
+                    data.add(td);
+
+                    table_name = null; // 退出读取表格信息模式
+                }
+
+                // 读取表列信息
+                default ->
+                {
+                    var column_idx  = (int) row.getCell(1).getNumericCellValue();
+                    var cell        = row.getCell(2);
+                    var string_type = cell == null ? "" : cell.toString().trim();
+                    column_list_buf.add(new ColumnMap(key, column_idx, string_type));
+                }
+                }
+            }
+            else if(key.equals("_block")) // 开始读取块信息
+            {
+                table_name      = row.getCell(1).toString().trim();
+                column_list_buf = new ArrayList<>(); // 重新开始获取列元数据
+            }
+        }
+        return data;
+    }
+
+    /**
+     * 创建表格数据对象
+     */
+    private static
+    BlockData CreateTableData(
+        String block_name,
+        FormulaEvaluator e, Sheet s,
+        int start_row, int end_row,
+        List<ColumnMap> column_list
+    )
+    {
+        // 获取表头
+        var headers = new String[column_list.size()];
+        for(var i = 0; i < column_list.size(); i++) headers[i] = column_list.get(i).column_name;
+
+        // 遍历表格每一行
+        // 根据类型创建表格数据对象
+        BlockData data = new BlockData(block_name, headers);
+        for(var sheet_row_idx = start_row; sheet_row_idx < end_row; sheet_row_idx++)
+        {
+            var recode = data.new Record();
+
+            // 遍历每一列（仅考虑 column_list 中定义的列）
+            var row = s.getRow(sheet_row_idx);
+            for(var column_map : column_list)
+            {
+                var cell = row.getCell(column_map.column_index);
+
+                String cell_value;
+                cell_value = GetCellValue(e, cell);                                                // 提取单元格值
+                cell_value = ParseString(cell_value, StringType.FromString(column_map.data_type)); // 解析出显示值
+
+                recode.Set(column_map.column_name, cell_value);
+            }
+        }
+
+        return data;
+    }
+
     // 解析字符串
     private static
     String ParseString(String value, StringType type)
     {
         // 如果为空白串，则返回 null
-        if(value.isEmpty()) return null;
+        if(value == null || value.isEmpty()) return null;
         return switch(type)
         {
             case Bool -> value.equals("0") ? "FALSE" : "TRUE";
@@ -82,132 +181,6 @@ class ExcelReader
         };
     }
 
-    /**
-     *
-     * 读取 Excel 数据
-     * <p>
-     * 返回 TableData 列表
-     *
-     */
-    public static
-    List<TableData> Read(Path file_path)
-    {
-        XSSFWorkbook workbook;
-
-        try
-        {
-            var temp_file = Files.createTempFile("Temp_", ".txt"); // 创建临时文件（系统自动放在临时目录）
-            Files.copy(file_path, temp_file, StandardCopyOption.REPLACE_EXISTING); // 将原文件复制到临时文件
-
-            workbook = new XSSFWorkbook(new FileInputStream(temp_file.toFile()));
-        }
-        catch(Exception e)
-        {
-            e.fillInStackTrace();
-            return new ArrayList<>();
-        }
-
-        var evaluator  = workbook.getCreationHelper().createFormulaEvaluator();
-        var main_sheet = workbook.getSheet("main");
-
-        // 遍历所有行
-        ArrayList<TableData> table_data_list = new ArrayList<>();
-
-        Sheet      dst_sheet       = null;
-        String     table_name      = "";
-        int        start_row       = 0;
-        int        end_row         = 0;
-        ColumnList column_list_buf = null;
-
-        boolean is_reading_table_info = false; // 是否处于读取表格信息模式
-        for(var row : main_sheet)
-        {
-            // 忽略空行
-            if(row == null) continue;
-            var key_cell = row.getCell(0);
-            if(key_cell == null || key_cell.getCellType() == CellType.BLANK) continue;
-
-            // 对于每一个键
-            String key = key_cell.toString().trim();
-            if(is_reading_table_info) // 处于读取表格信息模式
-            {
-                switch(key)
-                {
-                case "_sheet" -> dst_sheet = workbook.getSheet(row.getCell(1).toString().trim());
-                case "_from" -> start_row = (int) row.getCell(1).getNumericCellValue();
-                case "_to" -> end_row = (int) row.getCell(1).getNumericCellValue();
-
-                case "_block_end" ->
-                {
-                    TableData td = CreateTableData(
-                        evaluator, dst_sheet,
-                        table_name,
-                        start_row, end_row,
-                        column_list_buf
-                    );
-                    table_data_list.add(td);
-
-                    is_reading_table_info = false;
-                } // 结束表格信息读取
-
-                default ->
-                {
-                    int    column_idx  = (int) row.getCell(1).getNumericCellValue();
-                    Cell   cell        = row.getCell(2);
-                    String string_type = cell == null ? "" : cell.toString().trim();
-                    column_list_buf.Add(key, column_idx, string_type);
-                } // 读取表列信息
-                }
-            }
-            else if(key.equals("_block")) // 开始读取块信息
-            {
-                table_name      = row.getCell(1).toString().trim();
-                column_list_buf = new ColumnList();
-
-                is_reading_table_info = true;
-            }
-        }
-
-        // 转换成数组
-        return table_data_list;
-    }
-
-    /**
-     * 创建表格数据对象
-     */
-    private static
-    TableData CreateTableData(
-        FormulaEvaluator evaluator, Sheet sheet,
-        String table_name,
-        int start_row, int end_row,
-        ColumnList column_list
-    )
-    {
-        String[]   headers = new String[column_list.GetLength()];
-        String[][] data    = new String[end_row - start_row][column_list.GetLength()];
-
-        int header_idx = 0;
-        for(ColumnMap column_map : column_list.GetList()) headers[header_idx++] = column_map.column_name(); // 获取表头
-        for(int row_index = 0, sheet_row_idx = start_row; sheet_row_idx < end_row; row_index++, sheet_row_idx++)
-        { // 遍历表格每一行
-            Row row = sheet.getRow(sheet_row_idx);
-
-            // 遍历每一列（仅考虑 column_list 中定义的列）
-            int column_index = 0;
-            for(ColumnMap column_map : column_list.GetList())
-            {
-                var cell = row.getCell(column_map.column_index());
-
-                String cell_value;
-                cell_value = GetCellValue(evaluator, cell);                                          // 提取单元格值
-                cell_value = ParseString(cell_value, StringType.FromString(column_map.data_type())); // 解析出显示值
-
-                data[row_index][column_index++] = cell_value; // 添加单元格数据到 行数据
-            }
-        }
-        return new TableData(table_name, headers, data);// 创建表格数据对象
-    }
-
     // 提取单元格值
     private static
     String GetCellValue(FormulaEvaluator evaluator, Cell cell)
@@ -216,45 +189,44 @@ class ExcelReader
         // return formatter.formatCellValue(cell, null);
 
         // 处理空单元格
-        CellValue value = evaluator.evaluate(cell);
-        if(value == null) return "";
+        var value = evaluator.evaluate(cell);
+        if(value == null) return null;
 
         return switch(value.getCellType())
         {
             case BOOLEAN -> value.getBooleanValue() ? "1" : "0";
             case NUMERIC -> Double.toString(value.getNumberValue());
             case STRING -> value.getStringValue();
-            default -> "";
+            default -> null;
         };
     }
 
-
-}
-
-class ColumnList
-{
-    private final ArrayList<ColumnMap> list = new ArrayList<>();
-
-    public
-    void Add(String column_name, int column_index, String data_type)
+    enum StringType
     {
-        list.add(new ColumnMap(column_name, column_index, data_type));
+        Int,
+        Date,
+        Time,
+        Datetime,
+        Bool,
+        Text;
+
+        public static
+        StringType FromString(String str)
+        {
+            return switch(str.toLowerCase())
+            {
+                case "int" -> Int;
+                case "date" -> Date;
+                case "time" -> Time;
+                case "datetime" -> Datetime;
+                case "bool" -> Bool;
+                default -> Text;
+            };
+        }
     }
 
-    public
-    int GetLength()
-    {
-        return list.size();
-    }
-
-    // 迭代器
-    public
-    Iterable<ColumnMap> GetList()
-    {
-        return list;
-    }
+    record ColumnMap(String column_name, int column_index, String data_type) { }
 }
 
-record ColumnMap(String column_name, int column_index, String data_type)
-{
-}
+
+

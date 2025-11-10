@@ -25,7 +25,13 @@ class TableData
     {
         var title = "===" + this.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(this)) + "===";
 
-        StringBuilder sb = new StringBuilder().append(title).append("\n");
+        return title + "\n" + GetDataStr() + "\n" + "=".repeat(title.length());
+    }
+
+    protected
+    String GetDataStr()
+    {
+        StringBuilder sb = new StringBuilder();
 
         for(var header : headers) sb.append(header).append(" ");
         sb.append("\n");
@@ -35,8 +41,6 @@ class TableData
             for(var value : row) sb.append(value).append(" ");
             sb.append("\n");
         }
-
-        sb.append("=".repeat(title.length()));
 
         return sb.toString();
     }
