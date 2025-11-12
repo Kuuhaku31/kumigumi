@@ -3,7 +3,7 @@
 
 package Database;
 
-import utils.TableData;
+import utils.TableData.TableData;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

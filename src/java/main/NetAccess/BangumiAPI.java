@@ -4,7 +4,7 @@ package NetAccess;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import utils.TableData;
+import utils.TableData.TableData;
 
 import java.io.BufferedReader;
 import java.io.IOException;

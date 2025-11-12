@@ -1,6 +1,6 @@
 package Database;
 
-import utils.TableData;
+import utils.TableData.TableData;
 
 import java.util.List;
 

@@ -5,13 +5,15 @@ void main(String[] args)
 {
     System.out.println(Arrays.toString(args));
 
-    var strings = new ArrayList<String>();
-
-    strings.add("a");
-    strings.add("a");
-    strings.add("a");
-    strings.add("a");
+    var en = EnumTest.valueOf("a");
 
 
-    System.out.println(strings);
+    System.out.println(en);
+}
+
+enum EnumTest
+{
+    A,
+    B,
+    C
 }

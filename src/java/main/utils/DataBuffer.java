@@ -3,6 +3,8 @@
 
 package utils;
 
+import utils.TableData.TableData;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

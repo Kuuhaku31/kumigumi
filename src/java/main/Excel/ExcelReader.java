@@ -4,7 +4,7 @@ package Excel;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import utils.BlockData;
+import utils.TableData.BlockData;
 
 import java.io.FileInputStream;
 import java.nio.file.Files;

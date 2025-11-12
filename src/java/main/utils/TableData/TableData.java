@@ -1,4 +1,4 @@
-package utils;// utils.TableData.java
+package utils.TableData;// utils.TableData.TableData.java
 
 
 import java.util.ArrayList;
@@ -12,6 +12,14 @@ class TableData
 
     public
     TableData(String[] headers) { this.headers = headers.clone(); }
+
+    // 返回指定表头的列号，没有则返回 -1
+    public
+    int GetHeaderIndex(String header)
+    {
+        for(var i = 0; i < headers.length; ++i) if(headers[i].equals(header)) return i;
+        return -1;
+    }
 
     public
     List<String[]> GetData() { return data; }

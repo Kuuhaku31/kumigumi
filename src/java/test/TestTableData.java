@@ -1,11 +1,10 @@
 // TestTableData.java
 
 
-import Database.DBA;
-import Database.SQLiteAccess;
+import Database.KG_SQLiteAccess;
 import NetAccess.BangumiAPI;
 import NetAccess.MikanRSS;
-import utils.TableData;
+import utils.TableData.TableData;
 
 
 void main() throws URISyntaxException, IOException
@@ -28,13 +27,11 @@ void main() throws URISyntaxException, IOException
 
     System.out.println(ani);
 
-    DBA dba = new SQLiteAccess();
+    KG_SQLiteAccess dba = new KG_SQLiteAccess();
 
     dba.Open();
-
-    dba.Upsert("anime", ani);
-    dba.Upsert("episode", epi);
-    dba.Upsert("torrent", tor);
-
+    dba.Upsert(KG_SQLiteAccess.TableName.anime, ani);
+    dba.Upsert(KG_SQLiteAccess.TableName.episode, epi);
+    dba.Upsert(KG_SQLiteAccess.TableName.torrent, tor);
     dba.Close();
 }
