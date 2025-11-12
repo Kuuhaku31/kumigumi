@@ -13,8 +13,15 @@ void main(String[] args)
     System.setProperty("java.net.useSystemProxies", "true"); // 设置全局代理
 
     var help_msg       = "Usage: kumigumi fetch -a<anime_id> [-r<rss_link>] [...]";
-    var dt_path        = Path.of("D:/Downloads/dt/");
     var def_excel_path = Path.of("D:/OneDrive/kumigumi.xlsx");
+
+    // 创建路径
+    var dt_path = Path.of("D:/Downloads/dt/");
+    if(Files.notExists(dt_path))
+    {
+        try { Files.createDirectories(dt_path); }
+        catch(IOException e) { System.err.println("无法创建下载路径: " + e.getMessage()); }
+    }
 
     System.out.println("Hello, kumigumi!?");
     if(args.length > 0) System.out.println(Arrays.toString(args));
@@ -73,7 +80,8 @@ void main(String[] args)
 
             kg.UpsertDatabase(); // 更新数据库
 
-
+            kg.SaveLog();
+            
             break;
         }
 

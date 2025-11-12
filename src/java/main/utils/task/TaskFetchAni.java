@@ -28,6 +28,9 @@ class TaskFetchAni extends KGTask
     void run()
     {
         try { GetAnimeData(td_anime, ani_id); }
-        catch(URISyntaxException | IOException e) { System.err.println("TaskFetchAni 发生异常: " + e.getMessage()); }
+        catch(URISyntaxException | IOException e)
+        {
+            System.err.println("[TaskFetchAni: ani_id:" + ani_id + "] " + e.getMessage());
+        }
     }
 }

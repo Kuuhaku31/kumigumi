@@ -68,7 +68,7 @@ class KG_SQLiteAccess
     {
         String url = "jdbc:sqlite:D:/db/st-sqlite/kumigumi.db"; // 若文件不存在会自动创建
         try { conn = DriverManager.getConnection(url); }
-        catch(SQLException e) { e.fillInStackTrace(); }
+        catch(SQLException e) { System.err.println(e.getMessage()); }
     }
 
     public
@@ -77,7 +77,11 @@ class KG_SQLiteAccess
 
     public
     void Close()
-    { conn = null; }
+    {
+        try { conn.close(); }
+        catch(SQLException e) { System.err.println(e.getMessage()); }
+        conn = null;
+    }
 
     public
     void Upsert(TableName table_name, TableData data)

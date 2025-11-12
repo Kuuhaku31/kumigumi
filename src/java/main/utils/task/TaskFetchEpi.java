@@ -28,6 +28,9 @@ class TaskFetchEpi extends KGTask
     void run()
     {
         try { GetEpisodeData(td_episode, ani_id); }
-        catch(URISyntaxException | IOException e) { System.err.println("TaskFetchEpi 发生异常: " + e.getMessage()); }
+        catch(URISyntaxException | IOException e)
+        {
+            System.err.println("[TaskFetchEpi: ani_id:" + ani_id + "] " + e.getMessage());
+        }
     }
 }

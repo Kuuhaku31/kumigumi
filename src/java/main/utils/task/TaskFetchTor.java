@@ -36,6 +36,9 @@ class TaskFetchTor extends KGTask
             else if(rss_url.startsWith("https://nyaa")) NyaaRSS.GetTorrentData(td_torrent, rss_url, ani_id);
             else System.err.println("未知的RSS类型");
         }
-        catch(IOException e) { System.err.println("TaskFetchTor 发生异常: " + e.getMessage()); }
+        catch(IOException e)
+        {
+            System.err.println("[TaskFetchTor: ani_id: " + ani_id + " url: " + rss_url + "] " + e.getMessage());
+        }
     }
 }

@@ -11,6 +11,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import static utils.DataBuffer.SaveDataList;
+
 
 public
 class Kumigumi
@@ -70,6 +72,20 @@ class Kumigumi
     }
 
 
+    // 将所有表数据保存到日志文件
+    public
+    void SaveLog()
+    {
+        List<TableData> list = new ArrayList<>();
+        list.add(td_anime_fetch);
+        list.add(td_episode_fetch);
+        list.add(td_torrent_fetch);
+        list.addAll(block_list_fetch);
+        list.addAll(block_list_update);
+        SaveDataList(list);
+    }
+
+
     public
     void UpsertDatabase()
     {
@@ -84,10 +100,7 @@ class Kumigumi
         for(var block : block_list_update)
         {
             var table_name = KG_SQLiteAccess.TableName.Get(block.block_name);
-            if(table_name != null)
-            {
-                dba.Upsert(table_name, block);
-            }
+            if(table_name != null) dba.Upsert(table_name, block);
         }
 
         dba.Close();
