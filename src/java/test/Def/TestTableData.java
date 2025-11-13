@@ -1,4 +1,4 @@
-// TestTableData.java
+// Def.TestTableData.java
 
 
 import Database.KG_SQLiteAccess;
@@ -15,7 +15,7 @@ void main() throws URISyntaxException, IOException
     String[] TORRENT_HEADERS_SRC = {"TOR_URL", "ANI_ID", "air_datetime", "size", "url_page", "title", "subtitle_group", "description"};
 
 
-    System.out.println("TestTableData");
+    System.out.println("Def.TestTableData");
 
     TableData ani = new TableData(ANIME_HEADERS_SRC);
     TableData epi = new TableData(EPISODE_HEADERS_SRC);

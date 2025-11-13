@@ -2,7 +2,7 @@ import Excel.ExcelReader;
 
 void main()
 {
-    System.out.println("TestEX:");
+    System.out.println("Def.TestEX:");
 
     var path_str = "D:/OneDrive/kumigumi.xlsx";
     var path     = Path.of(path_str);
