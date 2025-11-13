@@ -1,4 +1,4 @@
-// Kumigumi.java
+package Main;// Main.Kumigumi.java
 
 
 import Database.KG_SQLiteAccess;

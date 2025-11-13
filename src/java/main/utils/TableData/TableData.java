@@ -1,6 +1,8 @@
 package utils.TableData;// utils.TableData.TableData.java
 
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +13,7 @@ class TableData
     private final List<String[]> data = new ArrayList<>();
 
     public
-    TableData(String[] headers) { this.headers = headers.clone(); }
+    TableData(String @NotNull [] headers) { this.headers = headers.clone(); }
 
     // 返回指定表头的列号，没有则返回 -1
     public
