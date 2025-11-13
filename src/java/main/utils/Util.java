@@ -37,7 +37,7 @@ class Util
         ShowProgress(0, task_count);           // 更新进度条
 
         // 提交任务
-        var pool = Executors.newFixedThreadPool(6); // 固定大小线程池
+        var pool = Executors.newFixedThreadPool(12); // 固定大小线程池
         for(var task : task_list)
         {
             pool.submit(() ->

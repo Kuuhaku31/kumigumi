@@ -86,11 +86,15 @@ class KG_SQLiteAccess
     public
     void Upsert(TableName table_name, TableData data)
     {
-        if(conn == null) return;
+        if(conn == null)
+        {
+            System.err.println("数据库未打开，无法执行 Upsert 操作");
+            return;
+        }
 
         // 准备表头
-        List<String> primary_key   = null;
-        List<String> target_header = null;
+        List<String> primary_key;
+        List<String> target_header;
         switch(table_name)
         {
         case anime ->
@@ -108,11 +112,25 @@ class KG_SQLiteAccess
             primary_key   = TORRENT_PRIMARY_KEY;
             target_header = TORRENT_HEADERS;
         }
+        default ->
+        {
+            System.err.println("未知的表名，无法执行 Upsert 操作");
+            return;
+        }
         }
 
-        // 确保包含
+
+        // 安全性检测
         List<String> upsert_header = new ArrayList<>();
-        for(var header : data.GetHeaders()) if(target_header.contains(header)) upsert_header.add(header);
+
+        var data_headers = data.GetHeaders();
+        for(var pk : primary_key) // 确保主键存在
+            if(data.GetHeaderIndex(pk) == -1)
+            {
+                System.err.println("主键不完整，无法执行 Upsert 操作");
+                return;
+            }
+        for(var header : data_headers) if(target_header.contains(header)) upsert_header.add(header); // 确保包含，仅更新白名单中的列
 
 
         // 构建通用 SQL 语句模板

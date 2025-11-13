@@ -119,13 +119,16 @@ class Kumigumi
         if(i_ani_id >= 0)
             for(var data_row : block.GetData())
             {
-                tasks.add(new TaskFetchAni(td_anime_fetch, Integer.parseInt(data_row[i_ani_id])));
-                tasks.add(new TaskFetchEpi(td_episode_fetch, Integer.parseInt(data_row[i_ani_id])));
+                tasks.add(new TaskFetchAni(td_anime_fetch, (int) Double.parseDouble(data_row[i_ani_id])));
+                tasks.add(new TaskFetchEpi(td_episode_fetch, (int) Double.parseDouble(data_row[i_ani_id])));
             }
         if(i_rss_url >= 0)
             for(var data_row : block.GetData())
             {
-                tasks.add(new TaskFetchTor(td_torrent_fetch, Integer.parseInt(data_row[i_ani_id]), data_row[i_rss_url]));
+                if(data_row[i_rss_url] != null)
+                {
+                    tasks.add(new TaskFetchTor(td_torrent_fetch, (int) Double.parseDouble(data_row[i_ani_id]), data_row[i_rss_url]));
+                }
             }
         return tasks;
     }

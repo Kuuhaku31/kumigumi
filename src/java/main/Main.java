@@ -12,8 +12,8 @@ void main(String[] args)
 
     System.setProperty("java.net.useSystemProxies", "true"); // 设置全局代理
 
-    var help_msg       = "Usage: kumigumi fetch -a<anime_id> [-r<rss_link>] [...]";
-    var def_excel_path = Path.of("D:/OneDrive/kumigumi.xlsx");
+    var help_msg   = "Usage: kumigumi fetch -a<anime_id> [-r<rss_link>] [...]";
+    var excel_path = args.length > 1 ? Path.of(args[1]) : Path.of("D:/OneDrive/kumigumi.xlsx");
 
     // 创建路径
     var dt_path = Path.of("D:/Downloads/dt/");
@@ -39,7 +39,7 @@ void main(String[] args)
     else
     {
         // 先一次性读取 Excel 全部数据块，并分类
-        kg.ReadExcel(args.length > 1 ? Path.of(args[1]) : def_excel_path);
+        kg.ReadExcel(excel_path);
 
         switch(mode)
         {
@@ -78,10 +78,15 @@ void main(String[] args)
 
             Multithreading(tasks); // 一次性执行所有任务
 
+            for(var task : tasks)
+            {
+                if(!task.IsCompleted()) System.out.println(task);
+            }
+
             kg.UpsertDatabase(); // 更新数据库
 
             kg.SaveLog();
-            
+
             break;
         }
 

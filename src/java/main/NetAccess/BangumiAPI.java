@@ -12,8 +12,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.sql.Time;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -44,43 +42,25 @@ class BangumiAPI
     private static
     void ParseEpisodeInfo(TableData.Record record, JSONObject episode_info_json)
     {
-        // 处理 json 格式字符串
-        String ANI_ID = String.valueOf(episode_info_json.getInt("subject_id"));
-        String EPI_ID = String.valueOf(episode_info_json.getInt("id"));
-
-        // EpisodeInfo episode_info = new EpisodeInfo(ep_id, ani_id);
-
-        // 解析放送日期
-        String air_date = ValidateDate(episode_info_json.getString("airdate"));
+        var ANI_ID   = String.valueOf(episode_info_json.getInt("subject_id"));
+        var EPI_ID   = String.valueOf(episode_info_json.getInt("id"));
+        var air_date = ValidateDate(episode_info_json.getString("airdate"));
 
         // 解析集数
-        String ep_str = episode_info_json.getNumber("ep").toString();
-        String sort   = episode_info_json.getNumber("sort").toString();
-        String index  = ep_str.equals("0") ? "SP: " + sort : sort;
+        var ep_str = episode_info_json.getNumber("ep").toString();
+        var sort   = episode_info_json.getNumber("sort").toString();
+        var index  = ep_str.equals("0") ? "SP: " + sort : sort;
 
         // 解析标题
-        String title    = episode_info_json.getString("name");
-        String title_cn = episode_info_json.getString("name_cn");
+        var title    = episode_info_json.getString("name");
+        var title_cn = episode_info_json.getString("name_cn");
 
         // 解析时长
-        String durationStr = episode_info_json.optString("duration", null);
-        Time   time        = null;
-        String duration    = null;
-        if(durationStr != null && !durationStr.isBlank())
-        {
-            try
-            {
-                time     = Time.valueOf(durationStr);
-                duration = durationStr;
-            }
-            catch(IllegalArgumentException _)
-            {
-                // duration 保持为 null
-            }
-        }
+        var duration_seconds = episode_info_json.optInt("duration_seconds", -1);
+        var duration         = duration_seconds == -1 ? null : String.valueOf(duration_seconds);
 
         // 解析概述
-        String description = (time != null) ? time.toString() : null;
+        var description = episode_info_json.optString("desc");
 
         // 返回
         // return new String[] {EPI_ID, ANI_ID, air_date, duration, index, title, title_cn, description};
@@ -98,18 +78,14 @@ class BangumiAPI
     private static
     void ParseAnimeInfo(TableData.Record record, JSONObject anime_info_json)
     {
-        // 解析 ANI_ID
-        String ANI_ID = String.valueOf(anime_info_json.getInt("id"));
 
-        // 解析放送日期
-        String air_date = ValidateDate(anime_info_json.getString("date"));
-
-        // 解析标题
-        String title    = anime_info_json.getString("name");
-        String title_cn = anime_info_json.getString("name_cn");
+        var ANI_ID   = String.valueOf(anime_info_json.getInt("id"));    // 解析 ANI_ID
+        var air_date = ValidateDate(anime_info_json.optString("date")); // 解析放送日期
+        var title    = anime_info_json.optString("name");               // 解析标题
+        var title_cn = anime_info_json.optString("name_cn");
 
         // 解析别名
-        Object aliases_json = parse_info_box(anime_info_json, "别名");
+        var    aliases_json = parse_info_box(anime_info_json, "别名");
         String aliases;
         if(aliases_json instanceof JSONArray aliases_array)
         {
@@ -125,17 +101,18 @@ class BangumiAPI
         else aliases = null;
 
         // 解析 description
-        String description = anime_info_json.getString("summary");
+        var description = anime_info_json.optString("summary");
 
         // 解析集数
-        String episode_count = String.valueOf(anime_info_json.getInt("eps"));
+        var count         = anime_info_json.optInt("eps", -1);
+        var episode_count = count == -1 ? null : String.valueOf(count);
 
         // 解析官方网站
-        Object official_site_json = parse_info_box(anime_info_json, "官方网站");
-        String url_official_site  = official_site_json == null ? null : official_site_json.toString();
+        var official_site_json = parse_info_box(anime_info_json, "官方网站");
+        var url_official_site  = official_site_json == null ? null : official_site_json.toString();
 
         // 解析封面图片
-        String url_cover = anime_info_json.getJSONObject("images").getString("large");
+        var url_cover = anime_info_json.getJSONObject("images").getString("large");
 
         // return new String[] {ANI_ID, air_date, title, title_cn, aliases, episode_count, url_official_site, url_cover};
         record.Set("ANI_ID", ANI_ID);
@@ -204,14 +181,14 @@ class BangumiAPI
     private static
     String Get(String url_str) throws URISyntaxException, IOException
     {
-        URL               url  = new URI(url_str).toURL();                  // 创建URL对象
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();  // 打开连接
-        conn.setRequestMethod("GET");                                       // 设置请求方法
-        conn.setRequestProperty("User-Agent", "Mozilla/5.0");               // 添加 User-Agent
+        var url  = new URI(url_str).toURL();                  // 创建URL对象
+        var conn = (HttpURLConnection) url.openConnection();  // 打开连接
+        conn.setRequestMethod("GET");                         // 设置请求方法
+        conn.setRequestProperty("User-Agent", "Mozilla/5.0"); // 添加 User-Agent
 
         // 读取响应
-        BufferedReader in       = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        StringBuilder  response = new StringBuilder();
+        var in       = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        var response = new StringBuilder();
 
         // 逐行读取响应内容
         String input_line;

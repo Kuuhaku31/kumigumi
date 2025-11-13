@@ -40,5 +40,12 @@ class TaskFetchTor extends KGTask
         {
             System.err.println("[TaskFetchTor: ani_id: " + ani_id + " url: " + rss_url + "] " + e.getMessage());
         }
+
+        is_completed = true;
     }
+
+    @Override
+    public
+    String toString()
+    { return "TaskFetchTor: is_completed=" + is_completed + " ani_id=" + ani_id + " rss_url=" + rss_url; }
 }

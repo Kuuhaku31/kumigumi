@@ -32,5 +32,12 @@ class TaskFetchAni extends KGTask
         {
             System.err.println("[TaskFetchAni: ani_id:" + ani_id + "] " + e.getMessage());
         }
+
+        is_completed = true;
     }
+
+    @Override
+    public
+    String toString()
+    { return "TaskFetchAni: is_completed=" + is_completed + " ani_id=" + ani_id; }
 }

@@ -1,6 +1,5 @@
 import utils.TableData.TableData;
-import utils.task.KGTask;
-import utils.task.TaskFetchTor;
+import utils.task.TaskFetchAni;
 
 
 void main() throws IOException
@@ -36,10 +35,11 @@ void main() throws IOException
     //
     // System.out.println(ani);
 
-    KGTask ft = new TaskFetchTor(tor, 507634, "https://mikanani.me/RSS/Bangumi?bangumiId=3774");
+    TaskFetchAni t = new TaskFetchAni(ani, 533027);
 
-    ft.run();
+    t.run();
     // GetTorrentData(tor, "https://mikanani.me/RSS/Bangumi?bangumiId=3774", 507634);
 
-    System.out.println(tor);
+    System.out.println(t);
+    System.out.println(ani);
 }

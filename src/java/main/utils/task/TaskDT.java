@@ -29,18 +29,17 @@ class TaskDT extends KGTask
     {
         var client = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.ALWAYS) // 自动跟随重定向
-            .connectTimeout(Duration.ofSeconds(10))      // 设置连接超时
+            .connectTimeout(Duration.ofSeconds(60))      // 设置连接超时
             .build();
 
         // 构建 URI 和请求
-        var uri         = URI.create(torrent_url);
-        var file_name   = Paths.get(uri.getPath()).getFileName().toString();
-        var target_path = download_dir.resolve(file_name);
+        var uri       = URI.create(torrent_url);
+        var file_name = Paths.get(uri.getPath()).getFileName().toString();
 
         var request = HttpRequest.newBuilder(uri).GET().build();
 
         HttpResponse<Path> response = null;
-        try { response = client.send(request, HttpResponse.BodyHandlers.ofFile(target_path)); }
+        try { response = client.send(request, HttpResponse.BodyHandlers.ofFile(download_dir.resolve(file_name))); }
         catch(IOException | InterruptedException e) { System.err.println(e.getMessage()); }
 
         if(response == null || response.statusCode() != 200)
