@@ -157,7 +157,8 @@ class Kumigumi
         List<KGTask> tasks = new ArrayList<>();
         for(var data_row : data)
         {
-            if(data_row[i_t_state].equals(state)) tasks.add(new TaskDT(dt_path, data_row[i_dt_url]));
+            if(data_row[i_t_state] != null && data_row[i_t_state].equals(state))
+                tasks.add(new TaskDT(dt_path, data_row[i_dt_url]));
         }
         return tasks;
     }
@@ -168,7 +169,10 @@ class Kumigumi
         List<KGTask> tasks = new ArrayList<>();
         for(var block : block_list_update)
         {
-            if(block.block_name.equals("torrent")) tasks.addAll(PraseTorrentDownloadTaskList(block, dt_path, state));
+            if(block.block_name.equals("torrent") && block.GetHeaderIndex("status_download") >= 0)
+            {
+                tasks.addAll(PraseTorrentDownloadTaskList(block, dt_path, state));
+            }
         }
         return tasks;
     }

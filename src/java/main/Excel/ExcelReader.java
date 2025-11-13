@@ -88,7 +88,8 @@ class ExcelReader
                 // 读取表列信息
                 default ->
                 {
-                    var column_idx  = (int) row.getCell(1).getNumericCellValue();
+                    var column_idx = (int) row.getCell(1).getNumericCellValue();
+                    if(column_idx < 0) break;
                     var cell        = row.getCell(2);
                     var string_type = cell == null ? "" : cell.toString().trim();
                     column_list_buf.add(new ColumnMap(key, column_idx, string_type));

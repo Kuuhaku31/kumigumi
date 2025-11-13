@@ -46,5 +46,12 @@ class TaskDT extends KGTask
         {
             System.err.println("种子下载失败: " + torrent_url);
         }
+
+        is_completed = true;
     }
+
+    @Override
+    public
+    String toString()
+    { return "TaskFetchTor: is_completed=" + is_completed + " torrent_url=" + torrent_url + " download_dir=" + download_dir; }
 }

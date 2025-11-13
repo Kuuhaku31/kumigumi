@@ -78,10 +78,7 @@ void main(String[] args)
 
             Multithreading(tasks); // 一次性执行所有任务
 
-            for(var task : tasks)
-            {
-                if(!task.IsCompleted()) System.out.println(task);
-            }
+            for(var task : tasks) if(!task.IsCompleted()) System.out.println(task);
 
             kg.UpsertDatabase(); // 更新数据库
 
