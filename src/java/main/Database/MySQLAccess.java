@@ -99,11 +99,11 @@ class MySQLAccess
             conn.setAutoCommit(false); // 启用事务
 
             // 2️⃣ 遍历所有行数据
-            for(var row_data : table_data.data())
-            {
-                for(int i = 0; i < table_data.headers().length; i++) stmt.setString(i + 1, row_data[i]);
-                stmt.addBatch(); // 加入批量
-            }
+            // for(var row_data : table_data.data())
+            // {
+            //     for(int i = 0; i < table_data.headers().length; i++) stmt.setString(i + 1, row_data[i]);
+            //     stmt.addBatch(); // 加入批量
+            // }
 
             // 3️⃣ 执行批处理
             stmt.executeBatch();

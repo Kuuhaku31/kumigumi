@@ -4,6 +4,7 @@ package Excel;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import utils.Operation;
 import utils.TableData.BlockData;
 
 import java.io.FileInputStream;
@@ -27,7 +28,7 @@ class ExcelReader
      *
      */
     public static
-    List<BlockData> Read(Path file_path)
+    ExcelInfo Read(Path file_path)
     {
         XSSFWorkbook workbook;
         try
@@ -38,12 +39,12 @@ class ExcelReader
         }
         catch(Exception e)
         {
-            e.fillInStackTrace();
-            return new ArrayList<>();
+            System.err.println("Error reading file: " + e.getMessage());
+            return null;
         }
         var evaluator  = workbook.getCreationHelper().createFormulaEvaluator();
         var main_sheet = workbook.getSheet("main");
-        if(main_sheet == null) return new ArrayList<>();
+        if(main_sheet == null) return null;
 
 
         // 遍历所有行
@@ -53,6 +54,7 @@ class ExcelReader
         int             end_row         = 0;
         List<BlockData> data            = new ArrayList<>();
         List<ColumnMap> column_list_buf = null;
+        List<Operation> operations      = new ArrayList<>();
         for(var row : main_sheet)
         {
             // 忽略空行
@@ -101,8 +103,19 @@ class ExcelReader
                 table_name      = row.getCell(1).toString().trim();
                 column_list_buf = new ArrayList<>(); // 重新开始获取列元数据
             }
+            else // 读取命令
+            {
+                List<String> args_list = new ArrayList<>();
+                for(int i = 1; i < row.getLastCellNum(); i++)
+                {
+                    var cell = row.getCell(i);
+                    if(cell == null || cell.getCellType() == CellType.BLANK) break;
+                    args_list.add(cell.toString().trim());
+                }
+                operations.add(new Operation(key, args_list.toArray(new String[0])));
+            }
         }
-        return data;
+        return new ExcelInfo(operations, data);
     }
 
     /**
@@ -182,7 +195,6 @@ class ExcelReader
         };
     }
 
-    // 提取单元格值
     private static
     String GetCellValue(FormulaEvaluator evaluator, Cell cell)
     {
@@ -227,6 +239,9 @@ class ExcelReader
     }
 
     record ColumnMap(String column_name, int column_index, String data_type) { }
+
+    public
+    record ExcelInfo(List<Operation> operations, List<BlockData> data) { }
 }
 
 

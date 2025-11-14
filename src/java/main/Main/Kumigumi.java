@@ -9,6 +9,7 @@ import utils.task.*;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static utils.DataBuffer.SaveDataList;
@@ -51,23 +52,47 @@ class Kumigumi
         "description",
     };
 
+
     private final TableData td_anime_fetch   = new TableData(ANIME_HEADERS_FETCH);
     private final TableData td_episode_fetch = new TableData(EPISODE_HEADERS_FETCH);
     private final TableData td_torrent_fetch = new TableData(TORRENT_HEADERS_FETCH);
 
+    private final List<BlockData> block_list_fetch = new ArrayList<>();
+    private final List<BlockData> block_list_store = new ArrayList<>();
+    private final List<BlockData> block_list_dt    = new ArrayList<>();
 
-    private final List<BlockData> block_list_fetch  = new ArrayList<>();
-    private final List<BlockData> block_list_update = new ArrayList<>();
 
     public
     void ReadExcel(Path excel_path)
     {
         // 先一次性读取 Excel 全部数据块，并分类
-        var blocks = ExcelReader.Read(excel_path);
-        for(var block : blocks)
+        var info = ExcelReader.Read(excel_path);
+        if(info == null) return;
+
+        List<String> store_tables = new ArrayList<>();
+        List<String> fetch_tables = new ArrayList<>();
+        List<String> dt_tables    = new ArrayList<>();
+
+        // 解析命令
+        for(var op : info.operations())
         {
-            if(block.block_name.equals("fetch")) block_list_fetch.add(block);
-            else block_list_update.add(block);
+            var command = op.command();
+            var params  = op.params();
+
+            switch(command)
+            {
+            case "-store" -> Collections.addAll(store_tables, params);
+            case "-fetch" -> Collections.addAll(fetch_tables, params);
+            case "-dt" -> Collections.addAll(dt_tables, params);
+            }
+        }
+
+        // 分类数据块
+        for(var block : info.data())
+        {
+            if(fetch_tables.contains(block.block_name)) block_list_fetch.add(block);
+            if(store_tables.contains(block.block_name)) block_list_store.add(block);
+            if(dt_tables.contains(block.block_name)) block_list_dt.add(block);
         }
     }
 
@@ -81,7 +106,7 @@ class Kumigumi
         list.add(td_episode_fetch);
         list.add(td_torrent_fetch);
         list.addAll(block_list_fetch);
-        list.addAll(block_list_update);
+        list.addAll(block_list_store);
         SaveDataList(list);
     }
 
@@ -97,7 +122,7 @@ class Kumigumi
         dba.Upsert(KG_SQLiteAccess.TableName.torrent, td_torrent_fetch);
 
         // 将 Excel 的数据块写入数据库
-        for(var block : block_list_update)
+        for(var block : block_list_store)
         {
             var table_name = KG_SQLiteAccess.TableName.Get(block.block_name);
             if(table_name != null) dba.Upsert(table_name, block);
@@ -167,7 +192,7 @@ class Kumigumi
     List<KGTask> PraseTorrentDownloadTaskList(Path dt_path, String state)
     {
         List<KGTask> tasks = new ArrayList<>();
-        for(var block : block_list_update)
+        for(var block : block_list_dt)
         {
             if(block.block_name.equals("torrent") && block.GetHeaderIndex("status_download") >= 0)
             {
