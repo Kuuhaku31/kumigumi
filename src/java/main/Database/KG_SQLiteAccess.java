@@ -7,60 +7,15 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import static Database.DBStructure.ANIME_HEADERS;
 
 public
 class KG_SQLiteAccess
 {
-    private final List<String> ANIME_HEADERS   = List.of(
-        "ANI_ID",
-        "air_date",
-        "title",
-        "title_cn",
-        "aliases",
-        "description",
-        "episode_count",
-        "url_official_site",
-        "url_cover",
-        "url_rss",
-        "rating_before",
-        "rating_after",
-        "remark"
-    );
-    private final List<String> EPISODE_HEADERS = List.of(
-        "EPI_ID",
-        "ANI_ID",
-        "sort",
-        "air_date",
-        "duration",
-        "ep",
-        "title",
-        "title_cn",
-        "description",
-        "rating",
-        "status_download",
-        "status_view",
-        "remark"
-    );
-    private final List<String> TORRENT_HEADERS = List.of(new String[] {
-        "TOR_URL",
-        "ANI_ID",
-        "air_datetime",
-        "size",
-        "url_page",
-        "title",
-        "subtitle_group",
-        "description",
-        "status_download",
-        "remark"
-    });
-
-    private final List<String> ANIME_PRIMARY_KEY   = List.of(new String[] {"ANI_ID"});
-    private final List<String> EPISODE_PRIMARY_KEY = List.of(new String[] {"EPI_ID"});
-    private final List<String> TORRENT_PRIMARY_KEY = List.of(new String[] {"TOR_URL"});
-
-
     private Connection conn = null;
 
     public
@@ -93,24 +48,24 @@ class KG_SQLiteAccess
         }
 
         // 准备表头
-        List<String> primary_key;
-        List<String> target_header;
+        DBStructure.Headers[] primary_key;
+        DBStructure.Headers[] target_header;
         switch(table_name)
         {
         case anime ->
         {
-            primary_key   = ANIME_PRIMARY_KEY;
+            primary_key   = new DBStructure.Headers[] {DBStructure.Headers.ANI_ID};
             target_header = ANIME_HEADERS;
         }
         case episode ->
         {
-            primary_key   = EPISODE_PRIMARY_KEY;
-            target_header = EPISODE_HEADERS;
+            primary_key   = new DBStructure.Headers[] {DBStructure.Headers.EPI_ID};
+            target_header = DBStructure.EPISODE_HEADERS;
         }
         case torrent ->
         {
-            primary_key   = TORRENT_PRIMARY_KEY;
-            target_header = TORRENT_HEADERS;
+            primary_key   = new DBStructure.Headers[] {DBStructure.Headers.TOR_URL};
+            target_header = DBStructure.TORRENT_HEADERS;
         }
         default ->
         {
@@ -121,28 +76,35 @@ class KG_SQLiteAccess
 
 
         // 安全性检测
-        List<String> upsert_header = new ArrayList<>();
+        List<DBStructure.Headers> upsert_header = new ArrayList<>();
 
         var data_headers = data.GetHeaders();
         for(var pk : primary_key) // 确保主键存在
-            if(data.GetHeaderIndex(pk) == -1)
+            if(data.GetHeaderIndex(String.valueOf(pk)) == -1)
             {
                 System.err.println("主键不完整，无法执行 Upsert 操作");
                 return;
             }
-        for(var header : data_headers) if(target_header.contains(header)) upsert_header.add(header); // 确保包含，仅更新白名单中的列
-
+        for(var header : data_headers) // 确保包含，仅更新白名单中的列
+        {
+            for(var th : target_header)
+            {
+                if(th.toString().equals(header))
+                {
+                    upsert_header.add(th);
+                    break;
+                }
+            }
+        }
 
         // 构建通用 SQL 语句模板
         var columns      = String.join(", ", upsert_header.stream().map(h -> "`" + h + "`").toArray(String[]::new));
         var placeholders = String.join(", ", Collections.nCopies(upsert_header.size(), "?"));
-        var primary_key_str = String.join(", ", primary_key
-            .stream()
+        var primary_key_str = String.join(", ", Arrays.stream(primary_key)
             .map(h -> "`" + h + "`")
             .toArray(String[]::new)
         );
         var update_part = String.join(", ", upsert_header.stream()
-            .filter(h -> !h.equals("id"))
             .map(h -> "`" + h + "` = excluded." + h)
             .toArray(String[]::new)
         );
