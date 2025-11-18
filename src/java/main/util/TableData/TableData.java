@@ -1,4 +1,4 @@
-package utils.TableData;
+package util.TableData;
 
 
 import org.jetbrains.annotations.NotNull;

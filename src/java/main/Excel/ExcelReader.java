@@ -4,8 +4,8 @@ package Excel;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import utils.Operation;
-import utils.TableData.BlockData;
+import util.Operation;
+import util.TableData.BlockData;
 
 import java.io.FileInputStream;
 import java.nio.file.Files;
@@ -214,6 +214,7 @@ class ExcelReader
         };
     }
 
+    private
     enum StringType
     {
         Int,
@@ -238,6 +239,7 @@ class ExcelReader
         }
     }
 
+    private
     record ColumnMap(String column_name, int column_index, String data_type) { }
 
     public

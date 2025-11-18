@@ -5,9 +5,9 @@ import Database.DBStructure.Headers;
 import Database.KG_SQLiteAccess;
 import Database.KG_SQLiteAccess.TableName;
 import Excel.ExcelReader;
-import utils.TableData.BlockData;
-import utils.TableData.TableData;
-import utils.task.*;
+import Task.*;
+import util.TableData.BlockData;
+import util.TableData.TableData;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -15,7 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static utils.DataBuffer.SaveDataList;
+import static util.Util.SaveDataList;
 
 
 public

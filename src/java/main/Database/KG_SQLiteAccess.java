@@ -1,6 +1,6 @@
 package Database;
 
-import utils.TableData.TableData;
+import util.TableData.TableData;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

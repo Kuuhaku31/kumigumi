@@ -15,8 +15,8 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.*;
 
-import static NetAccess.Util.ParseSizeToBytes;
-import static NetAccess.Util.ParseSubtitleGroup;
+import static util.Util.ParseSizeToBytes;
+import static util.Util.ParseSubtitleGroup;
 
 public
 class NyaaRSS

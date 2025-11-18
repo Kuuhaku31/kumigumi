@@ -1,4 +1,4 @@
-package utils.TableData;
+package util.TableData;
 
 
 // 用于插入/更新的数据

@@ -2,9 +2,9 @@ package Def;
 
 import Database.DBStructure;
 import Database.KG_SQLiteAccess;
-import utils.TableData.TableData;
-import utils.task.TaskFetchAni;
-import utils.task.TaskUpsert;
+import Task.TaskFetchAni;
+import Task.TaskUpsert;
+import util.TableData.TableData;
 
 import java.util.ArrayList;
 import java.util.List;

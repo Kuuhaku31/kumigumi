@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static NetAccess.Util.ParseSubtitleGroup;
+import static util.Util.ParseSubtitleGroup;
 
 public
 class MikanRSS

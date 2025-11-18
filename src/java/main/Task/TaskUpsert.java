@@ -1,9 +1,9 @@
-package utils.task;
+package Task;
 
 import Database.KG_SQLiteAccess;
 import Database.KG_SQLiteAccess.TableName;
 import Database.UpsertException;
-import utils.TableData.TableData;
+import util.TableData.TableData;
 
 import java.sql.SQLException;
 

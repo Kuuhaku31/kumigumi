@@ -2,7 +2,7 @@ package Main;
 
 
 import Database.KG_SQLiteAccess;
-import utils.task.TaskManager;
+import Task.TaskManager;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -97,7 +97,7 @@ class Main
                 KG_SQLiteAccess.Close();
 
                 kg.SaveLog();
-                
+
                 break;
             }
 
