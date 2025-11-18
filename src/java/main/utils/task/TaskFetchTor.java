@@ -3,25 +3,25 @@ package utils.task;
 
 import NetAccess.MikanRSS;
 import NetAccess.NyaaRSS;
-import utils.TableData.TableData;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 
 // 获取种子信息的任务
 public
-class TaskFetchTor extends KGTask
+class TaskFetchTor extends TaskFetch
 {
-    private final TableData td_torrent;
-    private final int       ani_id;
-    private final String    rss_url;
+    private final int    ani_id;
+    private final String rss_url;
 
     public
-    TaskFetchTor(TableData td_torrent, int ani_id, String rss_url)
+    TaskFetchTor(List<Map<String, String>> buffer, int ani_id, String rss_url)
     {
-        this.td_torrent = td_torrent;
-        this.ani_id     = ani_id;
-        this.rss_url    = rss_url;
+        super(buffer);
+        this.ani_id  = ani_id;
+        this.rss_url = rss_url;
     }
 
     // 执行任务的具体逻辑
@@ -29,23 +29,26 @@ class TaskFetchTor extends KGTask
     public
     void run()
     {
-        if(rss_url == null) return;
         try
         {
-            if(rss_url.startsWith("https://mikanani.me")) MikanRSS.GetTorrentData(td_torrent, rss_url, ani_id);
-            else if(rss_url.startsWith("https://nyaa")) NyaaRSS.GetTorrentData(td_torrent, rss_url, ani_id);
-            else System.err.println("未知的RSS类型");
+            List<Map<String, String>> torrent_data = null;
+
+            // 不同的订阅源选择不同方法获取
+            if(rss_url.startsWith("https://mikanani.me")) torrent_data = MikanRSS.GetTorrentData(rss_url, ani_id);
+            else if(rss_url.startsWith("https://nyaa")) torrent_data = NyaaRSS.GetTorrentData(rss_url, ani_id);
+
+            if(torrent_data == null) failed("不支持的RSS源");
+            else buffer.addAll(torrent_data);
         }
         catch(IOException e)
         {
-            System.err.println("[TaskFetchTor: ani_id: " + ani_id + " url: " + rss_url + "] " + e.getMessage());
+            failed(e.getMessage());
         }
-
-        is_completed = true;
     }
 
+
     @Override
-    public
-    String toString()
-    { return "TaskFetchTor: is_completed=" + is_completed + " ani_id=" + ani_id + " rss_url=" + rss_url; }
+    protected
+    String getStatusStr()
+    { return "ani_id=" + ani_id + " rss_url=" + rss_url; }
 }

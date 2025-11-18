@@ -11,7 +11,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 
 public
-class TaskDT extends KGTask
+class TaskDT extends TaskManager.Task
 {
     private final Path   download_dir;
     private final String torrent_url;
@@ -46,12 +46,17 @@ class TaskDT extends KGTask
         {
             System.err.println("种子下载失败: " + torrent_url);
         }
-
-        is_completed = true;
     }
 
     @Override
     public
     String toString()
-    { return "TaskFetchTor: is_completed=" + is_completed + " torrent_url=" + torrent_url + " download_dir=" + download_dir; }
+    { return "TaskFetchTor: is_completed=" + " torrent_url=" + torrent_url + " download_dir=" + download_dir; }
+
+    @Override
+    protected
+    String getStatusStr()
+    {
+        return "";
+    }
 }

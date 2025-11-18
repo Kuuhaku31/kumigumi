@@ -5,7 +5,6 @@ package NetAccess;
 
 import com.apptasticsoftware.rssreader.Item;
 import com.apptasticsoftware.rssreader.RssReader;
-import utils.TableData.TableData;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -22,8 +21,8 @@ import static NetAccess.Util.ParseSubtitleGroup;
 public
 class NyaaRSS
 {
-    private static final SimpleDateFormat rssFormat   = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", java.util.Locale.ENGLISH);
-    private static final SimpleDateFormat mysqlFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final SimpleDateFormat rssFormat      = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", java.util.Locale.ENGLISH);
+    private static final SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     /**
      * 通过 RSS 链接获取种子信息列表
@@ -33,10 +32,8 @@ class NyaaRSS
      * 返回值：种子信息列表，如果获取失败或没有种子则返回 null
      */
     public static
-    void GetTorrentData(TableData data, String rss_url, int ani_id) throws IOException
+    List<Map<String, String>> GetTorrentData(String rss_url, int ani_id) throws IOException
     {
-        if(rss_url == null) return;
-
         HttpClient client = HttpClient.newBuilder()
             .proxy(ProxySelector.of(new InetSocketAddress("127.0.0.1", 10809))) // 例：Clash 代理
             .connectTimeout(Duration.ofSeconds(30))
@@ -46,46 +43,46 @@ class NyaaRSS
         // 自建一个 Map 来保存每个 Item 对应的扩展字段
         Map<Item, Map<String, String>> itemExtensions = new IdentityHashMap<>();
         reader.addItemExtension("nyaa:size", (item, value) ->
-            itemExtensions.computeIfAbsent(item, k -> new HashMap<>()).put("size", value.trim())
+            itemExtensions.computeIfAbsent(item, _ -> new HashMap<>()).put("size", value.trim())
         );
 
         // 读取一个 RSS 链接
         List<Item> items = reader.read(rss_url).toList();
 
         // 遍历 RSS 条目，提取种子信息
-        for(Item item : items)
+        List<Map<String, String>> res = new ArrayList<>();
+        for(var item : items)
         {
-            var recode = data.new Record();
-
+            // 填充信息
+            Map<String, String> recode = new HashMap<>();
+            res.add(recode);
 
             // 填充信息
-            recode.Set("TOR_URL", item.getLink().orElse(null));
-            recode.Set("ANI_ID", String.valueOf(ani_id));
+            recode.put("TOR_URL", item.getLink().orElse(null));
+            recode.put("ANI_ID", String.valueOf(ani_id));
 
-            // 1. 解析字符串为 Date
-            // 2. 转成 MySQL 标准格式字符串
-            String air_datetime = null;
-            try { air_datetime = mysqlFormat.format(rssFormat.parse(item.getPubDate().orElse(null))); }
-            catch(ParseException _) { }
-            recode.Set("air_datetime", air_datetime);
+            try
+            {
+                // 解析字符串为 Date 转成标准格式字符串
+                var air_datetime = dateTimeFormat.format(rssFormat.parse(item.getPubDate().orElse(null)));
+                recode.put("air_datetime", air_datetime);
+            }
+            catch(ParseException _) { recode.put("air_datetime", null); }
 
             var ext  = itemExtensions.getOrDefault(item, Collections.emptyMap());
             var len  = ParseSizeToBytes(ext.getOrDefault("size", null));
             var size = len == null ? null : String.valueOf(len);
-            recode.Set("size", size);
+            recode.put("size", size);
 
-            var url_page = item.getGuid().orElse(null);
-            recode.Set("url_page", url_page);
+            recode.put("url_page", item.getGuid().orElse(null));
 
             var title = item.getTitle().orElse(null);
-            recode.Set("title", title);
+            recode.put("title", title);
+            recode.put("subtitle_group", ParseSubtitleGroup(title));
 
-            var subtitle_group = ParseSubtitleGroup(title);
-            recode.Set("subtitle_group", subtitle_group);
-
-            var description = item.getDescription().orElse(null);
-            recode.Set("description", description);
+            recode.put("description", item.getDescription().orElse(null));
         }
+        return res;
     }
 
 }

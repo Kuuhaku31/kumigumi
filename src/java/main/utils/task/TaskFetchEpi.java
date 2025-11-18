@@ -1,25 +1,24 @@
 package utils.task;
 
 
-import utils.TableData.TableData;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.List;
+import java.util.Map;
 
 import static NetAccess.BangumiAPI.GetEpisodeData;
 
 
 public
-class TaskFetchEpi extends KGTask
+class TaskFetchEpi extends TaskFetch
 {
-    private final TableData td_episode;
-    private final int       ani_id;
+    private final int ani_id;
 
     public
-    TaskFetchEpi(TableData td_episode, int ani_id)
+    TaskFetchEpi(List<Map<String, String>> buffer, int ani_id)
     {
-        this.td_episode = td_episode;
-        this.ani_id     = ani_id;
+        super(buffer);
+        this.ani_id = ani_id;
     }
 
     // 执行任务的具体逻辑
@@ -27,17 +26,15 @@ class TaskFetchEpi extends KGTask
     public
     void run()
     {
-        try { GetEpisodeData(td_episode, ani_id); }
+        try { buffer.addAll(GetEpisodeData(ani_id)); }
         catch(URISyntaxException | IOException e)
         {
-            System.err.println("[TaskFetchEpi: ani_id:" + ani_id + "] " + e.getMessage());
+            failed("[TaskFetchEpi: ani_id:" + ani_id + "] " + e.getMessage());
         }
-
-        is_completed = true;
     }
 
     @Override
-    public
-    String toString()
-    { return "TaskFetchEpi: is_completed=" + is_completed + " ani_id=" + ani_id; }
+    protected
+    String getStatusStr()
+    { return " ani_id=" + ani_id; }
 }

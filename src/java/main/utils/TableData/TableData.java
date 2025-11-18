@@ -1,4 +1,4 @@
-package utils.TableData;// utils.TableData.TableData.java
+package utils.TableData;
 
 
 import org.jetbrains.annotations.NotNull;

@@ -1,16 +1,13 @@
 package Main;
 
 
-import utils.task.KGTask;
+import Database.KG_SQLiteAccess;
+import utils.task.TaskManager;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-
-import static utils.Util.Multithreading;
 
 public
 class Main
@@ -41,9 +38,10 @@ class Main
         if(mode.equals("help")) System.out.println(help_msg);
         else if(mode.equals("fetch"))
         {
+            // TODO: ...
             System.out.println("Fetching...");
-            var tasks = kg.ParseTaskFromArgs(args);
-            Multithreading(tasks);
+            kg.addTaskFromArgs(args);
+            TaskManager.runAllTasks();
             kg.UpsertDatabase();
         }
         else
@@ -55,45 +53,51 @@ class Main
             {
             case "import":
             {
-                System.out.println("Importing from Excel...");
+                // System.out.println("Importing from Excel...");
                 // kg.UpsertExcelData();
                 break;
             }
             case "fetch_excel":
             {
-                System.out.println("Fetching from Excel...");
-
-                var tasks = kg.ParseFetchTaskFromBlock();
-                Multithreading(tasks);
-                // DataBuffer.SaveDataList(tasks);
-                kg.UpsertDatabase();
+                // System.out.println("Fetching from Excel...");
+                //
+                // var tasks = kg.ParseFetchTaskFromBlock();
+                // Multithreading(tasks);
+                // // DataBuffer.SaveDataList(tasks);
+                // kg.UpsertDatabase();
                 break;
             }
             case "dt":
             {
-                System.out.println("Downloading torrents...");
-
-                var tasks = kg.PraseTorrentDownloadTaskList(dt_path, "未下载");
-                Multithreading(tasks);
+                // System.out.println("Downloading torrents...");
+                //
+                // var tasks = kg.PraseTorrentDownloadTaskList(dt_path, "未下载");
+                // Multithreading(tasks);
 
                 break;
             }
             case "all":
             {
+
                 System.out.println("Fetching & Importing...");
 
-                List<KGTask> tasks = new ArrayList<>();
-                tasks.addAll(kg.ParseFetchTaskFromBlock());                       // 添加所有 fetch 任务
-                tasks.addAll(kg.PraseTorrentDownloadTaskList(dt_path, "未下载")); // 添加 dt 任务
+                // Step01. 创建下载任务
+                kg.addFetchTaskFromBlock();                       // 添加所有 fetch 任务
+                kg.addTorrentDownloadTaskList(dt_path, "未下载"); // 添加 dt 任务
 
-                Multithreading(tasks); // 一次性执行所有任务
+                // Step02. 执下载行任务，将获取的数据存到缓冲区
+                // 并发执行
+                TaskManager.runAllTasks();
 
-                for(var task : tasks) if(!task.IsCompleted()) System.out.println(task);
+                // 执行数据库更新
+                kg.buildTaskUpsert();
 
-                kg.UpsertDatabase(); // 更新数据库
+                KG_SQLiteAccess.Open();
+                TaskManager.runAllTasksFor(); // 顺序执行
+                KG_SQLiteAccess.Close();
 
                 kg.SaveLog();
-
+                
                 break;
             }
 

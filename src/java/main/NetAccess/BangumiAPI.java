@@ -4,7 +4,6 @@ package NetAccess;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import utils.TableData.TableData;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,6 +14,10 @@ import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 public
@@ -23,62 +26,27 @@ class BangumiAPI
     private static final String bangumi_server = "https://api.bgm.tv";
 
     public static
-    void GetAnimeData(TableData data, int anime_id) throws URISyntaxException, IOException
+    Map<String, String> GetAnimeData(int anime_id) throws URISyntaxException, IOException
     {
-        ParseAnimeInfo(data.new Record(), GetInfo(QueryType.anime_info, anime_id));
+        // 解析 anime 信息
+        return ParseAnimeInfo(GetInfo(QueryType.anime_info, anime_id));
     }
 
     public static
-    void GetEpisodeData(TableData data, int anime_id) throws URISyntaxException, IOException
+    List<Map<String, String>> GetEpisodeData(int anime_id) throws URISyntaxException, IOException
     {
         // 解析 episode 信息
         var ep_list = GetInfo(QueryType.episode_list, anime_id).getJSONArray("data");
-        if(ep_list == null) return;
 
-        for(int i = 0; i < ep_list.length(); i++) ParseEpisodeInfo(data.new Record(), ep_list.getJSONObject(i));
-    }
-
-
-    private static
-    void ParseEpisodeInfo(TableData.Record record, JSONObject episode_info_json)
-    {
-        var ANI_ID   = String.valueOf(episode_info_json.getInt("subject_id"));
-        var EPI_ID   = String.valueOf(episode_info_json.getInt("id"));
-        var air_date = ValidateDate(episode_info_json.getString("airdate"));
-
-        // 解析集数
-        var ep_str = episode_info_json.getNumber("ep").toString();
-        var sort   = episode_info_json.getNumber("sort").toString();
-        var index  = ep_str.equals("0") ? "SP: " + sort : sort;
-
-        // 解析标题
-        var title    = episode_info_json.getString("name");
-        var title_cn = episode_info_json.getString("name_cn");
-
-        // 解析时长
-        var duration_seconds = episode_info_json.optInt("duration_seconds", -1);
-        var duration         = duration_seconds == -1 ? null : String.valueOf(duration_seconds);
-
-        // 解析概述
-        var description = episode_info_json.optString("desc");
-
-        // 返回
-        // return new String[] {EPI_ID, ANI_ID, air_date, duration, index, title, title_cn, description};
-        record.Set("EPI_ID", EPI_ID);
-        record.Set("ANI_ID", ANI_ID);
-        record.Set("sort", sort);
-        record.Set("air_date", air_date);
-        record.Set("duration", duration);
-        record.Set("ep", index);
-        record.Set("title", title);
-        record.Set("title_cn", title_cn);
-        record.Set("description", description);
+        List<Map<String, String>> res = new ArrayList<>();
+        // for(int i = 0; i < ep_list.length(); i++) res.add(ParseEpisodeInfo(ep_list.getJSONObject(i)));
+        for(var item : ep_list) res.add(ParseEpisodeInfo((JSONObject) item));
+        return res;
     }
 
     private static
-    void ParseAnimeInfo(TableData.Record record, JSONObject anime_info_json)
+    Map<String, String> ParseAnimeInfo(JSONObject anime_info_json)
     {
-
         var ANI_ID   = String.valueOf(anime_info_json.getInt("id"));    // 解析 ANI_ID
         var air_date = ValidateDate(anime_info_json.optString("date")); // 解析放送日期
         var title    = anime_info_json.optString("name");               // 解析标题
@@ -114,16 +82,55 @@ class BangumiAPI
         // 解析封面图片
         var url_cover = anime_info_json.getJSONObject("images").getString("large");
 
-        // return new String[] {ANI_ID, air_date, title, title_cn, aliases, episode_count, url_official_site, url_cover};
-        record.Set("ANI_ID", ANI_ID);
-        record.Set("air_date", air_date);
-        record.Set("title", title);
-        record.Set("title_cn", title_cn);
-        record.Set("aliases", aliases);
-        record.Set("description", description);
-        record.Set("episode_count", episode_count);
-        record.Set("url_official_site", url_official_site);
-        record.Set("url_cover", url_cover);
+        // 返回
+        Map<String, String> res = new HashMap<>();
+        res.put("ANI_ID", ANI_ID);
+        res.put("air_date", air_date);
+        res.put("title", title);
+        res.put("title_cn", title_cn);
+        res.put("aliases", aliases);
+        res.put("description", description);
+        res.put("episode_count", episode_count);
+        res.put("url_official_site", url_official_site);
+        res.put("url_cover", url_cover);
+        return res;
+    }
+
+    private static
+    Map<String, String> ParseEpisodeInfo(JSONObject episode_info_json)
+    {
+        var ANI_ID   = String.valueOf(episode_info_json.getInt("subject_id"));
+        var EPI_ID   = String.valueOf(episode_info_json.getInt("id"));
+        var air_date = ValidateDate(episode_info_json.getString("airdate"));
+
+        // 解析集数
+        var ep_str = episode_info_json.getNumber("ep").toString();
+        var sort   = episode_info_json.getNumber("sort").toString();
+        var index  = ep_str.equals("0") ? "SP: " + sort : sort;
+
+        // 解析标题
+        var title    = episode_info_json.getString("name");
+        var title_cn = episode_info_json.getString("name_cn");
+
+        // 解析时长
+        var duration_seconds = episode_info_json.optInt("duration_seconds", -1);
+        var duration         = duration_seconds == -1 ? null : String.valueOf(duration_seconds);
+
+        // 解析概述
+        var description = episode_info_json.optString("desc");
+
+        // 返回
+        Map<String, String> res = new HashMap<>();
+        res.put("EPI_ID", EPI_ID);
+        res.put("ANI_ID", ANI_ID);
+        res.put("sort", sort);
+        res.put("air_date", air_date);
+        res.put("duration", duration);
+        res.put("ep", index);
+        res.put("title", title);
+        res.put("title_cn", title_cn);
+        res.put("description", description);
+        return res;
     }
 
 
