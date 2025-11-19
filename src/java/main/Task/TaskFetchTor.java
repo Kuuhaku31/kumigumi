@@ -1,12 +1,11 @@
 package Task;
 
 
-import NetAccess.MikanRSS;
-import NetAccess.NyaaRSS;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+
+import static NetAccess.NetAccess.FetchTorrentInfo;
 
 
 // 获取种子信息的任务
@@ -31,14 +30,9 @@ class TaskFetchTor extends TaskFetch
     {
         try
         {
-            List<Map<String, String>> torrent_data = null;
-
-            // 不同的订阅源选择不同方法获取
-            if(rss_url.startsWith("https://mikanani.me")) torrent_data = MikanRSS.GetTorrentData(rss_url, ani_id);
-            else if(rss_url.startsWith("https://nyaa")) torrent_data = NyaaRSS.GetTorrentData(rss_url, ani_id);
-
-            if(torrent_data == null) failed("不支持的RSS源");
-            else buffer.addAll(torrent_data);
+            var info = FetchTorrentInfo(rss_url);
+            for(var i : info) i.put("ANI_ID", String.valueOf(ani_id)); // 添加 ani_id 为外键
+            buffer.addAll(info);
         }
         catch(IOException e)
         {

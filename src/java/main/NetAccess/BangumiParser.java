@@ -5,46 +5,16 @@ package NetAccess;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 
-public
-class BangumiAPI
+class BangumiParser
 {
-    private static final String bangumi_server = "https://api.bgm.tv";
-
-    public static
-    Map<String, String> GetAnimeData(int anime_id) throws URISyntaxException, IOException
-    {
-        // 解析 anime 信息
-        return ParseAnimeInfo(GetInfo(QueryType.anime_info, anime_id));
-    }
-
-    public static
-    List<Map<String, String>> GetEpisodeData(int anime_id) throws URISyntaxException, IOException
-    {
-        // 解析 episode 信息
-        var ep_list = GetInfo(QueryType.episode_list, anime_id).getJSONArray("data");
-
-        List<Map<String, String>> res = new ArrayList<>();
-        // for(int i = 0; i < ep_list.length(); i++) res.add(ParseEpisodeInfo(ep_list.getJSONObject(i)));
-        for(var item : ep_list) res.add(ParseEpisodeInfo((JSONObject) item));
-        return res;
-    }
-
-    private static
+    static
     Map<String, String> ParseAnimeInfo(JSONObject anime_info_json)
     {
         var ANI_ID   = String.valueOf(anime_info_json.getInt("id"));    // 解析 ANI_ID
@@ -96,7 +66,7 @@ class BangumiAPI
         return res;
     }
 
-    private static
+    static
     Map<String, String> ParseEpisodeInfo(JSONObject episode_info_json)
     {
         var ANI_ID   = String.valueOf(episode_info_json.getInt("subject_id"));
@@ -133,23 +103,6 @@ class BangumiAPI
         return res;
     }
 
-
-    private static
-    JSONObject GetInfo(QueryType type, int anime_id) throws URISyntaxException, IOException
-    {
-        String format_str;
-        switch(type)
-        {
-        case anime_info -> format_str = "%s/v0/subjects/%d";
-        case episode_list -> format_str = "%s/v0/episodes?subject_id=%d";
-        default -> throw new UnsupportedOperationException("BangumiAPI GetInfo: 未知的查询类型");
-        }
-        String url_str = String.format(format_str, bangumi_server, anime_id);
-        String res_str = Get(url_str);
-
-        return new JSONObject(res_str);
-    }
-
     private static
     String ValidateDate(String str)
     {
@@ -183,35 +136,5 @@ class BangumiAPI
             }
         }
         return null;
-    }
-
-    private static
-    String Get(String url_str) throws URISyntaxException, IOException
-    {
-        var url  = new URI(url_str).toURL();                  // 创建URL对象
-        var conn = (HttpURLConnection) url.openConnection();  // 打开连接
-        conn.setRequestMethod("GET");                         // 设置请求方法
-        conn.setRequestProperty("User-Agent", "Mozilla/5.0"); // 添加 User-Agent
-
-        // 读取响应
-        var in       = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        var response = new StringBuilder();
-
-        // 逐行读取响应内容
-        String input_line;
-        while((input_line = in.readLine()) != null) response.append(input_line);
-
-        in.close();
-
-        return response.toString();
-    }
-
-
-    // 请求类型
-    private
-    enum QueryType
-    {
-        anime_info,
-        episode_list,
     }
 }

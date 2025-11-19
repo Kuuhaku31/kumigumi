@@ -6,7 +6,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 
-import static NetAccess.BangumiAPI.GetAnimeData;
+import static NetAccess.NetAccess.FetchAnimeInfo;
 
 
 public
@@ -26,7 +26,7 @@ class TaskFetchAni extends TaskFetch
     public
     void run()
     {
-        try { buffer.add(GetAnimeData(ani_id)); }
+        try { buffer.add(FetchAnimeInfo(ani_id)); }
         catch(URISyntaxException | IOException e)
         {
             failed(e.getMessage());

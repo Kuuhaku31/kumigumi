@@ -6,7 +6,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 
-import static NetAccess.BangumiAPI.GetEpisodeData;
+import static NetAccess.NetAccess.FetchEpisodeInfo;
 
 
 public
@@ -26,7 +26,7 @@ class TaskFetchEpi extends TaskFetch
     public
     void run()
     {
-        try { buffer.addAll(GetEpisodeData(ani_id)); }
+        try { buffer.addAll(FetchEpisodeInfo(ani_id)); }
         catch(URISyntaxException | IOException e)
         {
             failed("[TaskFetchEpi: ani_id:" + ani_id + "] " + e.getMessage());
