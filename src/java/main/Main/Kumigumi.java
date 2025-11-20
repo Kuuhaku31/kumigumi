@@ -4,16 +4,17 @@ package Main;// Main.Kumigumi.java
 import Database.DBStructure.Headers;
 import Database.KG_SQLiteAccess;
 import Database.KG_SQLiteAccess.TableName;
+import Database.UpsertException;
 import Excel.ExcelReader;
 import Task.*;
-import util.TableData.BlockData;
+import util.DataBuffer;
 import util.TableData.TableData;
 
 import java.nio.file.Path;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static util.Util.SaveDataList;
 
@@ -21,23 +22,124 @@ import static util.Util.SaveDataList;
 public
 class Kumigumi
 {
-    // buffer
-    private final List<BlockData> block_list_fetch = new ArrayList<>();
-    private final List<BlockData> block_list_dt    = new ArrayList<>();
-
-    private final List<BlockData> anime_block_list_store   = new ArrayList<>();
-    private final List<BlockData> episode_block_list_store = new ArrayList<>();
-    private final List<BlockData> torrent_block_list_store = new ArrayList<>();
-
-    // 缓存从网站获取的数据
-    private final List<Map<String, String>> anime_fetch   = new ArrayList<>();
-    private final List<Map<String, String>> episode_fetch = new ArrayList<>();
-    private final List<Map<String, String>> torrent_fetch = new ArrayList<>();
+    private final DataBuffer data_buffer = new DataBuffer();
 
 
-    // 通过 MapList 构建数据库更新任务
+    // 读取 Excel
     public
-    void buildTaskUpsert()
+    void ReadExcel(Path excel_path)
+    {
+        // 先一次性读取 Excel 全部数据块，并分类
+        var info = ExcelReader.Read(excel_path);
+        if(info == null) return;
+
+        List<String> ani_store_tables = new ArrayList<>();
+        List<String> epi_store_tables = new ArrayList<>();
+        List<String> tor_store_tables = new ArrayList<>();
+
+        List<String> fetch_tables = new ArrayList<>();
+        List<String> dt_tables    = new ArrayList<>();
+
+        // 解析命令
+        for(var op : info.operations())
+        {
+            var command = op.command();
+            var params  = op.params();
+
+            switch(command)
+            {
+            case "-store-ani" -> Collections.addAll(ani_store_tables, params);
+            case "-store-epi" -> Collections.addAll(epi_store_tables, params);
+            case "-store-tor" -> Collections.addAll(tor_store_tables, params);
+
+            case "-fetch" -> Collections.addAll(fetch_tables, params);
+            case "-dt" -> Collections.addAll(dt_tables, params);
+            }
+        }
+
+        // 分类数据块
+        for(var block : info.data())
+        {
+            if(ani_store_tables.contains(block.block_name)) data_buffer.table_update_ani.add(block);
+            if(epi_store_tables.contains(block.block_name)) data_buffer.table_update_epi.add(block);
+            if(tor_store_tables.contains(block.block_name)) data_buffer.table_update_tor.add(block);
+
+            if(fetch_tables.contains(block.block_name)) data_buffer.table_fetch.add(block);
+            if(dt_tables.contains(block.block_name)) data_buffer.table_dt.add(block);
+        }
+    }
+
+    // 将 Excel 的数据块解析成 fetch 任务列表
+    public
+    List<TaskManager.Task> getFetchTask()
+    {
+        List<TaskManager.Task> res = new ArrayList<>();
+        for(var table : data_buffer.table_fetch)
+        {
+            // 获取对应列号
+            var i_ani_id  = table.GetHeaderIndex("ANI_ID");
+            var i_rss_url = table.GetHeaderIndex("url_rss");
+
+            // 生成不同任务
+            if(i_ani_id >= 0) for(var data_row : table.GetData())
+            {
+                res.add(new TaskFetchAni((int) Double.parseDouble(data_row[i_ani_id])));
+                res.add(new TaskFetchEpi((int) Double.parseDouble(data_row[i_ani_id])));
+            }
+            if(i_rss_url >= 0) for(var data_row : table.GetData())
+            {
+                if(data_row[i_rss_url] != null) res.add(new TaskFetchTor(
+                    (int) Double.parseDouble(data_row[i_ani_id]),
+                    data_row[i_rss_url]
+                ));
+            }
+        }
+        return res;
+    }
+
+    // 将 Excel 的数据块解析成种子下载任务列表
+    public
+    List<TaskManager.Task> getDTTask(Path dt_path, String state)
+    {
+        List<TaskManager.Task> res = new ArrayList<>();
+        for(var table : data_buffer.table_dt)
+        {
+            // 获取列号
+            var i_dt_url  = table.GetHeaderIndex("TOR_URL");
+            var i_t_state = table.GetHeaderIndex("status_download");
+            if(i_dt_url < 0 || i_t_state < 0) continue;
+
+            // 每个块的各个 TOR_URL : status_download
+            for(var data_row : table.GetData())
+            {
+                if(data_row[i_t_state] != null && data_row[i_t_state].equals(state)) res.add(new TaskDT(
+                    dt_path,
+                    data_row[i_dt_url]
+                ));
+            }
+        }
+        return res;
+    }
+
+
+    // 获取任务运行结果
+    public
+    void addTaskRes(List<TaskManager.Task> tasks)
+    {
+        for(var task : tasks)
+        {
+            switch(task)
+            {
+            case TaskFetchAni taskFetchAni -> data_buffer.anime_fetch.addAll(taskFetchAni.getBuffer());
+            case TaskFetchEpi taskFetchEpi -> data_buffer.episode_fetch.addAll(taskFetchEpi.getBuffer());
+            case TaskFetchTor taskFetchTor -> data_buffer.torrent_fetch.addAll(taskFetchTor.getBuffer());
+            case null, default -> System.err.println("出现了非法任务: " + task);
+            }
+        }
+    }
+
+    public
+    void toDatabase()
     {
         String[] ANIME_HEADERS_FETCH = {
             Headers.ANI_ID.toString(),
@@ -79,7 +181,7 @@ class Kumigumi
         var tor_upsert = new TableData(TORRENT_HEADERS_FETCH);
 
         // 遍历每个 map，生成记录
-        for(var map : anime_fetch)
+        for(var map : data_buffer.anime_fetch)
         {
             var recode = ani_upsert.new Record();
             for(var header : ANIME_HEADERS_FETCH)
@@ -91,7 +193,7 @@ class Kumigumi
             }
         }
 
-        for(var map : episode_fetch)
+        for(var map : data_buffer.episode_fetch)
         {
             var recode = epi_upsert.new Record();
             for(var header : EPISODE_HEADERS_FETCH)
@@ -103,7 +205,7 @@ class Kumigumi
             }
         }
 
-        for(var map : torrent_fetch)
+        for(var map : data_buffer.torrent_fetch)
         {
             var recode = tor_upsert.new Record();
             for(var header : TORRENT_HEADERS_FETCH)
@@ -115,138 +217,42 @@ class Kumigumi
             }
         }
 
-        // 提交任务
-        new TaskUpsert(TableName.anime, ani_upsert);
-        new TaskUpsert(TableName.episode, epi_upsert);
-        new TaskUpsert(TableName.torrent, tor_upsert);
-
-        for(var block : anime_block_list_store) new TaskUpsert(TableName.anime, block);
-        for(var block : episode_block_list_store) new TaskUpsert(TableName.episode, block);
-        for(var block : torrent_block_list_store) new TaskUpsert(TableName.torrent, block);
-    }
+        KG_SQLiteAccess.Open();
 
 
-    // 读取 Excel
-    public
-    void ReadExcel(Path excel_path)
-    {
-        // 先一次性读取 Excel 全部数据块，并分类
-        var info = ExcelReader.Read(excel_path);
-        if(info == null) return;
-
-        List<String> ani_store_tables = new ArrayList<>();
-        List<String> epi_store_tables = new ArrayList<>();
-        List<String> tor_store_tables = new ArrayList<>();
-
-        List<String> fetch_tables = new ArrayList<>();
-        List<String> dt_tables    = new ArrayList<>();
-
-        // 解析命令
-        for(var op : info.operations())
+        // todo: 优化
+        try
         {
-            var command = op.command();
-            var params  = op.params();
+            // 提交任务
+            KG_SQLiteAccess.Upsert(TableName.anime, ani_upsert);
+            KG_SQLiteAccess.Upsert(TableName.episode, epi_upsert);
+            KG_SQLiteAccess.Upsert(TableName.torrent, tor_upsert);
 
-            switch(command)
-            {
-            case "-store-ani" -> Collections.addAll(ani_store_tables, params);
-            case "-store-epi" -> Collections.addAll(epi_store_tables, params);
-            case "-store-tor" -> Collections.addAll(tor_store_tables, params);
-
-            case "-fetch" -> Collections.addAll(fetch_tables, params);
-            case "-dt" -> Collections.addAll(dt_tables, params);
-            }
+            for(var table : data_buffer.table_update_ani) KG_SQLiteAccess.Upsert(TableName.anime, table);
+            for(var table : data_buffer.table_update_epi) KG_SQLiteAccess.Upsert(TableName.episode, table);
+            for(var table : data_buffer.table_update_tor) KG_SQLiteAccess.Upsert(TableName.torrent, table);
+        }
+        catch(SQLException | UpsertException e)
+        {
+            System.err.println(e.getMessage());
         }
 
-        // 分类数据块
-        for(var block : info.data())
-        {
-            if(ani_store_tables.contains(block.block_name)) anime_block_list_store.add(block);
-            if(epi_store_tables.contains(block.block_name)) episode_block_list_store.add(block);
-            if(tor_store_tables.contains(block.block_name)) torrent_block_list_store.add(block);
-
-            if(fetch_tables.contains(block.block_name)) block_list_fetch.add(block);
-            if(dt_tables.contains(block.block_name)) block_list_dt.add(block);
-        }
+        KG_SQLiteAccess.Close();
     }
-
 
     // 将所有表数据保存到日志文件
     public
     void SaveLog()
     {
         List<TableData> list = new ArrayList<>();
-        list.addAll(block_list_fetch);
-        list.addAll(block_list_dt);
-
-        list.addAll(anime_block_list_store);
-        list.addAll(episode_block_list_store);
-        list.addAll(torrent_block_list_store);
+        // list.addAll(block_list_fetch);
+        // list.addAll(block_list_dt);
+        //
+        // list.addAll(anime_block_list_store);
+        // list.addAll(episode_block_list_store);
+        // list.addAll(torrent_block_list_store);
 
         SaveDataList(list);
-    }
-
-
-    public
-    void UpsertDatabase()
-    {
-        KG_SQLiteAccess.Open();
-
-        TaskManager.runAllTasks();
-
-        KG_SQLiteAccess.Close();
-    }
-
-
-    // 将 Excel 的数据块解析成 fetch 任务列表
-    public
-    void addFetchTaskFromBlock()
-    {
-        for(var block : block_list_fetch)
-        {
-            // 获取对应列号
-            var i_ani_id  = block.GetHeaderIndex("ANI_ID");
-            var i_rss_url = block.GetHeaderIndex("url_rss");
-
-            // 生成不同任务
-            if(i_ani_id >= 0) for(var data_row : block.GetData())
-            {
-                new TaskFetchAni(anime_fetch, (int) Double.parseDouble(data_row[i_ani_id]));
-                new TaskFetchEpi(episode_fetch, (int) Double.parseDouble(data_row[i_ani_id]));
-            }
-
-            if(i_rss_url >= 0) for(var data_row : block.GetData())
-            {
-                if(data_row[i_rss_url] != null) new TaskFetchTor(
-                    torrent_fetch,
-                    (int) Double.parseDouble(data_row[i_ani_id]),
-                    data_row[i_rss_url]
-                );
-            }
-        }
-    }
-
-
-    // 将 Excel 的数据块解析成种子下载任务列表
-    public
-    void addTorrentDownloadTaskList(Path dt_path, String state)
-    {
-        for(var block : block_list_dt)
-        {
-            // 获取列号
-            var i_dt_url  = block.GetHeaderIndex("TOR_URL");
-            var i_t_state = block.GetHeaderIndex("status_download");
-            if(i_dt_url < 0 || i_t_state < 0) continue;
-
-            // 每个块的各个 TOR_URL : status_download
-            for(var data_row : block.GetData())
-            {
-                if(data_row[i_t_state] != null && data_row[i_t_state].equals(state)) new TaskDT(
-                    dt_path,
-                    data_row[i_dt_url]
-                );
-            }
-        }
     }
 
 
@@ -254,22 +260,22 @@ class Kumigumi
     public
     void addTaskFromArgs(String[] args)
     {
-        for(int i = 0; i < args.length; i++)
-        {
-            if(args[i].startsWith("-a")) // 如果开头两个字符是 "-a"
-            {
-                // 获取 anime_id
-                var ani_id = Integer.parseInt(args[i].substring(2));
-
-                // 继续判断下一个参数开头是不是 "-r"
-                String rss_link_str = null;
-                if(i + 1 < args.length && args[i + 1].startsWith("-r")) { rss_link_str = args[i + 1].substring(2); }
-
-                // 添加不同类型任务
-                new TaskFetchAni(anime_fetch, ani_id);
-                new TaskFetchEpi(episode_fetch, ani_id);
-                if(rss_link_str != null) new TaskFetchTor(torrent_fetch, ani_id, rss_link_str);
-            }
-        }
+        // for(int i = 0; i < args.length; i++)
+        // {
+        //     if(args[i].startsWith("-a")) // 如果开头两个字符是 "-a"
+        //     {
+        //         // 获取 anime_id
+        //         var ani_id = Integer.parseInt(args[i].substring(2));
+        //
+        //         // 继续判断下一个参数开头是不是 "-r"
+        //         String rss_link_str = null;
+        //         if(i + 1 < args.length && args[i + 1].startsWith("-r")) { rss_link_str = args[i + 1].substring(2); }
+        //
+        //         // 添加不同类型任务
+        //         new TaskFetchAni(anime_fetch, ani_id);
+        //         new TaskFetchEpi(episode_fetch, ani_id);
+        //         if(rss_link_str != null) new TaskFetchTor(torrent_fetch, ani_id, rss_link_str);
+        //     }
+        // }
     }
 }

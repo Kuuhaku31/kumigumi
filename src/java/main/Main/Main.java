@@ -1,13 +1,14 @@
 package Main;
 
 
-import Database.KG_SQLiteAccess;
 import Task.TaskManager;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public
 class Main
@@ -40,9 +41,9 @@ class Main
         {
             // TODO: ...
             System.out.println("Fetching...");
-            kg.addTaskFromArgs(args);
-            TaskManager.runAllTasks();
-            kg.UpsertDatabase();
+            // kg.addTaskFromArgs(args);
+            // TaskManager.runTasks();
+            // kg.UpsertDatabase();
         }
         else
         {
@@ -82,19 +83,30 @@ class Main
                 System.out.println("Fetching & Importing...");
 
                 // Step01. 创建下载任务
-                kg.addFetchTaskFromBlock();                       // 添加所有 fetch 任务
-                kg.addTorrentDownloadTaskList(dt_path, "未下载"); // 添加 dt 任务
+                List<TaskManager.Task> tasks = new ArrayList<>();
+                tasks.addAll(kg.getFetchTask());               // 添加所有 fetch 任务
+                tasks.addAll(kg.getDTTask(dt_path, "未下载")); // 添加 dt 任务
 
-                // Step02. 执下载行任务，将获取的数据存到缓冲区
-                // 并发执行
-                TaskManager.runAllTasks();
+                TaskManager.addTask(tasks);
+
+                // Step02. 执行执下载行任务，将获取的数据存到缓冲区
+                TaskManager.runTasks();
+
+                // 获取运行结果
+                var completed_tasks = TaskManager.getCompletedTask();
+                var failed_tasks    = TaskManager.getFailedTasks();
+                if(!failed_tasks.isEmpty())
+                {
+                    System.err.println("以下任务执行失败:");
+                    for(var task : failed_tasks)
+                    {
+                        System.err.println(task);
+                    }
+                }
+                kg.addTaskRes(completed_tasks);
 
                 // 执行数据库更新
-                kg.buildTaskUpsert();
-
-                KG_SQLiteAccess.Open();
-                TaskManager.runAllTasksFor(); // 顺序执行
-                KG_SQLiteAccess.Close();
+                kg.toDatabase();
 
                 kg.SaveLog();
 

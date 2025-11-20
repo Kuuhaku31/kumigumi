@@ -46,6 +46,7 @@ class TaskDT extends TaskManager.Task
         {
             System.err.println("种子下载失败: " + torrent_url);
         }
+        else completed();
     }
 
     @Override
