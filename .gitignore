@@ -1,15 +1,5 @@
 
-.vscode
-__pycache__
 
-/helps
-/ignore
-/target
-/log
-/data
-
-/kumigumi.json
-
+/ignore/
 /resources/
-/.idea/
 /out/

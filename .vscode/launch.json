@@ -1,0 +1,69 @@
+{
+  "version": "0.2.0",
+
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Assertion",
+      "request": "launch",
+      "mainClass": "vsc.Assertion",
+      "projectName": "st-java_cf28f860"
+    },
+    {
+      "type": "java",
+      "name": "Lambda",
+      "request": "launch",
+      "mainClass": "vsc.InnerClass.Lambda",
+      "projectName": "st-java_cf28f860"
+    },
+    {
+      "type": "java",
+      "name": "InnerClass",
+      "request": "launch",
+      "mainClass": "vsc.InnerClass.InnerClass",
+      "projectName": "st-java_cf28f860"
+    },
+    {
+      "type": "java",
+      "name": "多维数组",
+      "request": "launch",
+      "mainClass": "vsc.ST02.多维数组",
+      "projectName": "st-java_cf28f860"
+    },
+    {
+      "type": "java",
+      "name": "TestIO",
+      "request": "launch",
+      "mainClass": "vsc.ST_IO.TestIO",
+      "projectName": "st-java_cf28f860"
+    },
+    {
+      "type": "java",
+      "name": "TestPerson",
+      "request": "launch",
+      "mainClass": "vsc.TestPerson",
+      "projectName": "st-java_cf28f860"
+    },
+    {
+      "type": "java",
+      "name": "Main",
+      "request": "launch",
+      "mainClass": "vsc.Main",
+      "projectName": "st-java_cf28f860"
+    },
+    {
+      "type": "java",
+      "name": "Main",
+      "request": "launch",
+      "mainClass": "main.Main"
+    },
+    {
+      "type": "java",
+      "name": "Run Test",
+      "request": "launch",
+      "mainClass": "main.Test",
+      "classPaths": ["${workspaceFolder}/build"],
+      "preLaunchTask": "Java Build Test"
+    }
+  ]
+}

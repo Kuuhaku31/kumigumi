@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../st-java/.vscode"
+		}
+	],
+    "settings": {
+        "java.configuration.updateBuildConfiguration": "disabled"
+    }
+}
