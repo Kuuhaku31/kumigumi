@@ -1,13 +1,11 @@
-// Def.TestAPI.java
+package Def;
 
 import java.sql.SQLException;
+import java.util.Arrays;
 
-
-void main(String[] args) throws SQLException
-{
-
-    IO.println(Arrays.toString(args));
-    IO.println("----- Creating Task -----");
-
-
+public class TestAPI {
+    public void main(String[] args) throws SQLException {
+        IO.println(Arrays.toString(args));
+        IO.println("----- Creating Task -----");
+    }
 }

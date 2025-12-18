@@ -10,8 +10,13 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Main {
+
     // kumigumi 入口函数
     void main(String[] args) {
+
+        // 打印当前工作目录
+        System.out.println("Current working directory: " + System.getProperty("user.dir"));
+
         var kg = new Kumigumi();
 
         System.setProperty("java.net.useSystemProxies", "true"); // 设置全局代理
@@ -32,8 +37,10 @@ public class Main {
         System.out.println("Hello, kumigumi!?");
         if (args.length > 0)
             System.out.println(Arrays.toString(args));
-        else
+        else {
+            System.out.println(help_msg);
             return;
+        }
 
         String mode = args[0];
         if (mode.equals("help"))
