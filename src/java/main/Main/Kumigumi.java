@@ -67,6 +67,8 @@ class Kumigumi
             if(fetch_tables.contains(block.block_name)) data_buffer.table_fetch.add(block);
             if(dt_tables.contains(block.block_name)) data_buffer.table_dt.add(block);
         }
+
+        data_buffer.printExcelInfo();
     }
 
     // 将 Excel 的数据块解析成 fetch 任务列表
@@ -130,9 +132,10 @@ class Kumigumi
         {
             switch(task)
             {
-            case TaskFetchAni taskFetchAni -> data_buffer.anime_fetch.addAll(taskFetchAni.getBuffer());
-            case TaskFetchEpi taskFetchEpi -> data_buffer.episode_fetch.addAll(taskFetchEpi.getBuffer());
-            case TaskFetchTor taskFetchTor -> data_buffer.torrent_fetch.addAll(taskFetchTor.getBuffer());
+            case TaskFetchAni t -> data_buffer.anime_fetch.addAll(t.getBuffer());
+            case TaskFetchEpi t -> data_buffer.episode_fetch.addAll(t.getBuffer());
+            case TaskFetchTor t -> data_buffer.torrent_fetch.addAll(t.getBuffer());
+            case TaskDT _ -> { }
             case null, default -> System.err.println("出现了非法任务: " + task);
             }
         }
@@ -205,6 +208,7 @@ class Kumigumi
             }
         }
 
+        // todo: 检测合法性
         for(var map : data_buffer.torrent_fetch)
         {
             var recode = tor_upsert.new Record();

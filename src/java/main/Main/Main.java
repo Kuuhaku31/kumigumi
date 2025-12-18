@@ -50,6 +50,7 @@ class Main
             // 先一次性读取 Excel 全部数据块，并分类
             kg.ReadExcel(excel_path);
 
+            System.exit(0);
             switch(mode)
             {
             case "import":

@@ -22,5 +22,13 @@ class DataBuffer
     public final List<Map<String, String>> anime_fetch   = new ArrayList<>();
     public final List<Map<String, String>> episode_fetch = new ArrayList<>();
     public final List<Map<String, String>> torrent_fetch = new ArrayList<>();
+
+
+    public
+    void printExcelInfo()
+    {
+        for(var tableFetch : table_fetch) System.out.println(tableFetch.toString());
+        for(var tableDt : table_dt) System.out.println(tableDt.toString());
+    }
 }
 
