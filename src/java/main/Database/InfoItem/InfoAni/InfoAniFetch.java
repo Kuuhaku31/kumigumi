@@ -17,12 +17,16 @@ public class InfoAniFetch extends InfoAni {
         super(ani_id);
     }
 
+    public String getAirDateString() {
+        // 以 yyyy-MM-dd 格式显示 air_date
+        return (air_date == null) ? null : String.format("%tF", air_date);
+    }
+
     @Override
     public String toString() {
         return "InfoAniFetch{" +
                 "ANI_ID=" + ANI_ID +
-                // 以 yyyy-MM-dd 格式显示 air_date
-                ", air_date=" + (air_date != null ? String.format("%tF", air_date) : "null") +
+                ", air_date=" + getAirDateString() +
                 ", title='" + title + '\'' +
                 ", title_cn='" + title_cn + '\'' +
                 ", aliases='" + aliases + '\'' +
