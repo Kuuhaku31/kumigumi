@@ -23,8 +23,14 @@ public class SQLiteAccess implements Closeable {
 
     @Override
     public void close() throws IOException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'close'");
+        try {
+            if (conn != null) {
+                conn.close();
+                conn = null;
+            }
+        } catch (SQLException e) {
+            throw new IOException("Failed to close database connection", e);
+        }
     }
 
 }
