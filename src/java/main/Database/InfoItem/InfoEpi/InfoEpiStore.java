@@ -1,8 +1,8 @@
 package Database.InfoItem.InfoEpi;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+
+import static util.Util.getDateString;
 
 public class InfoEpiStore extends InfoEpi {
 
@@ -18,14 +18,11 @@ public class InfoEpiStore extends InfoEpi {
 
     @Override
     public String toString() {
-        var fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
-        var viewStr = (view_datetime == null) ? null : view_datetime.atZone(ZoneId.systemDefault()).format(fmt);
-
         return "InfoEpiStore{" +
                 "ANI_ID=" + ANI_ID +
                 ", EPI_ID=" + EPI_ID +
                 ", rating=" + rating +
-                ", view_datetime=" + viewStr +
+                ", view_datetime=" + getDateString(view_datetime) +
                 ", status_download='" + status_download + '\'' +
                 ", status_view='" + status_view + '\'' +
                 ", remark='" + remark + '\'' +

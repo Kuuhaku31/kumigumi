@@ -1,6 +1,7 @@
 package Database.InfoItem.InfoEpi;
 
 import java.util.Date;
+import static util.Util.getDateString;
 
 public class InfoEpiFetch extends InfoEpi {
 
@@ -23,8 +24,7 @@ public class InfoEpiFetch extends InfoEpi {
                 ", EPI_ID=" + EPI_ID +
                 ", ep=" + ep +
                 ", sort=" + sort +
-                // 以 yyyy-MM-dd 格式显示 air_date
-                ", air_date=" + (air_date != null ? String.format("%tF", air_date) : "null") +
+                ", air_date=" + getDateString(air_date) +
                 ", duration=" + duration +
                 ", title='" + title + '\'' +
                 ", title_cn='" + title_cn + '\'' +

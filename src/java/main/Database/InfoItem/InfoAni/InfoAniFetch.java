@@ -1,6 +1,7 @@
 package Database.InfoItem.InfoAni;
 
 import java.util.Date;
+import static util.Util.getDateString;
 
 public class InfoAniFetch extends InfoAni {
 
@@ -17,16 +18,11 @@ public class InfoAniFetch extends InfoAni {
         super(ani_id);
     }
 
-    public String getAirDateString() {
-        // 以 yyyy-MM-dd 格式显示 air_date
-        return (air_date == null) ? null : String.format("%tF", air_date);
-    }
-
     @Override
     public String toString() {
         return "InfoAniFetch{" +
                 "ANI_ID=" + ANI_ID +
-                ", air_date=" + getAirDateString() +
+                ", air_date=" + getDateString(air_date) +
                 ", title='" + title + '\'' +
                 ", title_cn='" + title_cn + '\'' +
                 ", aliases='" + aliases + '\'' +

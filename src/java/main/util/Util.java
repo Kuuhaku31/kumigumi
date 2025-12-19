@@ -6,10 +6,27 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 public class Util {
+
+    /** 以 yyyy-MM-dd 格式显示 date */
+    public static String getDateString(Date date) {
+        return (date == null) ? null : String.format("%tF", date);
+    }
+
+    /** 以 yyyy-MM-ddTHH:mm:ssXXX 格式显示 datetime */
+    public static String getDateString(LocalDateTime datetime) {
+        var fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
+        var viewStr = (datetime == null) ? null : datetime.atZone(ZoneId.systemDefault()).format(fmt);
+        return viewStr;
+    }
+
     public static void printMapList(List<Map<String, String>> list) {
         for (var map : list)
             printMap(map);

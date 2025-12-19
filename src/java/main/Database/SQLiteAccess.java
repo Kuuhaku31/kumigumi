@@ -10,6 +10,13 @@ import java.util.List;
 
 import Database.InfoItem.InfoItem;
 import Database.InfoItem.InfoAni.InfoAniFetch;
+import Database.InfoItem.InfoAni.InfoAniStore;
+import Database.InfoItem.InfoEpi.InfoEpiFetch;
+import Database.InfoItem.InfoEpi.InfoEpiStore;
+import Database.InfoItem.InfoTor.InfoTorFetch;
+import Database.InfoItem.InfoTor.InfoTorStore;
+
+import static util.Util.getDateString;
 
 public class SQLiteAccess implements Closeable {
 
@@ -117,7 +124,7 @@ public class SQLiteAccess implements Closeable {
         }
     }
 
-    // 插入或更新单个 InfoAniFetch 项目
+    /** 插入或更新单个 InfoAniFetch 项目 */
     public void Upsert(InfoAniFetch item) throws SQLException {
         final String sqlAniFetch = """
                 INSERT INTO anime (
@@ -144,7 +151,7 @@ public class SQLiteAccess implements Closeable {
                 """;
         try (PreparedStatement ps = conn.prepareStatement(sqlAniFetch)) {
             ps.setInt(1, item.ANI_ID);
-            ps.setString(2, item.getAirDateString());
+            ps.setString(2, getDateString(item.air_date));
             ps.setString(3, item.title);
             ps.setString(4, item.title_cn);
             ps.setString(5, item.aliases);
@@ -152,6 +159,165 @@ public class SQLiteAccess implements Closeable {
             ps.setInt(7, item.episode_count);
             ps.setString(8, item.url_official_site);
             ps.setString(9, item.url_cover);
+            ps.executeUpdate();
+        }
+    }
+
+    /** 插入或更新单个 InfoAniStore 项目 */
+    public void Upsert(InfoAniStore item) throws SQLException {
+        final String sqlAniStore = """
+                INSERT INTO anime (
+                    ANI_ID,
+                    url_rss,
+                    rating_before,
+                    rating_after,
+                    remark
+                )
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT (ANI_ID) DO UPDATE SET
+                    url_rss         = excluded.url_rss,
+                    rating_before   = excluded.rating_before,
+                    rating_after    = excluded.rating_after,
+                    remark          = excluded.remark;
+                """;
+        try (PreparedStatement ps = conn.prepareStatement(sqlAniStore)) {
+            ps.setInt(1, item.ANI_ID);
+            ps.setString(2, item.url_rss);
+            ps.setInt(3, item.rating_before);
+            ps.setInt(4, item.rating_after);
+            ps.setString(5, item.remark);
+            ps.executeUpdate();
+        }
+    }
+
+    /** 插入或更新单个 InfoEpiFetch 项目 */
+    public void Upsert(InfoEpiFetch item) throws SQLException {
+        final String sqlEpiFetch = """
+                INSERT INTO episode (
+                    EPI_ID,
+                    ANI_ID,
+                    ep,
+                    sort,
+                    air_date,
+                    duration,
+                    title,
+                    title_cn,
+                    description
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (EPI_ID) DO UPDATE SET
+                    ANI_ID      = excluded.ANI_ID,
+                    ep          = excluded.ep,
+                    sort        = excluded.sort,
+                    air_date    = excluded.air_date,
+                    duration    = excluded.duration,
+                    title       = excluded.title,
+                    title_cn    = excluded.title_cn,
+                    description = excluded.description;
+                """;
+        try (var ps = conn.prepareStatement(sqlEpiFetch)) {
+            ps.setInt(1, item.EPI_ID);
+            ps.setInt(2, item.ANI_ID);
+            ps.setInt(3, item.ep);
+            ps.setDouble(4, item.sort);
+            ps.setString(5, getDateString(item.air_date));
+            ps.setInt(6, item.duration);
+            ps.setString(7, item.title);
+            ps.setString(8, item.title_cn);
+            ps.setString(9, item.description);
+            ps.executeUpdate();
+        }
+    }
+
+    /** 插入或更新单个 InfoEpiStore 项目 */
+    public void Upsert(InfoEpiStore item) throws SQLException {
+        final String sqlEpiStore = """
+                INSERT INTO episode (
+                    EPI_ID,
+                    ANI_ID,
+                    rating,
+                    view_datetime,
+                    status_download,
+                    status_view,
+                    remark
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (EPI_ID) DO UPDATE SET
+                    ANI_ID            = excluded.ANI_ID,
+                    rating            = excluded.rating,
+                    view_datetime     = excluded.view_datetime,
+                    status_download   = excluded.status_download,
+                    status_view       = excluded.status_view,
+                    remark            = excluded.remark;
+                """;
+        try (var ps = conn.prepareStatement(sqlEpiStore)) {
+            ps.setInt(1, item.EPI_ID);
+            ps.setInt(2, item.ANI_ID);
+            ps.setInt(3, item.rating);
+            ps.setString(4, item.view_datetime != null ? item.view_datetime.toString() : null);
+            ps.setString(5, item.status_download);
+            ps.setString(6, item.status_view);
+            ps.setString(7, item.remark);
+            ps.executeUpdate();
+        }
+    }
+
+    /** 插入或更新单个 InfoTorFetch 项目 */
+    public void Upsert(InfoTorFetch item) throws SQLException {
+        final String sqlTorFetch = """
+                INSERT INTO torrent (
+                    TOR_URL,
+                    ANI_ID,
+                    air_datetime,
+                    size,
+                    url_page,
+                    title,
+                    subtitle_group,
+                    description
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (TOR_URL) DO UPDATE SET
+                    ANI_ID          = excluded.ANI_ID,
+                    air_datetime    = excluded.air_datetime,
+                    size            = excluded.size,
+                    url_page        = excluded.url_page,
+                    title           = excluded.title,
+                    subtitle_group  = excluded.subtitle_group,
+                    description     = excluded.description;
+                """;
+        try (var ps = conn.prepareStatement(sqlTorFetch)) {
+            ps.setString(1, item.TOR_URL);
+            ps.setInt(2, item.ANI_ID);
+            ps.setString(3, getDateString(item.air_datetime));
+            ps.setLong(4, item.size);
+            ps.setString(5, item.url_page);
+            ps.setString(6, item.title);
+            ps.setString(7, item.subtitle_group);
+            ps.setString(8, item.description);
+            ps.executeUpdate();
+        }
+    }
+
+    /** 插入或更新单个 InfoTorStore 项目 */
+    public void Upsert(InfoTorStore item) throws SQLException {
+        final String sqlTorStore = """
+                INSERT INTO torrent (
+                    TOR_URL,
+                    ANI_ID,
+                    status_download,
+                    remark
+                )
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT (TOR_URL) DO UPDATE SET
+                    ANI_ID           = excluded.ANI_ID,
+                    status_download  = excluded.status_download,
+                    remark           = excluded.remark;
+                """;
+        try (var ps = conn.prepareStatement(sqlTorStore)) {
+            ps.setString(1, item.TOR_URL);
+            ps.setInt(2, item.ANI_ID);
+            ps.setString(3, item.status_download);
+            ps.setString(4, item.remark);
             ps.executeUpdate();
         }
     }
