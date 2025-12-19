@@ -1,0 +1,36 @@
+{
+  "version": "0.2.0",
+
+  "configurations": [
+    {
+      "type": "java",
+      "name": "TestDB",
+      "request": "launch",
+      "mainClass": "db.TestDB",
+      "projectName": "kumigumi",
+      "vmArgs": ["--enable-native-access=ALL-UNNAMED"]
+    },
+    {
+      "type": "java",
+      "name": "TestInfo",
+      "request": "launch",
+      "mainClass": "Def.TestInfo",
+      "projectName": "kumigumi"
+    },
+    {
+      "type": "java",
+      "name": "Test",
+      "request": "launch",
+      "mainClass": "Def.Test",
+      "projectName": "kumigumi",
+      "args": "123"
+    },
+    {
+      "type": "java",
+      "name": "Main",
+      "request": "launch",
+      "mainClass": "Main.Main",
+      "projectName": "kumigumi"
+    }
+  ]
+}
