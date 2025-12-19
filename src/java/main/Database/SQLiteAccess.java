@@ -23,13 +23,14 @@ public class SQLiteAccess implements Closeable {
 
     @Override
     public void close() throws IOException {
-        try {
-            if (conn != null) {
+        if (conn != null) {
+            try {
                 conn.close();
+            } catch (SQLException e) {
+                throw new IOException("Failed to close database connection", e);
+            } finally {
                 conn = null;
             }
-        } catch (SQLException e) {
-            throw new IOException("Failed to close database connection", e);
         }
     }
 
