@@ -76,18 +76,19 @@ public class Kumigumi {
             var i_rss_url = table.GetHeaderIndex("url_rss");
 
             // 生成不同任务
-            if (i_ani_id >= 0)
+            if (i_ani_id >= 0) {
                 for (var data_row : table.GetData()) {
                     res.add(new TaskFetchAni((int) Double.parseDouble(data_row[i_ani_id])));
                     res.add(new TaskFetchEpi((int) Double.parseDouble(data_row[i_ani_id])));
                 }
-            if (i_rss_url >= 0)
+            }
+            if (i_rss_url >= 0) {
                 for (var data_row : table.GetData()) {
-                    if (data_row[i_rss_url] != null)
-                        res.add(new TaskFetchTor(
-                                (int) Double.parseDouble(data_row[i_ani_id]),
-                                data_row[i_rss_url]));
+                    if (data_row[i_rss_url] != null) {
+                        res.add(new TaskFetchTor((int) Double.parseDouble(data_row[i_ani_id]), data_row[i_rss_url]));
+                    }
                 }
+            }
         }
         return res;
     }

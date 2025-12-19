@@ -3,7 +3,9 @@
 ## 版本 2026-01
 
 编程语言：Java
+
 使用数据库：SQLite
+
 Excel 和数据库的连接方式：ODBC
 
 ## 功能实现
@@ -40,9 +42,9 @@ kumigumi all
 
 `KG_DATABASE_PATH`
 
-`-ex 路径`
+`-exPath/to/excel.xlsx`
 
-`-db 路径`
+`-dbPath/to/database.db`
 
 ---
 
@@ -83,8 +85,8 @@ kumigumi all
 | `description`     | text     | 单集介绍        |                                       |
 | `rating`          | integer  | 话评分          | 手动维护                              |
 | `view_datetime`   | text     | 观看日期时间    | 手动维护（yyyy-MM-ddThh:mm:ss+hh:mm） |
-| `status_download` | Enum     | 话下载情况      | 手动维护                              |
-| `status_view`     | Enum     | 话观看情况      | 手动维护                              |
+| `status_download` | text     | 话下载情况      | 手动维护                              |
+| `status_view`     | text     | 话观看情况      | 手动维护                              |
 | `remark`          | text     | 备注            | 手动维护                              |
 
 `status_download`: 0 : `未下载`, 1 : `已下载`, 2 : `不下载`
@@ -139,5 +141,29 @@ bgm 提供两个字段标记各个话的索引：`ep` 和 `sort`
 | `remark`          | text     | 备注            | 手动维护 |
 
 `status_download`: 0 : `未下载`, 1 : `已下载`, 2 : `不下载`
+
+---
+
+## 关键类
+
+`InfoItem`
+
+`InfoAni`
+
+`InfoAniFetch`
+
+`InfoAniStore`
+
+`InfoEpi`
+
+`InfoEpiFetch`
+
+`InfoEpiStore`
+
+`InfoTor`
+
+`InfoTorFetch`
+
+`InfoTorStore`
 
 ---

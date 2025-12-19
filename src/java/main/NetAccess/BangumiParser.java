@@ -1,5 +1,3 @@
-// BangumiAPI.java
-
 package NetAccess;
 
 import org.json.JSONArray;

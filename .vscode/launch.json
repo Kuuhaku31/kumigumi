@@ -4,6 +4,13 @@
   "configurations": [
     {
       "type": "java",
+      "name": "TestInfo",
+      "request": "launch",
+      "mainClass": "Def.TestInfo",
+      "projectName": "kumigumi"
+    },
+    {
+      "type": "java",
       "name": "Test",
       "request": "launch",
       "mainClass": "Def.Test",
