@@ -5,15 +5,20 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import util.TableData.BlockData;
 
 public class ExcelReader1 {
     private XSSFWorkbook workbook; // Excel 工作簿
@@ -22,6 +27,8 @@ public class ExcelReader1 {
     private CellPosition cursor = new CellPosition(); // 光标位置
     private Map<String, String> variables = new HashMap<>(); // 定义的变量
     private List<List<String>> data = new ArrayList<>(); // 保存读取的数据
+    private List<BlockMetaData> blockMetaList = new ArrayList<>(); // 保存块元信息
+    private List<BlockData> blockDataList = new ArrayList<>(); // 保存块信息
 
     private boolean isReading = false; // 是否读取中
 
@@ -190,10 +197,8 @@ public class ExcelReader1 {
         return row.getCell(cursor.col() + dx);
     }
 
+    /** 解析命令 */
     void parseCommands() {
-
-        List<BlockMetaData> blockMetaList = new ArrayList<>();
-
         var it = data.iterator();
         while (it.hasNext()) {
             var row = it.next();
@@ -222,6 +227,107 @@ public class ExcelReader1 {
                 blockMetaList.add(blockMeta);
                 System.out.println("Parsed Block: " + blockMeta);
             }
+        }
+    }
+
+    /**
+     * 创建表格数据对象
+     */
+    void createBlocks() {
+        for (var blockMeta : blockMetaList) {
+
+            // 获取工作表
+            var sheet = workbook.getSheet(blockMeta.sheetName);
+            if (sheet == null) {
+                System.out.println("Sheet not found: " + blockMeta.sheetName);
+                continue;
+            }
+
+            // 获取表头
+            var headerMetaList = new ArrayList<>(blockMeta.headerToColIndex.entrySet()); // 获取表头元数据列表
+            var headers = new String[headerMetaList.size()];
+            for (var i = 0; i < headerMetaList.size(); i++)
+                headers[i] = headerMetaList.get(i).getKey();
+
+            // 遍历表格每一行
+            // 根据类型创建表格数据对象
+            var data = new BlockData(blockMeta.blockName, headers);
+            for (var sheet_row_idx = blockMeta.startRow - 1; sheet_row_idx < blockMeta.endRow - 1; sheet_row_idx++) {
+                var recode = data.new Record();
+
+                // 遍历每一列（仅考虑 column_list 中定义的列）
+                var row = sheet.getRow(sheet_row_idx);
+                for (var column_map : headerMetaList) {
+                    var cell = row.getCell(column_map.getValue().col() - 1);
+
+                    String cell_value;
+                    cell_value = GetCellValue(evaluator, cell); // 提取单元格值
+                    cell_value = ParseString(cell_value, StringType.FromString(column_map.getValue().type())); // 解析出显示值
+
+                    recode.Set(column_map.getKey(), cell_value);
+                }
+            }
+            blockDataList.add(data);
+        }
+    }
+
+    void printBlocks() {
+        for (var blockData : blockDataList) {
+            System.out.println(blockData);
+        }
+    }
+
+    // 解析字符串
+    private String ParseString(String value, StringType type) {
+        // 如果为空白串，则返回 null
+        if (value == null || value.isEmpty())
+            return null;
+        return switch (type) {
+            case Bool -> value.equals("0") ? "FALSE" : "TRUE";
+            case Text -> value;
+            default -> {
+                try {
+                    double double_value = Double.parseDouble(value);
+                    if (type == StringType.Int)
+                        yield String.valueOf((int) double_value);
+
+                    Date date = DateUtil.getJavaDate(double_value);
+
+                    String pattern = switch (type) {
+                        case Date -> "yyyy-MM-dd";
+                        case Time -> "HH:mm:ss";
+                        case Datetime -> "yyyy-MM-dd HH:mm:ss";
+                        default -> null;
+                    };
+
+                    yield new SimpleDateFormat(pattern).format(date);
+                } catch (Exception e) {
+                    yield null; // 解析失败则返回空
+                }
+            }
+
+        };
+    }
+
+    private enum StringType {
+        Int,
+        Date,
+        Time,
+        Datetime,
+        Bool,
+        Text;
+
+        static StringType FromString(String str) {
+            if (str == null)
+                return Text;
+            return switch (str.toLowerCase()) {
+                case "int" -> Int;
+                case "date" -> Date;
+                case "time" -> Time;
+                case "datetime" -> Datetime;
+                case "bool" -> Bool;
+                default -> Text;
+            };
         }
     }
 
