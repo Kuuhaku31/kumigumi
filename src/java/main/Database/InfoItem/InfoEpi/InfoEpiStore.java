@@ -1,13 +1,11 @@
 package Database.InfoItem.InfoEpi;
 
-import java.time.LocalDateTime;
-
-import static util.Util.getDateString;
+import java.time.OffsetDateTime;
 
 public class InfoEpiStore extends InfoEpi {
 
     public Integer rating;
-    public LocalDateTime view_datetime;
+    public OffsetDateTime view_datetime;
     public String status_download;
     public String status_view;
     public String remark;
@@ -21,7 +19,7 @@ public class InfoEpiStore extends InfoEpi {
         return "InfoEpiStore{" +
                 "EPI_ID=" + EPI_ID +
                 ", rating=" + rating +
-                ", view_datetime=" + getDateString(view_datetime) +
+                ", view_datetime=" + view_datetime +
                 ", status_download='" + status_download + '\'' +
                 ", status_view='" + status_view + '\'' +
                 ", remark='" + remark + '\'' +

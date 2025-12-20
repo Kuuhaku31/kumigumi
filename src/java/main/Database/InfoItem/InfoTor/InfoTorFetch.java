@@ -1,12 +1,11 @@
 package Database.InfoItem.InfoTor;
 
-import java.time.LocalDateTime;
-import static util.Util.getDateString;
+import java.time.OffsetDateTime;
 
 public class InfoTorFetch extends InfoTor {
 
     public Integer ANI_ID;
-    public LocalDateTime air_datetime;
+    public OffsetDateTime air_datetime;
     public Integer size;
     public String url_page;
     public String title;
@@ -22,7 +21,7 @@ public class InfoTorFetch extends InfoTor {
         return "InfoTorFetch{" +
                 "TOR_URL='" + TOR_URL + '\'' +
                 ", ANI_ID=" + ANI_ID +
-                ", air_datetime=" + getDateString(air_datetime) +
+                ", air_datetime=" + air_datetime +
                 ", size=" + size +
                 ", url_page='" + url_page + '\'' +
                 ", title='" + title + '\'' +

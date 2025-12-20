@@ -29,7 +29,7 @@ public class ExcelReader {
     private CellPosition cursor = new CellPosition(); // 光标位置
     private Map<String, String> variables = new HashMap<>(); // 定义的变量
     private List<List<String>> commands = new ArrayList<>(); // 保存读取的数据
-    private List<BlockData> blockDataList = new ArrayList<>(); // 保存块信息
+    List<BlockData> blockDataList = new ArrayList<>(); // 保存块信息
 
     ExcelReader(String filePath) throws IOException {
         // 创建临时文件（系统自动放在临时目录）

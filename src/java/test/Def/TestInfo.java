@@ -43,13 +43,13 @@ public class TestInfo {
         infoEpiFetch.description = "This is the first episode.";
 
         infoEpiStore.rating = 8;
-        infoEpiStore.view_datetime = java.time.LocalDateTime.now();
+        infoEpiStore.view_datetime = java.time.OffsetDateTime.now();
         infoEpiStore.status_download = "Completed";
         infoEpiStore.status_view = "Watched";
         infoEpiStore.remark = "Awesome episode!";
 
         infoTorFetch.ANI_ID = TEST_ANI_ID;
-        infoTorFetch.air_datetime = java.time.LocalDateTime.now();
+        infoTorFetch.air_datetime = java.time.OffsetDateTime.now();
         infoTorFetch.size = 1500;
         infoTorFetch.url_page = "https://example.com/torpage";
         infoTorFetch.title = "Example Torrent";

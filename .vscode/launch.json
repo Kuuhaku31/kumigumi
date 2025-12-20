@@ -4,6 +4,13 @@
   "configurations": [
     {
       "type": "java",
+      "name": "TestTableToInfo",
+      "request": "launch",
+      "mainClass": "Def.TestTableToInfo",
+      "projectName": "kumigumi"
+    },
+    {
+      "type": "java",
       "name": "TestExcel",
       "request": "launch",
       "mainClass": "Excel.TestExcel",
