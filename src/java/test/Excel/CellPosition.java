@@ -1,8 +1,13 @@
 package Excel;
 
 public class CellPosition {
+    private String sheetName = "main";
     private int row = 0;
     private int col = 0;
+
+    String sheetName() {
+        return sheetName;
+    }
 
     int row() {
         return row;
@@ -12,9 +17,10 @@ public class CellPosition {
         return col;
     }
 
-    void gotoPosition(int r, int c) {
+    void gotoPosition(int r, int c, String name) {
         row = r;
         col = c;
+        sheetName = name == null ? sheetName : name;
     }
 
     void gotoNextRow() {
@@ -24,8 +30,9 @@ public class CellPosition {
     CellPosition() {
     }
 
-    CellPosition(int r, int c) {
+    CellPosition(int r, int c, String name) {
         row = r;
         col = c;
+        sheetName = name;
     }
 }
