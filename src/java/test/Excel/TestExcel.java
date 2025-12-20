@@ -16,7 +16,7 @@ public class TestExcel {
         reader.runCommands();
         reader.printBlocks();
 
-        var res = TableToInfo.convertInfoTorFetch(reader.blockDataList.get(0));
+        var res = TableToInfo.convertInfoTorStore(reader.blockDataList.get(0));
         for (var info : res) {
             System.out.println(info);
         }
