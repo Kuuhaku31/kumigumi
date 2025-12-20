@@ -8,7 +8,7 @@ public class TestExcel {
 
     public static void main(String[] args) throws IOException {
         System.out.println("TestExcel");
-        ExcelReader1 reader = new ExcelReader1(TEST_EXCEL_PATH);
+        ExcelReader reader = new ExcelReader(TEST_EXCEL_PATH);
         reader.read();
         reader.printVariables();
         reader.printDataList();

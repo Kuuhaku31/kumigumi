@@ -4,7 +4,7 @@ import Database.DBStructure.Headers;
 import Database.KG_SQLiteAccess;
 import Database.KG_SQLiteAccess.TableName;
 import Database.UpsertException;
-import Excel.ExcelReader;
+import Excel.ExcelReader_o;
 import Task.*;
 import util.DataBuffer;
 import util.TableData.TableData;
@@ -23,7 +23,7 @@ public class Kumigumi {
     // 读取 Excel
     public void ReadExcel(Path excel_path) {
         // 先一次性读取 Excel 全部数据块，并分类
-        var info = ExcelReader.Read(excel_path);
+        var info = ExcelReader_o.Read(excel_path);
         if (info == null)
             return;
 
