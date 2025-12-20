@@ -9,6 +9,9 @@ import java.sql.SQLException;
 import java.util.List;
 
 import Database.InfoItem.InfoItem;
+import Database.InfoItem.InfoAni.InfoAni;
+import Database.InfoItem.InfoEpi.InfoEpi;
+import Database.InfoItem.InfoTor.InfoTor;
 import Database.InfoItem.InfoAni.InfoAniFetch;
 import Database.InfoItem.InfoAni.InfoAniStore;
 import Database.InfoItem.InfoEpi.InfoEpiFetch;
@@ -150,21 +153,22 @@ public class SQLiteAccess implements Closeable {
                     url_cover           = excluded.url_cover;
                 """;
         try (PreparedStatement ps = conn.prepareStatement(sqlAniFetch)) {
-            ps.setInt(1, item.ANI_ID);
-            ps.setString(2, getDateString(item.air_date));
-            ps.setString(3, item.title);
-            ps.setString(4, item.title_cn);
-            ps.setString(5, item.aliases);
-            ps.setString(6, item.description);
-            ps.setInt(7, item.episode_count);
-            ps.setString(8, item.url_official_site);
-            ps.setString(9, item.url_cover);
+            var i = 1;
+            ps.setInt(i++, item.ANI_ID);
+            ps.setString(i++, getDateString(item.air_date));
+            ps.setString(i++, item.title);
+            ps.setString(i++, item.title_cn);
+            ps.setString(i++, item.aliases);
+            ps.setString(i++, item.description);
+            ps.setInt(i++, item.episode_count);
+            ps.setString(i++, item.url_official_site);
+            ps.setString(i++, item.url_cover);
             ps.executeUpdate();
         }
     }
 
     /** 插入或更新单个 InfoAniStore 项目 */
-    public void Upsert(InfoAniStore item) throws SQLException {
+    public void Update(InfoAniStore item) throws SQLException {
         final String sqlAniStore = """
                 INSERT INTO anime (
                     ANI_ID,
@@ -181,11 +185,12 @@ public class SQLiteAccess implements Closeable {
                     remark          = excluded.remark;
                 """;
         try (PreparedStatement ps = conn.prepareStatement(sqlAniStore)) {
-            ps.setInt(1, item.ANI_ID);
-            ps.setString(2, item.url_rss);
-            ps.setInt(3, item.rating_before);
-            ps.setInt(4, item.rating_after);
-            ps.setString(5, item.remark);
+            var i = 1;
+            ps.setInt(i++, item.ANI_ID);
+            ps.setString(i++, item.url_rss);
+            ps.setInt(i++, item.rating_before);
+            ps.setInt(i++, item.rating_after);
+            ps.setString(i++, item.remark);
             ps.executeUpdate();
         }
     }
@@ -216,48 +221,40 @@ public class SQLiteAccess implements Closeable {
                     description = excluded.description;
                 """;
         try (var ps = conn.prepareStatement(sqlEpiFetch)) {
-            ps.setInt(1, item.EPI_ID);
-            ps.setInt(2, item.ANI_ID);
-            ps.setInt(3, item.ep);
-            ps.setDouble(4, item.sort);
-            ps.setString(5, getDateString(item.air_date));
-            ps.setInt(6, item.duration);
-            ps.setString(7, item.title);
-            ps.setString(8, item.title_cn);
-            ps.setString(9, item.description);
+            var i = 1;
+            ps.setInt(i++, item.EPI_ID);
+            ps.setInt(i++, item.ANI_ID);
+            ps.setInt(i++, item.ep);
+            ps.setDouble(i++, item.sort);
+            ps.setString(i++, getDateString(item.air_date));
+            ps.setInt(i++, item.duration);
+            ps.setString(i++, item.title);
+            ps.setString(i++, item.title_cn);
+            ps.setString(i++, item.description);
             ps.executeUpdate();
         }
     }
 
     /** 插入或更新单个 InfoEpiStore 项目 */
-    public void Upsert(InfoEpiStore item) throws SQLException {
+    public void Update(InfoEpiStore item) throws SQLException {
         final String sqlEpiStore = """
-                INSERT INTO episode (
-                    EPI_ID,
-                    ANI_ID,
-                    rating,
-                    view_datetime,
-                    status_download,
-                    status_view,
-                    remark
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT (EPI_ID) DO UPDATE SET
-                    ANI_ID            = excluded.ANI_ID,
-                    rating            = excluded.rating,
-                    view_datetime     = excluded.view_datetime,
-                    status_download   = excluded.status_download,
-                    status_view       = excluded.status_view,
-                    remark            = excluded.remark;
+                UPDATE episode
+                SET
+                    rating          = ?,
+                    view_datetime   = ?,
+                    status_download = ?,
+                    status_view     = ?,
+                    remark          = ?
+                WHERE EPI_ID = ?;
                 """;
         try (var ps = conn.prepareStatement(sqlEpiStore)) {
-            ps.setInt(1, item.EPI_ID);
-            ps.setInt(2, item.ANI_ID);
-            ps.setInt(3, item.rating);
-            ps.setString(4, item.view_datetime != null ? item.view_datetime.toString() : null);
-            ps.setString(5, item.status_download);
-            ps.setString(6, item.status_view);
-            ps.setString(7, item.remark);
+            var i = 1;
+            ps.setInt(i++, item.rating);
+            ps.setString(i++, getDateString(item.view_datetime));
+            ps.setString(i++, item.status_download);
+            ps.setString(i++, item.status_view);
+            ps.setString(i++, item.remark);
+            ps.setInt(i++, item.EPI_ID);
             ps.executeUpdate();
         }
     }
@@ -286,39 +283,59 @@ public class SQLiteAccess implements Closeable {
                     description     = excluded.description;
                 """;
         try (var ps = conn.prepareStatement(sqlTorFetch)) {
-            ps.setString(1, item.TOR_URL);
-            ps.setInt(2, item.ANI_ID);
-            ps.setString(3, getDateString(item.air_datetime));
-            ps.setLong(4, item.size);
-            ps.setString(5, item.url_page);
-            ps.setString(6, item.title);
-            ps.setString(7, item.subtitle_group);
-            ps.setString(8, item.description);
+            var i = 1;
+            ps.setString(i++, item.TOR_URL);
+            ps.setInt(i++, item.ANI_ID);
+            ps.setString(i++, getDateString(item.air_datetime));
+            ps.setLong(i++, item.size);
+            ps.setString(i++, item.url_page);
+            ps.setString(i++, item.title);
+            ps.setString(i++, item.subtitle_group);
+            ps.setString(i++, item.description);
             ps.executeUpdate();
         }
     }
 
     /** 插入或更新单个 InfoTorStore 项目 */
-    public void Upsert(InfoTorStore item) throws SQLException {
+    public void Update(InfoTorStore item) throws SQLException {
         final String sqlTorStore = """
-                INSERT INTO torrent (
-                    TOR_URL,
-                    ANI_ID,
-                    status_download,
-                    remark
-                )
-                VALUES (?, ?, ?, ?)
-                ON CONFLICT (TOR_URL) DO UPDATE SET
-                    ANI_ID           = excluded.ANI_ID,
-                    status_download  = excluded.status_download,
-                    remark           = excluded.remark;
+                UPDATE torrent
+                SET
+                    status_download = ?,
+                    remark          = ?
+                WHERE TOR_URL = ?;
                 """;
         try (var ps = conn.prepareStatement(sqlTorStore)) {
-            ps.setString(1, item.TOR_URL);
-            ps.setInt(2, item.ANI_ID);
-            ps.setString(3, item.status_download);
-            ps.setString(4, item.remark);
+            var i = 1;
+            ps.setString(i++, item.TOR_URL);
+            ps.setString(i++, item.status_download);
+            ps.setString(i++, item.remark);
             ps.executeUpdate();
+        }
+    }
+
+    /** 删除项目 */
+    public void Delete(InfoItem item) throws SQLException {
+        String sqlDelete = null;
+        if (item instanceof InfoAni) {
+            sqlDelete = "DELETE FROM anime WHERE ANI_ID = ?;";
+        } else if (item instanceof InfoEpi) {
+            sqlDelete = "DELETE FROM episode WHERE EPI_ID = ?;";
+        } else if (item instanceof InfoTor) {
+            sqlDelete = "DELETE FROM torrent WHERE TOR_URL = ?;";
+        }
+
+        if (sqlDelete != null) {
+            try (var ps = conn.prepareStatement(sqlDelete)) {
+                if (item instanceof InfoAni) {
+                    ps.setInt(1, ((InfoAni) item).ANI_ID);
+                } else if (item instanceof InfoEpi) {
+                    ps.setInt(1, ((InfoEpi) item).EPI_ID);
+                } else if (item instanceof InfoTor) {
+                    ps.setString(1, ((InfoTor) item).TOR_URL);
+                }
+                ps.executeUpdate();
+            }
         }
     }
 

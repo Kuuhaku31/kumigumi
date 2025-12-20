@@ -5,6 +5,7 @@ import static util.Util.getDateString;
 
 public class InfoTorFetch extends InfoTor {
 
+    public Integer ANI_ID;
     public LocalDateTime air_datetime;
     public Integer size;
     public String url_page;
@@ -12,15 +13,15 @@ public class InfoTorFetch extends InfoTor {
     public String subtitle_group;
     public String description;
 
-    public InfoTorFetch(Integer ANI_ID, String TOR_URL) {
-        super(ANI_ID, TOR_URL);
+    public InfoTorFetch(String TOR_URL) {
+        super(TOR_URL);
     }
 
     @Override
     public String toString() {
         return "InfoTorFetch{" +
-                "ANI_ID=" + ANI_ID +
-                ", TOR_URL='" + TOR_URL + '\'' +
+                "TOR_URL='" + TOR_URL + '\'' +
+                ", ANI_ID=" + ANI_ID +
                 ", air_datetime=" + getDateString(air_datetime) +
                 ", size=" + size +
                 ", url_page='" + url_page + '\'' +

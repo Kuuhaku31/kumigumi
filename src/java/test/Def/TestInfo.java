@@ -8,12 +8,17 @@ import Database.InfoItem.InfoTor.InfoTorFetch;
 import Database.InfoItem.InfoTor.InfoTorStore;
 
 public class TestInfo {
-    public static InfoAniFetch infoAniFetch = new InfoAniFetch(1);
-    public static InfoAniStore infoAniStore = new InfoAniStore(1);
-    public static InfoEpiFetch infoEpiFetch = new InfoEpiFetch(1, 1);
-    public static InfoEpiStore infoEpiStore = new InfoEpiStore(1, 1);
-    public static InfoTorFetch infoTorFetch = new InfoTorFetch(1, "http://example.com/tor");
-    public static InfoTorStore infoTorStore = new InfoTorStore(1, "http://example.com/tor");
+
+    static final Integer TEST_ANI_ID = 143;
+    public static final Integer TEST_EPI_ID = 7776;
+    static final String TEST_TOR_URL = "https://example.com/testtor.torrent";
+
+    public static InfoAniFetch infoAniFetch = new InfoAniFetch(TEST_ANI_ID);
+    public static InfoAniStore infoAniStore = new InfoAniStore(TEST_ANI_ID);
+    public static InfoEpiFetch infoEpiFetch = new InfoEpiFetch(TEST_EPI_ID);
+    public static InfoEpiStore infoEpiStore = new InfoEpiStore(TEST_EPI_ID);
+    public static InfoTorFetch infoTorFetch = new InfoTorFetch(TEST_TOR_URL);
+    public static InfoTorStore infoTorStore = new InfoTorStore(TEST_TOR_URL);
 
     static {
         infoAniFetch.air_date = new java.util.Date();
@@ -28,6 +33,7 @@ public class TestInfo {
         infoAniStore.rating_after = 9;
         infoAniStore.remark = "Great anime!";
 
+        infoEpiFetch.ANI_ID = TEST_ANI_ID;
         infoEpiFetch.ep = 1;
         infoEpiFetch.sort = 1.2f;
         infoEpiFetch.air_date = new java.util.Date();
@@ -42,12 +48,14 @@ public class TestInfo {
         infoEpiStore.status_view = "Watched";
         infoEpiStore.remark = "Awesome episode!";
 
+        infoTorFetch.ANI_ID = TEST_ANI_ID;
         infoTorFetch.air_datetime = java.time.LocalDateTime.now();
         infoTorFetch.size = 1500;
         infoTorFetch.url_page = "https://example.com/torpage";
         infoTorFetch.title = "Example Torrent";
         infoTorFetch.subtitle_group = "Example Group";
         infoTorFetch.description = "This is an example torrent description.";
+
         infoTorStore.status_download = "Downloaded";
         infoTorStore.remark = "Good quality torrent.";
     }

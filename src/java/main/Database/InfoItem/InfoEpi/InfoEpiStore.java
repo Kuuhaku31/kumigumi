@@ -12,15 +12,14 @@ public class InfoEpiStore extends InfoEpi {
     public String status_view;
     public String remark;
 
-    public InfoEpiStore(Integer ANI_ID, Integer EPI_ID) {
-        super(ANI_ID, EPI_ID);
+    public InfoEpiStore(Integer EPI_ID) {
+        super(EPI_ID);
     }
 
     @Override
     public String toString() {
         return "InfoEpiStore{" +
-                "ANI_ID=" + ANI_ID +
-                ", EPI_ID=" + EPI_ID +
+                "EPI_ID=" + EPI_ID +
                 ", rating=" + rating +
                 ", view_datetime=" + getDateString(view_datetime) +
                 ", status_download='" + status_download + '\'' +

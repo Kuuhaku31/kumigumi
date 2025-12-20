@@ -2,21 +2,43 @@ package db;
 
 import java.sql.SQLException;
 
+import Database.InfoItem.InfoAni.InfoAni;
 import Def.TestInfo;
 
 public class TestDB {
+
+    static final String dbURL = "D:/repositories/kumigumi/resources/test.db";
+
     public static void main(String[] args) throws SQLException {
         System.out.println("TestDB");
+        testUpsert();
+        // testDelete();
+    }
 
-        var dbURL = "D:/repositories/kumigumi/resources/test.db";
+    static void testUpsert() throws SQLException {
+        System.out.println("TestDB.testUpsert()");
+        TestInfo.main(null);
         try (var db = new Database.SQLiteAccess(dbURL)) {
             System.out.println("Database opened.");
             db.Upsert(TestInfo.infoAniFetch);
-            db.Upsert(TestInfo.infoAniStore);
             db.Upsert(TestInfo.infoEpiFetch);
-            db.Upsert(TestInfo.infoEpiStore);
             db.Upsert(TestInfo.infoTorFetch);
-            db.Upsert(TestInfo.infoTorStore);
+
+            db.Update(TestInfo.infoAniStore);
+            db.Update(TestInfo.infoEpiStore);
+            db.Update(TestInfo.infoTorStore);
+        }
+    }
+
+    static void testDelete() throws SQLException {
+        System.out.println("TestDB.testDelete()");
+
+        var infoAni = new InfoAni(14);
+        System.out.println(infoAni);
+
+        try (var db = new Database.SQLiteAccess(dbURL)) {
+            System.out.println("Database opened.");
+            db.Delete(infoAni);
         }
     }
 }
