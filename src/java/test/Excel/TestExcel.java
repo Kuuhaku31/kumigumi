@@ -13,7 +13,6 @@ public class TestExcel {
         reader.printVariables();
         reader.printDataList();
         reader.parseCommands();
-        reader.createBlocks();
         reader.printBlocks();
     }
 

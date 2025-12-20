@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -27,7 +29,6 @@ public class ExcelReader1 {
     private CellPosition cursor = new CellPosition(); // 光标位置
     private Map<String, String> variables = new HashMap<>(); // 定义的变量
     private List<List<String>> data = new ArrayList<>(); // 保存读取的数据
-    private List<BlockMetaData> blockMetaList = new ArrayList<>(); // 保存块元信息
     private List<BlockData> blockDataList = new ArrayList<>(); // 保存块信息
 
     private boolean isReading = false; // 是否读取中
@@ -41,6 +42,7 @@ public class ExcelReader1 {
         evaluator = workbook.getCreationHelper().createFormulaEvaluator();
     }
 
+    /** 读取数据，生成命令 */
     void read() {
         // 遍历所有行，保存数据
         isReading = true;
@@ -58,13 +60,46 @@ public class ExcelReader1 {
                     break; // 如果遇到空单元格，结束该行读取
 
                 } else {
-                    var cellData = GetCellValue(evaluator, cell); // 读取单元格数据
+                    var cellData = GetCellValue(cell); // 读取单元格数据
                     特殊标记处理(cellData);
                     row_data.add(cellData); // 保存单元格数据
                 }
             }
             if (row_data.size() != 0)
                 data.add(row_data); // 保存该行数据
+        }
+    }
+
+    /** 解析命令 */
+    void parseCommands() {
+        var it = data.iterator();
+        while (it.hasNext()) {
+            var row = it.next();
+            if (row.get(0).equals("_block")) {
+                var blockMeta = new BlockMetaData(row.get(1));
+                // 读取列信息
+                while (it.hasNext()) {
+                    row = it.next();
+                    var fist = row.get(0);
+                    if (fist.equals("_block_end"))
+                        break;
+                    else if (fist.equals("_from")) {
+                        blockMeta.startRow = (int) Double.parseDouble(row.get(1)) - 1;
+                    } else if (fist.equals("_to")) {
+                        blockMeta.endRow = (int) Double.parseDouble(row.get(1)) - 1;
+                    } else if (fist.equals("_sheet")) {
+                        blockMeta.sheetName = row.get(1);
+                    } else {
+                        // 添加列
+                        var header = row.get(0);
+                        var colIdx = (int) Double.parseDouble(row.get(1)) - 1;
+                        var type = row.size() >= 3 ? row.get(2) : null;
+                        blockMeta.addColumn(header, type, colIdx);
+                    }
+                }
+                createBlocks(blockMeta); // 创建块数据
+                System.out.println("Parsed Block: " + blockMeta);
+            }
         }
     }
 
@@ -86,6 +121,49 @@ public class ExcelReader1 {
             System.out.println("\t" + entry.getKey() + ": " + entry.getValue());
     }
 
+    void printBlocks() {
+        for (var blockData : blockDataList) {
+            System.out.println(blockData);
+        }
+    }
+
+    /** 创建表格数据对象 */
+    private void createBlocks(BlockMetaData blockMeta) {
+
+        // 获取工作表
+        var sheet = workbook.getSheet(blockMeta.sheetName);
+        if (sheet == null) {
+            System.out.println("Sheet not found: " + blockMeta.sheetName);
+            return;
+        }
+
+        // 获取表头
+        var headerMetaList = new ArrayList<>(blockMeta.headerToColIndex.entrySet()); // 获取表头元数据列表
+        var headers = new String[headerMetaList.size()];
+        for (var i = 0; i < headerMetaList.size(); i++)
+            headers[i] = headerMetaList.get(i).getKey();
+
+        // 遍历表格每一行
+        // 根据类型创建表格数据对象
+        var data = new BlockData(blockMeta.blockName, headers);
+        for (var sheet_row_idx = blockMeta.startRow; sheet_row_idx < blockMeta.endRow; sheet_row_idx++) {
+            var recode = data.new Record();
+
+            // 遍历每一列（仅考虑 column_list 中定义的列）
+            var row = sheet.getRow(sheet_row_idx);
+            for (var column_map : headerMetaList) {
+                var cell = row.getCell(column_map.getValue().col());
+
+                String cell_value;
+                cell_value = GetCellValue(cell); // 提取单元格值
+                cell_value = ParseString(cell_value, StringType.FromString(column_map.getValue().type())); // 解析出显示值
+
+                recode.Set(column_map.getKey(), cell_value);
+            }
+        }
+        blockDataList.add(data);
+    }
+
     private void 特殊标记处理(String cellData) {
         if (cellData != null && cellData.startsWith("#")) {
             if (cellData.equalsIgnoreCase("#end")) // 结束读取
@@ -100,8 +178,8 @@ public class ExcelReader1 {
             } else if (cellData.equalsIgnoreCase("#define")) // 定义变量
             {
                 // 读取变量名和值（但不处理）
-                var var_name = GetCellValue(evaluator, getCell(1));
-                var var_value = GetCellValue(evaluator, getCell(2));
+                var var_name = GetCellValue(getCell(1));
+                var var_value = GetCellValue(getCell(2));
                 if (var_name != null) {
                     var_name = var_name.trim();
                     if (var_value != null)
@@ -113,7 +191,7 @@ public class ExcelReader1 {
 
             } else if (cellData.equalsIgnoreCase("#goto_if")) // 条件跳转
             {
-                var var_name = GetCellValue(evaluator, getCell(1));
+                var var_name = GetCellValue(getCell(1));
                 // 如果存在则跳转
                 if (variables.containsKey(var_name))
                     jump(1);
@@ -124,7 +202,7 @@ public class ExcelReader1 {
         }
     }
 
-    private String GetCellValue(FormulaEvaluator evaluator, Cell cell) {
+    private String GetCellValue(Cell cell) {
 
         // 处理空单元格
         var value = evaluator.evaluate(cell);
@@ -141,11 +219,11 @@ public class ExcelReader1 {
 
     private void jump(int dx) {
         // 读取目标位置
-        var target_row = GetCellValue(evaluator, getCell(dx + 1));
-        var target_col = GetCellValue(evaluator, getCell(dx + 2));
+        var target_row = GetCellValue(getCell(dx + 1));
+        var target_col = GetCellValue(getCell(dx + 2));
         var r = (int) Double.parseDouble(target_row) - 1;
         var c = (int) Double.parseDouble(target_col) - 1;
-        var newSheet = GetCellValue(evaluator, getCell(dx + 3));
+        var newSheet = GetCellValue(getCell(dx + 3));
 
         cursor.gotoPosition(r, c, newSheet);
         System.out.println("#Goto Position: (" + r + ", " + c + ") in Sheet: " + newSheet);
@@ -197,86 +275,6 @@ public class ExcelReader1 {
         return row.getCell(cursor.col() + dx);
     }
 
-    /** 解析命令 */
-    void parseCommands() {
-        var it = data.iterator();
-        while (it.hasNext()) {
-            var row = it.next();
-            if (row.get(0).equals("_block")) {
-                var blockMeta = new BlockMetaData(row.get(1));
-                // 读取列信息
-                while (it.hasNext()) {
-                    row = it.next();
-                    var fist = row.get(0);
-                    if (fist.equals("_block_end"))
-                        break;
-                    else if (fist.equals("_from")) {
-                        blockMeta.startRow = (int) Double.parseDouble(row.get(1));
-                    } else if (fist.equals("_to")) {
-                        blockMeta.endRow = (int) Double.parseDouble(row.get(1));
-                    } else if (fist.equals("_sheet")) {
-                        blockMeta.sheetName = row.get(1);
-                    } else {
-                        // 添加列
-                        var header = row.get(0);
-                        var colIdx = (int) Double.parseDouble(row.get(1));
-                        var type = row.size() >= 3 ? row.get(2) : null;
-                        blockMeta.addColumn(header, type, colIdx);
-                    }
-                }
-                blockMetaList.add(blockMeta);
-                System.out.println("Parsed Block: " + blockMeta);
-            }
-        }
-    }
-
-    /**
-     * 创建表格数据对象
-     */
-    void createBlocks() {
-        for (var blockMeta : blockMetaList) {
-
-            // 获取工作表
-            var sheet = workbook.getSheet(blockMeta.sheetName);
-            if (sheet == null) {
-                System.out.println("Sheet not found: " + blockMeta.sheetName);
-                continue;
-            }
-
-            // 获取表头
-            var headerMetaList = new ArrayList<>(blockMeta.headerToColIndex.entrySet()); // 获取表头元数据列表
-            var headers = new String[headerMetaList.size()];
-            for (var i = 0; i < headerMetaList.size(); i++)
-                headers[i] = headerMetaList.get(i).getKey();
-
-            // 遍历表格每一行
-            // 根据类型创建表格数据对象
-            var data = new BlockData(blockMeta.blockName, headers);
-            for (var sheet_row_idx = blockMeta.startRow - 1; sheet_row_idx < blockMeta.endRow - 1; sheet_row_idx++) {
-                var recode = data.new Record();
-
-                // 遍历每一列（仅考虑 column_list 中定义的列）
-                var row = sheet.getRow(sheet_row_idx);
-                for (var column_map : headerMetaList) {
-                    var cell = row.getCell(column_map.getValue().col() - 1);
-
-                    String cell_value;
-                    cell_value = GetCellValue(evaluator, cell); // 提取单元格值
-                    cell_value = ParseString(cell_value, StringType.FromString(column_map.getValue().type())); // 解析出显示值
-
-                    recode.Set(column_map.getKey(), cell_value);
-                }
-            }
-            blockDataList.add(data);
-        }
-    }
-
-    void printBlocks() {
-        for (var blockData : blockDataList) {
-            System.out.println(blockData);
-        }
-    }
-
     // 解析字符串
     private String ParseString(String value, StringType type) {
         // 如果为空白串，则返回 null
@@ -292,15 +290,16 @@ public class ExcelReader1 {
                         yield String.valueOf((int) double_value);
 
                     Date date = DateUtil.getJavaDate(double_value);
+                    var datetime = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
 
                     String pattern = switch (type) {
                         case Date -> "yyyy-MM-dd";
                         case Time -> "HH:mm:ss";
-                        case Datetime -> "yyyy-MM-dd HH:mm:ss";
+                        case Datetime -> "yyyy-MM-dd'T'HH:mm:ssXXX";
                         default -> null;
                     };
-
-                    yield new SimpleDateFormat(pattern).format(date);
+                    var fmt = DateTimeFormatter.ofPattern(pattern);
+                    yield datetime.atZone(ZoneId.systemDefault()).format(fmt);
                 } catch (Exception e) {
                     yield null; // 解析失败则返回空
                 }
