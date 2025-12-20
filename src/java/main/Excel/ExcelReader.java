@@ -28,10 +28,8 @@ public class ExcelReader {
 
     private CellPosition cursor = new CellPosition(); // 光标位置
     private Map<String, String> variables = new HashMap<>(); // 定义的变量
-    private List<List<String>> data = new ArrayList<>(); // 保存读取的数据
+    private List<List<String>> commands = new ArrayList<>(); // 保存读取的数据
     private List<BlockData> blockDataList = new ArrayList<>(); // 保存块信息
-
-    private boolean isReading = false; // 是否读取中
 
     ExcelReader(String filePath) throws IOException {
         // 创建临时文件（系统自动放在临时目录）
@@ -40,12 +38,9 @@ public class ExcelReader {
         Files.copy(Files.newInputStream(Path.of(filePath)), temp_file, StandardCopyOption.REPLACE_EXISTING);
         workbook = new XSSFWorkbook(new FileInputStream(temp_file.toFile()));
         evaluator = workbook.getCreationHelper().createFormulaEvaluator();
-    }
 
-    /** 读取数据，生成命令 */
-    void read() {
         // 遍历所有行，保存数据
-        isReading = true;
+        boolean isReading = true;
         while (isReading) {
             if (isCursorOut())
                 break; // 超出行数
@@ -62,19 +57,19 @@ public class ExcelReader {
                 } else {
                     var cellData = GetCellValue(cell); // 读取单元格数据
                     if (cellData != null && cellData.startsWith("#"))
-                        特殊标记处理(cellData);
+                        isReading = 特殊标记处理(cellData);
                     else
                         row_data.add(cellData); // 保存单元格数据
                 }
             }
             if (row_data.size() != 0)
-                data.add(row_data); // 保存该行数据
+                commands.add(row_data); // 保存该行数据
         }
     }
 
     /** 解析命令 */
-    void parseCommands() {
-        var it = data.iterator();
+    void runCommands() {
+        var it = commands.iterator();
         while (it.hasNext()) {
             var row = it.next();
             if (row.get(0).equals("_block")) {
@@ -105,9 +100,9 @@ public class ExcelReader {
         }
     }
 
-    void printDataList() {
+    void printCommands() {
         System.out.println("#Data List:");
-        for (var row : data) {
+        for (var row : commands) {
             System.out.print("\tRow: [");
             for (var cell : row) {
                 System.out.print(cell + ", ");
@@ -166,11 +161,11 @@ public class ExcelReader {
         blockDataList.add(data);
     }
 
-    private void 特殊标记处理(String cellData) {
+    private boolean 特殊标记处理(String cellData) {
         if (cellData.equalsIgnoreCase("#end")) // 结束读取
         {
-            isReading = false;
             System.out.println("#End of Data.");
+            return false;
 
         } else if (cellData.equalsIgnoreCase("#goto")) // 跳转到指定位置
         {
@@ -200,6 +195,7 @@ public class ExcelReader {
                 cursor.gotoNextRow();
         } else
             cursor.gotoNextRow();
+        return true;
     }
 
     private String GetCellValue(Cell cell) {

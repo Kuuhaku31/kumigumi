@@ -9,10 +9,9 @@ public class TestExcel {
     public static void main(String[] args) throws IOException {
         System.out.println("TestExcel");
         ExcelReader reader = new ExcelReader(TEST_EXCEL_PATH);
-        reader.read();
         reader.printVariables();
-        reader.printDataList();
-        reader.parseCommands();
+        reader.printCommands();
+        reader.runCommands();
         reader.printBlocks();
     }
 
