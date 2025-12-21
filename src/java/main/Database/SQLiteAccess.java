@@ -4,7 +4,6 @@ import java.io.Closeable;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -19,387 +18,281 @@ import static util.Util.getDateString;
 
 public class SQLiteAccess implements Closeable {
 
-    private static final String sqlCreateAniTable = """
-            CREATE TABLE "anime" (
-                "ANI_ID"            integer NOT NULL,
-                "air_date"          text,
-                "title"             text,
-                "title_cn"          text,
-                "aliases"           text,
-                "description"       text,
-                "episode_count"     integer,
-                "url_official_site" text,
-                "url_cover"         text,
-                "url_rss"           text,
-                "rating_before"     integer,
-                "rating_after"      integer,
-                "remark"            text,
-                PRIMARY KEY ("ANI_ID")
-            );
-            """;
-
-    private static final String sqlCreateEpiTable = """
-            CREATE TABLE "episode" (
-                "EPI_ID"            integer NOT NULL,
-                "ANI_ID"            integer NOT NULL,
-                "ep"                text,
-                "sort"              real,
-                "air_date"          text,
-                "duration"          integer,
-                "title"             text,
-                "title_cn"          text,
-                "description"       text,
-                "rating"            integer,
-                "view_datetime"     text,
-                "status_download"   text,
-                "status_view"       text,
-                "remark"            text,
-                PRIMARY KEY ("EPI_ID"),
-                CONSTRAINT "ANI_ID"
-                FOREIGN KEY ("ANI_ID")
-                REFERENCES "anime" ("ANI_ID")
-                ON DELETE CASCADE ON UPDATE CASCADE
-            );
-            """;
-
-    private static final String sqlCreateTorTable = """
-            CREATE TABLE "torrent" (
-                "TOR_URL"           text NOT NULL,
-                "ANI_ID"            integer NOT NULL,
-                "air_datetime"      text,
-                "size"              integer,
-                "url_page"          text,
-                "title"             text,
-                "subtitle_group"    text,
-                "description"       text,
-                "status_download"   text,
-                "remark"            text,
-                PRIMARY KEY ("TOR_URL"),
-                CONSTRAINT "ANI_ID"
-                FOREIGN KEY ("ANI_ID")
-                REFERENCES "anime" ("ANI_ID")
-                ON DELETE CASCADE ON UPDATE CASCADE
-            );
-            """;
-
-    private Connection conn;
+    private final Connection conn; // SQLite 数据库连接
+    private final SQLiteStatementCache stmtCache; // 语句缓存持有者
+    private static final int DEFAULT_BATCH_SIZE = 500; // 默认批处理大小
 
     public SQLiteAccess(String dbPath) throws SQLException {
 
+        // 确保数据库文件存在
         var dbUrl = "jdbc:sqlite:" + dbPath;
-
-        // 检查数据库是否存在
         if (!new File(dbPath).exists()) {
             System.out.println("Database file not found.");
-            initDatabase(dbUrl); // 如果表不存在则创建表
+            SQLiteInit.initDatabase(dbUrl); // 如果表不存在则创建表
         }
         conn = DriverManager.getConnection(dbUrl); // 连接 SQLite 数据库
+
+        // 应用 PRAGMA 设置以优化性能
+        try (var st = conn.createStatement()) {
+            st.execute("PRAGMA journal_mode = WAL;");
+            st.execute("PRAGMA synchronous = NORMAL;");
+            st.execute("PRAGMA temp_store = MEMORY;");
+            st.execute("PRAGMA cache_size = 10000;");
+        } catch (SQLException e) {
+            System.err.println("Failed to apply PRAGMA settings: " + e.getMessage());
+        }
+
+        // 初始化语句缓存
+        stmtCache = new SQLiteStatementCache(conn);
     }
 
     public void Upsert(List<UpsertItem> items) throws SQLException {
-        if (items == null)
+        if (items == null || items.isEmpty())
             return;
+
+        var prevAuto = conn.getAutoCommit(); // 保存之前的自动提交状态
+        conn.setAutoCommit(false); // 关闭自动提交
+
+        int aniCount = 0, epiCount = 0, torCount = 0; // 计数器
         for (var it : items) {
-            if (it instanceof InfoAniUpsert)
-                Upsert((InfoAniUpsert) it);
-            else if (it instanceof InfoEpiUpsert)
-                Upsert((InfoEpiUpsert) it);
-            else if (it instanceof InfoTorUpsert)
-                Upsert((InfoTorUpsert) it);
-            else
+            if (it instanceof InfoAniUpsert) {
+                var item = (InfoAniUpsert) it;
+                var i = 1;
+                stmtCache.psAniUpsert.setInt(i++, item.ANI_ID);
+                stmtCache.psAniUpsert.addBatch();
+                aniCount++;
+                if (aniCount % DEFAULT_BATCH_SIZE == 0) // 如果达到批处理大小则执行批处理
+                    stmtCache.psAniUpsert.executeBatch();
+            } else if (it instanceof InfoEpiUpsert) {
+                var item = (InfoEpiUpsert) it;
+                var i = 1;
+                stmtCache.psEpiUpsert.setInt(i++, item.EPI_ID);
+                stmtCache.psEpiUpsert.setInt(i++, item.ANI_ID);
+                stmtCache.psEpiUpsert.addBatch();
+                epiCount++;
+                if (epiCount % DEFAULT_BATCH_SIZE == 0)
+                    stmtCache.psEpiUpsert.executeBatch();
+            } else if (it instanceof InfoTorUpsert) {
+                var item = (InfoTorUpsert) it;
+                var i = 1;
+                stmtCache.psTorUpsert.setString(i++, item.TOR_URL);
+                stmtCache.psTorUpsert.setInt(i++, item.ANI_ID);
+                stmtCache.psTorUpsert.addBatch();
+                torCount++;
+                if (torCount % DEFAULT_BATCH_SIZE == 0)
+                    stmtCache.psTorUpsert.executeBatch();
+            } else {
                 System.err.println("Unknown UpsertItem type: " + it.getClass().getName());
+            }
         }
+
+        if (aniCount > 0)
+            stmtCache.psAniUpsert.executeBatch();
+        if (epiCount > 0)
+            stmtCache.psEpiUpsert.executeBatch();
+        if (torCount > 0)
+            stmtCache.psTorUpsert.executeBatch();
+
+        conn.commit();
+        conn.setAutoCommit(prevAuto);
     }
 
     public void Update(List<UpdateItem> items) throws SQLException {
-        if (items == null)
+        if (items == null || items.isEmpty())
             return;
+
+        var prevAuto = conn.getAutoCommit();
+        conn.setAutoCommit(false);
+
+        int aniFetchCount = 0, aniStoreCount = 0;
+        int epiFetchCount = 0, epiStoreCount = 0;
+        int torFetchCount = 0, torStoreCount = 0;
         for (var it : items) {
-            if (it instanceof InfoAniFetch)
-                Update((InfoAniFetch) it);
-            else if (it instanceof InfoEpiFetch)
-                Update((InfoEpiFetch) it);
-            else if (it instanceof InfoTorFetch)
-                Update((InfoTorFetch) it);
-            else if (it instanceof InfoAniStore)
-                Update((InfoAniStore) it);
-            else if (it instanceof InfoEpiStore)
-                Update((InfoEpiStore) it);
-            else if (it instanceof InfoTorStore)
-                Update((InfoTorStore) it);
-            else
+            if (it instanceof InfoAniFetch) {
+                var item = (InfoAniFetch) it;
+                var i = 1;
+                stmtCache.psAniFetch.setString(i++, getDateString(item.air_date));
+                stmtCache.psAniFetch.setString(i++, item.title);
+                stmtCache.psAniFetch.setString(i++, item.title_cn);
+                stmtCache.psAniFetch.setString(i++, item.aliases);
+                stmtCache.psAniFetch.setString(i++, item.description);
+                stmtCache.psAniFetch.setInt(i++, item.episode_count);
+                stmtCache.psAniFetch.setString(i++, item.url_official_site);
+                stmtCache.psAniFetch.setString(i++, item.url_cover);
+                stmtCache.psAniFetch.setInt(i++, item.ANI_ID);
+                stmtCache.psAniFetch.addBatch();
+                aniFetchCount++;
+                if (aniFetchCount % DEFAULT_BATCH_SIZE == 0)
+                    stmtCache.psAniFetch.executeBatch();
+            } else if (it instanceof InfoEpiFetch) {
+                var item = (InfoEpiFetch) it;
+                var i = 1;
+                if (item.ep == null)
+                    stmtCache.psEpiFetch.setNull(i++, java.sql.Types.INTEGER);
+                else
+                    stmtCache.psEpiFetch.setInt(i++, item.ep);
+                if (item.sort == null)
+                    stmtCache.psEpiFetch.setNull(i++, java.sql.Types.REAL);
+                else
+                    stmtCache.psEpiFetch.setDouble(i++, item.sort);
+                stmtCache.psEpiFetch.setString(i++, getDateString(item.air_date));
+                if (item.duration == null)
+                    stmtCache.psEpiFetch.setNull(i++, java.sql.Types.INTEGER);
+                else
+                    stmtCache.psEpiFetch.setInt(i++, item.duration);
+                stmtCache.psEpiFetch.setString(i++, item.title);
+                stmtCache.psEpiFetch.setString(i++, item.title_cn);
+                stmtCache.psEpiFetch.setString(i++, item.description);
+                stmtCache.psEpiFetch.setInt(i++, item.EPI_ID);
+                stmtCache.psEpiFetch.addBatch();
+                epiFetchCount++;
+                if (epiFetchCount % DEFAULT_BATCH_SIZE == 0)
+                    stmtCache.psEpiFetch.executeBatch();
+            } else if (it instanceof InfoTorFetch) {
+                var item = (InfoTorFetch) it;
+                var i = 1;
+                stmtCache.psTorFetch.setString(i++, getDateString(item.air_datetime));
+                if (item.size == null)
+                    stmtCache.psTorFetch.setNull(i++, java.sql.Types.BIGINT);
+                else
+                    stmtCache.psTorFetch.setLong(i++, item.size);
+                stmtCache.psTorFetch.setString(i++, item.url_page);
+                stmtCache.psTorFetch.setString(i++, item.title);
+                stmtCache.psTorFetch.setString(i++, item.subtitle_group);
+                stmtCache.psTorFetch.setString(i++, item.description);
+                stmtCache.psTorFetch.setString(i++, item.TOR_URL);
+                stmtCache.psTorFetch.addBatch();
+                torFetchCount++;
+                if (torFetchCount % DEFAULT_BATCH_SIZE == 0)
+                    stmtCache.psTorFetch.executeBatch();
+            } else if (it instanceof InfoAniStore) {
+                var item = (InfoAniStore) it;
+                var i = 1;
+                stmtCache.psAniStore.setString(i++, item.url_rss);
+                if (item.rating_before == null)
+                    stmtCache.psAniStore.setNull(i++, java.sql.Types.INTEGER);
+                else
+                    stmtCache.psAniStore.setInt(i++, item.rating_before);
+                if (item.rating_after == null)
+                    stmtCache.psAniStore.setNull(i++, java.sql.Types.INTEGER);
+                else
+                    stmtCache.psAniStore.setInt(i++, item.rating_after);
+                stmtCache.psAniStore.setString(i++, item.remark);
+                stmtCache.psAniStore.setInt(i++, item.ANI_ID);
+                stmtCache.psAniStore.addBatch();
+                aniStoreCount++;
+                if (aniStoreCount % DEFAULT_BATCH_SIZE == 0)
+                    stmtCache.psAniStore.executeBatch();
+            } else if (it instanceof InfoEpiStore) {
+                var item = (InfoEpiStore) it;
+                var i = 1;
+                if (item.rating == null)
+                    stmtCache.psEpiStore.setNull(i++, java.sql.Types.INTEGER);
+                else
+                    stmtCache.psEpiStore.setInt(i++, item.rating);
+                stmtCache.psEpiStore.setString(i++, getDateString(item.view_datetime));
+                stmtCache.psEpiStore.setString(i++, item.status_download);
+                stmtCache.psEpiStore.setString(i++, item.status_view);
+                stmtCache.psEpiStore.setString(i++, item.remark);
+                stmtCache.psEpiStore.setInt(i++, item.EPI_ID);
+                stmtCache.psEpiStore.addBatch();
+                epiStoreCount++;
+                if (epiStoreCount % DEFAULT_BATCH_SIZE == 0)
+                    stmtCache.psEpiStore.executeBatch();
+            } else if (it instanceof InfoTorStore) {
+                var item = (InfoTorStore) it;
+                var i = 1;
+                stmtCache.psTorStore.setString(i++, item.status_download);
+                stmtCache.psTorStore.setString(i++, item.remark);
+                stmtCache.psTorStore.setString(i++, item.TOR_URL);
+                stmtCache.psTorStore.addBatch();
+                torStoreCount++;
+                if (torStoreCount % DEFAULT_BATCH_SIZE == 0)
+                    stmtCache.psTorStore.executeBatch();
+            } else
                 System.err.println("Unknown UpdateItem type: " + it.getClass().getName());
         }
+
+        if (aniFetchCount > 0)
+            stmtCache.psAniFetch.executeBatch();
+        if (aniStoreCount > 0)
+            stmtCache.psAniStore.executeBatch();
+        if (epiFetchCount > 0)
+            stmtCache.psEpiFetch.executeBatch();
+        if (epiStoreCount > 0)
+            stmtCache.psEpiStore.executeBatch();
+        if (torFetchCount > 0)
+            stmtCache.psTorFetch.executeBatch();
+        if (torStoreCount > 0)
+            stmtCache.psTorStore.executeBatch();
+
+        conn.commit();
+        conn.setAutoCommit(prevAuto);
     }
 
     /** 删除项目 */
-    public void Delete(InfoItem item) throws SQLException {
-        String sqlDelete = null;
-        if (item instanceof InfoAni) {
-            sqlDelete = "DELETE FROM anime WHERE ANI_ID = ?;";
-        } else if (item instanceof InfoEpi) {
-            sqlDelete = "DELETE FROM episode WHERE EPI_ID = ?;";
-        } else if (item instanceof InfoTor) {
-            sqlDelete = "DELETE FROM torrent WHERE TOR_URL = ?;";
-        }
+    public void Delete(List<InfoItem> item) throws SQLException {
+        if (item == null || item.isEmpty())
+            return;
 
-        if (sqlDelete != null) {
-            try (var ps = conn.prepareStatement(sqlDelete)) {
-                if (item instanceof InfoAni) {
-                    ps.setInt(1, ((InfoAni) item).ANI_ID);
-                } else if (item instanceof InfoEpi) {
-                    ps.setInt(1, ((InfoEpi) item).EPI_ID);
-                } else if (item instanceof InfoTor) {
-                    ps.setString(1, ((InfoTor) item).TOR_URL);
-                }
-                ps.executeUpdate();
+        var prevAuto = conn.getAutoCommit();
+        conn.setAutoCommit(false);
+
+        int aniCount = 0, epiCount = 0, torCount = 0;
+        for (var it : item) {
+            if (it instanceof InfoAni) {
+                var info = (InfoAni) it;
+                stmtCache.psAniDelete.setInt(1, info.ANI_ID);
+                stmtCache.psAniDelete.addBatch();
+                aniCount++;
+                if (aniCount % DEFAULT_BATCH_SIZE == 0)
+                    stmtCache.psAniDelete.executeBatch();
+            } else if (it instanceof InfoEpi) {
+                var info = (InfoEpi) it;
+                stmtCache.psEpiDelete.setInt(1, info.EPI_ID);
+                stmtCache.psEpiDelete.addBatch();
+                epiCount++;
+                if (epiCount % DEFAULT_BATCH_SIZE == 0)
+                    stmtCache.psEpiDelete.executeBatch();
+            } else if (it instanceof InfoTor) {
+                var info = (InfoTor) it;
+                stmtCache.psTorDelete.setString(1, info.TOR_URL);
+                stmtCache.psTorDelete.addBatch();
+                torCount++;
+                if (torCount % DEFAULT_BATCH_SIZE == 0)
+                    stmtCache.psTorDelete.executeBatch();
+            } else {
+                System.err.println("Unknown InfoItem type for deletion: " + it.getClass().getName());
             }
         }
+
+        if (aniCount > 0)
+            stmtCache.psAniDelete.executeBatch();
+        if (epiCount > 0)
+            stmtCache.psEpiDelete.executeBatch();
+        if (torCount > 0)
+            stmtCache.psTorDelete.executeBatch();
+
+        conn.commit();
+        conn.setAutoCommit(prevAuto);
     }
 
     @Override
     public void close() {
+        if (stmtCache != null) {
+            try {
+                stmtCache.close();
+            } catch (Exception e) {
+                System.err.println("Failed to close statement cache: " + e.getMessage());
+            }
+        }
+
         if (conn != null) {
             try {
                 conn.close();
             } catch (SQLException e) {
                 System.err.println("Close failed: " + e.getMessage());
             }
-            conn = null;
-        }
-    }
-
-    private static void initDatabase(String db_url) throws SQLException {
-        // 连接 SQLite 数据库
-        System.out.println("Creating new database...");
-        try (var conn = DriverManager.getConnection(db_url)) {
-            conn.prepareStatement(sqlCreateAniTable).execute();
-            conn.prepareStatement(sqlCreateEpiTable).execute();
-            conn.prepareStatement(sqlCreateTorTable).execute();
-        }
-        System.out.println("Database created.");
-    }
-
-    /** 插入或更新单个 InfoAniUpsert 项目 */
-    private void Upsert(InfoAniUpsert item) throws SQLException {
-        final String sqlAniUpsert = """
-                INSERT INTO anime (
-                    ANI_ID
-                ) VALUES (?)
-                ON CONFLICT(ANI_ID) DO UPDATE SET
-                    ANI_ID = excluded.ANI_ID;
-                """;
-        try (PreparedStatement ps = conn.prepareStatement(sqlAniUpsert)) {
-            var i = 1;
-            ps.setInt(i++, item.ANI_ID);
-            ps.executeUpdate();
-        }
-    }
-
-    /** 插入或更新单个 InfoEpiUpsert 项目 */
-    private void Upsert(InfoEpiUpsert item) throws SQLException {
-        final String sqlEpiUpsert = """
-                INSERT INTO episode (
-                    EPI_ID,
-                    ANI_ID
-                ) VALUES (?, ?)
-                ON CONFLICT(EPI_ID) DO UPDATE SET
-                    EPI_ID = excluded.EPI_ID;
-                """;
-        try (var ps = conn.prepareStatement(sqlEpiUpsert)) {
-            var i = 1;
-            ps.setInt(i++, item.EPI_ID);
-            ps.setInt(i++, item.ANI_ID);
-            ps.executeUpdate();
-        }
-    }
-
-    /** 插入或更新单个 InfoTorUpsert 项目 */
-    private void Upsert(InfoTorUpsert item) throws SQLException {
-        final String sqlTorUpsert = """
-                INSERT INTO torrent (
-                    TOR_URL,
-                    ANI_ID
-                ) VALUES (?, ?)
-                ON CONFLICT(TOR_URL) DO UPDATE SET
-                    TOR_URL = excluded.TOR_URL;
-                """;
-        try (var ps = conn.prepareStatement(sqlTorUpsert)) {
-            var i = 1;
-            ps.setString(i++, item.TOR_URL);
-            ps.setInt(i++, item.ANI_ID);
-            ps.executeUpdate();
-        }
-    }
-
-    /** 更新单个 InfoAniFetch 项目 */
-    private void Update(InfoAniFetch item) throws SQLException {
-        final String sqlAniFetch = """
-                UPDATE anime
-                SET
-                    air_date            = ?,
-                    title               = ?,
-                    title_cn            = ?,
-                    aliases             = ?,
-                    description         = ?,
-                    episode_count       = ?,
-                    url_official_site   = ?,
-                    url_cover           = ?
-                WHERE ANI_ID = ?;
-                """;
-        try (PreparedStatement ps = conn.prepareStatement(sqlAniFetch)) {
-            var i = 1;
-            ps.setString(i++, getDateString(item.air_date));
-            ps.setString(i++, item.title);
-            ps.setString(i++, item.title_cn);
-            ps.setString(i++, item.aliases);
-            ps.setString(i++, item.description);
-            ps.setInt(i++, item.episode_count);
-            ps.setString(i++, item.url_official_site);
-            ps.setString(i++, item.url_cover);
-            ps.setInt(i++, item.ANI_ID);
-            ps.executeUpdate();
-        }
-    }
-
-    /** 更新单个 InfoAniStore 项目 */
-    private void Update(InfoAniStore item) throws SQLException {
-        final String sqlAniStore = """
-                UPDATE anime
-                SET
-                    url_rss         = ?,
-                    rating_before   = ?,
-                    rating_after    = ?,
-                    remark          = ?
-                WHERE ANI_ID = ?;
-                """;
-        try (PreparedStatement ps = conn.prepareStatement(sqlAniStore)) {
-            var i = 1;
-            ps.setString(i++, item.url_rss);
-            if (item.rating_before == null)
-                ps.setNull(i++, java.sql.Types.INTEGER);
-            else
-                ps.setInt(i++, item.rating_before);
-            if (item.rating_after == null)
-                ps.setNull(i++, java.sql.Types.INTEGER);
-            else
-                ps.setInt(i++, item.rating_after);
-            ps.setString(i++, item.remark);
-            ps.setInt(i++, item.ANI_ID);
-            ps.executeUpdate();
-        }
-    }
-
-    /** 更新单个 InfoEpiFetch 项目 */
-    private void Update(InfoEpiFetch item) throws SQLException {
-        final String sqlEpiFetch = """
-                UPDATE episode
-                SET
-                    EPI_ID      = ?,
-                    ep          = ?,
-                    sort        = ?,
-                    air_date    = ?,
-                    duration    = ?,
-                    title       = ?,
-                    title_cn    = ?,
-                    description = ?
-                WHERE EPI_ID = ?;
-                """;
-        try (var ps = conn.prepareStatement(sqlEpiFetch)) {
-            var i = 1;
-            if (item.ep == null)
-                ps.setNull(i++, java.sql.Types.INTEGER);
-            else
-                ps.setInt(i++, item.ep);
-            if (item.sort == null)
-                ps.setNull(i++, java.sql.Types.REAL);
-            else
-                ps.setDouble(i++, item.sort);
-            ps.setString(i++, getDateString(item.air_date));
-            if (item.duration == null)
-                ps.setNull(i++, java.sql.Types.INTEGER);
-            else
-                ps.setInt(i++, item.duration);
-            ps.setString(i++, item.title);
-            ps.setString(i++, item.title_cn);
-            ps.setString(i++, item.description);
-            ps.setInt(i++, item.EPI_ID);
-            ps.executeUpdate();
-        }
-    }
-
-    /** 更新单个 InfoEpiStore 项目 */
-    private void Update(InfoEpiStore item) throws SQLException {
-        final String sqlEpiStore = """
-                UPDATE episode
-                SET
-                    rating          = ?,
-                    view_datetime   = ?,
-                    status_download = ?,
-                    status_view     = ?,
-                    remark          = ?
-                WHERE EPI_ID = ?;
-                """;
-        try (var ps = conn.prepareStatement(sqlEpiStore)) {
-            var i = 1;
-            if (item.rating == null)
-                ps.setNull(i++, java.sql.Types.INTEGER);
-            else
-                ps.setInt(i++, item.rating);
-            ps.setString(i++, getDateString(item.view_datetime));
-            ps.setString(i++, item.status_download);
-            ps.setString(i++, item.status_view);
-            ps.setString(i++, item.remark);
-            ps.setInt(i++, item.EPI_ID);
-            ps.executeUpdate();
-        }
-    }
-
-    /** 更新单个 InfoTorFetch 项目 */
-    private void Update(InfoTorFetch item) throws SQLException {
-        final String sqlTorFetch = """
-                UPDATE torrent
-                SET
-                    TOR_URL         = ?,
-                    air_datetime    = ?,
-                    size            = ?,
-                    url_page        = ?,
-                    title           = ?,
-                    subtitle_group  = ?,
-                    description     = ?
-                WHERE TOR_URL = ?;
-                """;
-        try (var ps = conn.prepareStatement(sqlTorFetch)) {
-            var i = 1;
-            ps.setString(i++, getDateString(item.air_datetime));
-            if (item.size == null)
-                ps.setNull(i++, java.sql.Types.BIGINT);
-            else
-                ps.setLong(i++, item.size);
-            ps.setString(i++, item.url_page);
-            ps.setString(i++, item.title);
-            ps.setString(i++, item.subtitle_group);
-            ps.setString(i++, item.description);
-            ps.setString(i++, item.TOR_URL);
-            ps.executeUpdate();
-        }
-    }
-
-    /** 更新单个 InfoTorStore 项目 */
-    private void Update(InfoTorStore item) throws SQLException {
-        final String sqlTorStore = """
-                UPDATE torrent
-                SET
-                    status_download = ?,
-                    remark          = ?
-                WHERE TOR_URL = ?;
-                """;
-        try (var ps = conn.prepareStatement(sqlTorStore)) {
-            var i = 1;
-            ps.setString(i++, item.status_download);
-            ps.setString(i++, item.remark);
-            ps.setString(i++, item.TOR_URL);
-            ps.executeUpdate();
         }
     }
 }

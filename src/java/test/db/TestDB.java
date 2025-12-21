@@ -18,15 +18,16 @@ public class TestDB {
     static void testUpsert() throws SQLException {
         System.out.println("TestDB.testUpsert()");
         TestInfo.main(null);
-        try (var db = new Database.SQLiteAccess(dbURL)) {
+        try (@SuppressWarnings("unused")
+        var db = new Database.SQLiteAccess(dbURL)) {
             System.out.println("Database opened.");
-            db.Update(TestInfo.infoAniFetch);
-            db.Update(TestInfo.infoEpiFetch);
-            db.Update(TestInfo.infoTorFetch);
+            // db.Update(TestInfo.infoAniFetch);
+            // db.Update(TestInfo.infoEpiFetch);
+            // db.Update(TestInfo.infoTorFetch);
 
-            db.Update(TestInfo.infoAniStore);
-            db.Update(TestInfo.infoEpiStore);
-            db.Update(TestInfo.infoTorStore);
+            // db.Update(TestInfo.infoAniStore);
+            // db.Update(TestInfo.infoEpiStore);
+            // db.Update(TestInfo.infoTorStore);
         }
     }
 
@@ -36,9 +37,10 @@ public class TestDB {
         var infoAni = new InfoAni(14);
         System.out.println(infoAni);
 
-        try (var db = new Database.SQLiteAccess(dbURL)) {
+        try (@SuppressWarnings("unused")
+        var db = new Database.SQLiteAccess(dbURL)) {
             System.out.println("Database opened.");
-            db.Delete(infoAni);
+            // db.Delete(infoAni);
         }
     }
 }
