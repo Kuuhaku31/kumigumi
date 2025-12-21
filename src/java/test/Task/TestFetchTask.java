@@ -2,12 +2,12 @@ package Task;
 
 import java.util.List;
 
-import Database.InfoItem.InfoItem;
+import Database.InfoItem.UpdateItem;
 
 public class TestFetchTask {
 
     static final String filename = "ignore/TestFetchTask_Output.txt";
-    static final List<InfoItem> buffer = new java.util.ArrayList<>();
+    static final List<UpdateItem> buffer = new java.util.ArrayList<>();
 
     public static void main(String[] args) {
         System.out.println("TestFetchTask");

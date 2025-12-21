@@ -2,12 +2,12 @@ package FetchTask;
 
 import java.util.List;
 
-import Database.InfoItem.InfoItem;
+import Database.InfoItem.UpdateItem;
 
 public abstract class FetchTask implements Runnable {
-    final List<InfoItem> buffer;
+    final List<UpdateItem> buffer;
 
-    public FetchTask(List<InfoItem> buffer) {
+    public FetchTask(List<UpdateItem> buffer) {
         this.buffer = buffer;
     }
 }

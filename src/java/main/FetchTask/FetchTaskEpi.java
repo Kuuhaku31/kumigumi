@@ -1,6 +1,6 @@
 package FetchTask;
 
-import Database.InfoItem.InfoItem;
+import Database.InfoItem.UpdateItem;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -12,7 +12,7 @@ public class FetchTaskEpi extends FetchTask {
 
     final Integer ani_id;
 
-    public FetchTaskEpi(List<InfoItem> buffer, Integer ani_id) {
+    public FetchTaskEpi(List<UpdateItem> buffer, Integer ani_id) {
         super(buffer);
         this.ani_id = ani_id;
     }

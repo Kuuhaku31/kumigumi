@@ -9,9 +9,12 @@ public class TestMetaData {
     public static final MetaData meta_永远的黄昏 = new MetaData(
             566600, "https://mikan.tangbai.cc/RSS/Bangumi?bangumiId=3736");
 
-    public static final String DATABASE_PATH = "D:/repositories/kumigumi/resources/test.db";
+    // public static final String DATABASE_PATH =
+    // "D:/repositories/kumigumi/resources/test.db";
+    public static final String DATABASE_PATH = "D:/db/kumigumi/kumigumi.db";
     public static final String EXCEL_FILE_PATH = "D:/repositories/kumigumi/resources/kg.xlsx";
 
     public static final String OUTPUT_FILE_0 = "D:/repositories/kumigumi/resources/output0.text";
     public static final String OUTPUT_FILE_1 = "D:/repositories/kumigumi/resources/output1.text";
+    public static final String OUTPUT_FILE_2 = "D:/repositories/kumigumi/resources/output2.text";
 }
