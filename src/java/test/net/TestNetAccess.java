@@ -15,25 +15,13 @@ import static Main.TableToInfo.convertInfoAniFetch;
 import static Main.TableToInfo.convertInfoEpiFetch;
 import static Main.TableToInfo.convertInfoTorFetch;
 
+import MetaData.TestMetaData;
+
 public class TestNetAccess {
 
     static void main() throws URISyntaxException, IOException {
 
-        class MetaData {
-            public Integer ANI_ID;
-            public String url_rss;
-
-            public MetaData(Integer ANI_ID, String url_rss) {
-                this.ANI_ID = ANI_ID;
-                this.url_rss = url_rss;
-            }
-        }
-
-        // var meta_千岁 = new MetaData(507634,
-        // "https://mikanani.me/RSS/Bangumi?bangumiId=3774");
-        var meta_笑容职场 = new MetaData(475663, "https://mikan.tangbai.cc/RSS/Bangumi?bangumiId=3761");
-
-        var meta = meta_笑容职场;
+        var meta = TestMetaData.meta_笑容职场;
 
         var ani_info = FetchAnimeInfo(meta.ANI_ID);
         var epi_info = FetchEpisodeInfo(meta.ANI_ID);

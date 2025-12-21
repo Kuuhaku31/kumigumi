@@ -94,8 +94,17 @@ public class TableToInfo {
             return null;
         var info = new InfoAniFetch(Integer.parseInt(data.get("ANI_ID")));
 
-        if (data.containsKey("air_date"))
-            info.air_date = java.sql.Date.valueOf(data.get("air_date"));
+        if (data.containsKey("air_date")) {
+            var dateStr = data.get("air_date");
+            if (dateStr != null)
+                try {
+                    var sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+                    Date parsedDate = sdf.parse(dateStr);
+                    info.air_date = parsedDate;
+                } catch (java.text.ParseException e) {
+                    e.printStackTrace();
+                }
+        }
         if (data.containsKey("title"))
             info.title = data.get("title");
         if (data.containsKey("title_cn"))
