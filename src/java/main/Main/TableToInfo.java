@@ -1,7 +1,9 @@
 package Main;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -124,8 +126,17 @@ public class TableToInfo {
             info.ep = Integer.parseInt(data.get("ep"));
         if (data.containsKey("sort"))
             info.sort = Float.parseFloat(data.get("sort"));
-        if (data.containsKey("air_date"))
-            info.air_date = java.sql.Date.valueOf(data.get("air_date"));
+        if (data.containsKey("air_date")) {
+            var dateStr = data.get("air_date");
+            if (dateStr != null)
+                try {
+                    var sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+                    Date parsedDate = sdf.parse(dateStr);
+                    info.air_date = parsedDate;
+                } catch (java.text.ParseException e) {
+                    e.printStackTrace();
+                }
+        }
         if (data.containsKey("duration"))
             info.duration = Integer.parseInt(data.get("duration"));
         if (data.containsKey("title"))
@@ -147,9 +158,17 @@ public class TableToInfo {
         if (data.containsKey("ANI_ID"))
             info.ANI_ID = Integer.parseInt(data.get("ANI_ID"));
         if (data.containsKey("air_datetime"))
-            info.air_datetime = OffsetDateTime.parse(data.get("air_datetime"));
+        // info.air_datetime = OffsetDateTime.parse(data.get("air_datetime"));
+        // 2025-12-19T23:30:39.590966
+        {
+            var datetimeStr = data.get("air_datetime");
+            if (datetimeStr != null) {
+                var dateTime = LocalDateTime.parse(datetimeStr);
+                info.air_datetime = dateTime.atOffset(OffsetDateTime.now().getOffset());
+            }
+        }
         if (data.containsKey("size"))
-            info.size = Integer.parseInt(data.get("size"));
+            info.size = Long.parseLong(data.get("size"));
         if (data.containsKey("url_page"))
             info.url_page = data.get("url_page");
         if (data.containsKey("title"))

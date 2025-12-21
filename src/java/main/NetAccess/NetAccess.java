@@ -46,7 +46,7 @@ public class NetAccess {
         var reader = new RssReader(client);
 
         // 不同的订阅源选择不同方法获取
-        if (rss_url.startsWith("https://mikanani.me"))
+        if (rss_url.startsWith("https://mikanani.me") || rss_url.startsWith("https://mikan.tangbai.cc"))
             torrent_data = parseMikanRSS(reader, rss_url);
         else if (rss_url.startsWith("https://nyaa"))
             torrent_data = parseNyaaRSS(reader, rss_url);
@@ -56,6 +56,17 @@ public class NetAccess {
             throw new IOException("不支持的RSS源");
         else
             return torrent_data;
+    }
+
+    public static List<Map<String, String>> FetchTorrentInfo(String rss_url, int anime_id) throws IOException {
+        List<Map<String, String>> torrent_data = FetchTorrentInfo(rss_url);
+
+        // 为每个 torrent 条目添加 ANI_ID 字段
+        for (var tor : torrent_data) {
+            tor.put("ANI_ID", String.valueOf(anime_id));
+        }
+
+        return torrent_data;
     }
 
     private static JSONObject GetInfo(QueryType type, int anime_id) throws URISyntaxException, IOException {

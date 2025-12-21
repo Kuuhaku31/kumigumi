@@ -29,7 +29,7 @@ public class InfoEpiFetch extends InfoEpi {
                 ", duration=" + duration +
                 ", title='" + title + '\'' +
                 ", title_cn='" + title_cn + '\'' +
-                ", description='" + description + '\'' +
+                ", description='" + description.replace("\r\n", "\\n") + '\'' +
                 '}';
     }
 }

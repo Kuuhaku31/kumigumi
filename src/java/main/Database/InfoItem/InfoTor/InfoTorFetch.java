@@ -6,7 +6,7 @@ public class InfoTorFetch extends InfoTor {
 
     public Integer ANI_ID;
     public OffsetDateTime air_datetime;
-    public Integer size;
+    public Long size;
     public String url_page;
     public String title;
     public String subtitle_group;

@@ -50,7 +50,7 @@ public class TestInfo {
 
         infoTorFetch.ANI_ID = TEST_ANI_ID;
         infoTorFetch.air_datetime = java.time.OffsetDateTime.now();
-        infoTorFetch.size = 1500;
+        infoTorFetch.size = 1500L;
         infoTorFetch.url_page = "https://example.com/torpage";
         infoTorFetch.title = "Example Torrent";
         infoTorFetch.subtitle_group = "Example Group";
