@@ -4,6 +4,42 @@
   "configurations": [
     {
       "type": "java",
+      "name": "TestMain",
+      "request": "launch",
+      "mainClass": "Def.TestMain",
+      "projectName": "kumigumi",
+      "vmArgs": ["--enable-native-access=ALL-UNNAMED"]
+    },
+    {
+      "type": "java",
+      "name": "TestFetchTask",
+      "request": "launch",
+      "mainClass": "Task.TestFetchTask",
+      "projectName": "kumigumi"
+    },
+    {
+      "type": "java",
+      "name": "TestNetAccess",
+      "request": "launch",
+      "mainClass": "net.TestNetAccess",
+      "projectName": "kumigumi"
+    },
+    {
+      "type": "java",
+      "name": "TestTableToInfo",
+      "request": "launch",
+      "mainClass": "Def.TestTableToInfo",
+      "projectName": "kumigumi"
+    },
+    {
+      "type": "java",
+      "name": "TestExcel",
+      "request": "launch",
+      "mainClass": "Excel.TestExcel",
+      "projectName": "kumigumi"
+    },
+    {
+      "type": "java",
       "name": "TestDB",
       "request": "launch",
       "mainClass": "db.TestDB",

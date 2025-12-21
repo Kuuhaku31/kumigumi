@@ -1,9 +1,12 @@
 package Database.InfoItem.InfoEpi;
 
 import java.util.Date;
+
+import Database.InfoItem.UpdateItem;
+
 import static util.Util.getDateString;
 
-public class InfoEpiFetch extends InfoEpi {
+public class InfoEpiFetch extends InfoEpi implements UpdateItem {
 
     public Integer ep;
     public Float sort;
@@ -13,22 +16,21 @@ public class InfoEpiFetch extends InfoEpi {
     public String title_cn;
     public String description;
 
-    public InfoEpiFetch(Integer ANI_ID, Integer EPI_ID) {
-        super(ANI_ID, EPI_ID);
+    public InfoEpiFetch(Integer EPI_ID) {
+        super(EPI_ID);
     }
 
     @Override
     public String toString() {
         return "InfoEpiFetch{" +
-                "ANI_ID=" + ANI_ID +
-                ", EPI_ID=" + EPI_ID +
+                "EPI_ID=" + EPI_ID +
                 ", ep=" + ep +
                 ", sort=" + sort +
                 ", air_date=" + getDateString(air_date) +
                 ", duration=" + duration +
                 ", title='" + title + '\'' +
                 ", title_cn='" + title_cn + '\'' +
-                ", description='" + description + '\'' +
+                ", description='" + description.replace("\r\n", "\\n") + '\'' +
                 '}';
     }
 }

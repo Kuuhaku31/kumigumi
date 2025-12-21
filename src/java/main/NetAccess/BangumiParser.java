@@ -68,7 +68,7 @@ class BangumiParser {
         // 解析集数
         var ep_str = episode_info_json.getNumber("ep").toString();
         var sort = episode_info_json.getNumber("sort").toString();
-        var index = ep_str.equals("0") ? "SP: " + sort : sort;
+        // var index = ep_str.equals("0") ? "SP: " + sort : sort;
 
         // 解析标题
         var title = episode_info_json.getString("name");
@@ -88,7 +88,7 @@ class BangumiParser {
         res.put("sort", sort);
         res.put("air_date", air_date);
         res.put("duration", duration);
-        res.put("ep", index);
+        res.put("ep", ep_str);
         res.put("title", title);
         res.put("title_cn", title_cn);
         res.put("description", description);

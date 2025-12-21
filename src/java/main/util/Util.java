@@ -6,8 +6,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
@@ -21,10 +20,11 @@ public class Util {
     }
 
     /** 以 yyyy-MM-ddTHH:mm:ssXXX 格式显示 datetime */
-    public static String getDateString(LocalDateTime datetime) {
-        var fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
-        var viewStr = (datetime == null) ? null : datetime.atZone(ZoneId.systemDefault()).format(fmt);
-        return viewStr;
+    public static String getDateString(OffsetDateTime datetime) {
+        if (datetime == null)
+            return null;
+        var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
+        return datetime.format(formatter);
     }
 
     public static void printMapList(List<Map<String, String>> list) {

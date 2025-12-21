@@ -2,13 +2,16 @@ package Database.InfoItem.InfoTor;
 
 import Database.InfoItem.InfoItem;
 
-public abstract class InfoTor extends InfoItem {
+public class InfoTor extends InfoItem {
 
     public final String TOR_URL;
-    public final Integer ANI_ID;
 
-    InfoTor(Integer ANI_ID, String TOR_URL) {
-        this.ANI_ID = ANI_ID;
+    public InfoTor(String TOR_URL) {
         this.TOR_URL = TOR_URL;
+    }
+
+    @Override
+    public String toString() {
+        return "InfoTor{" + "TOR_URL='" + TOR_URL + '\'' + '}';
     }
 }

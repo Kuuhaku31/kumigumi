@@ -1,9 +1,12 @@
 package Database.InfoItem.InfoAni;
 
 import java.util.Date;
+
+import Database.InfoItem.UpdateItem;
+
 import static util.Util.getDateString;
 
-public class InfoAniFetch extends InfoAni {
+public class InfoAniFetch extends InfoAni implements UpdateItem {
 
     public Date air_date;
     public String title;
@@ -26,7 +29,7 @@ public class InfoAniFetch extends InfoAni {
                 ", title='" + title + '\'' +
                 ", title_cn='" + title_cn + '\'' +
                 ", aliases='" + aliases + '\'' +
-                ", description='" + description + '\'' +
+                ", description='" + description.replace("\r\n", "\\n") + '\'' +
                 ", episode_count=" + episode_count +
                 ", url_official_site='" + url_official_site + '\'' +
                 ", url_cover='" + url_cover + '\'' +
