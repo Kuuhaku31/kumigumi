@@ -1,11 +1,8 @@
 package Def;
 
-import Database.InfoItem.InfoAni.InfoAniFetch;
-import Database.InfoItem.InfoAni.InfoAniStore;
-import Database.InfoItem.InfoEpi.InfoEpiFetch;
-import Database.InfoItem.InfoEpi.InfoEpiStore;
-import Database.InfoItem.InfoTor.InfoTorFetch;
-import Database.InfoItem.InfoTor.InfoTorStore;
+import Database.InfoItem.InfoAni.*;
+import Database.InfoItem.InfoEpi.*;
+import Database.InfoItem.InfoTor.*;
 
 public class TestInfo {
 
@@ -13,12 +10,17 @@ public class TestInfo {
     public static final Integer TEST_EPI_ID = 7776;
     static final String TEST_TOR_URL = "https://example.com/testtor.torrent";
 
-    public static InfoAniFetch infoAniFetch = new InfoAniFetch(TEST_ANI_ID);
-    public static InfoAniStore infoAniStore = new InfoAniStore(TEST_ANI_ID);
-    public static InfoEpiFetch infoEpiFetch = new InfoEpiFetch(TEST_EPI_ID);
-    public static InfoEpiStore infoEpiStore = new InfoEpiStore(TEST_EPI_ID);
-    public static InfoTorFetch infoTorFetch = new InfoTorFetch(TEST_TOR_URL);
-    public static InfoTorStore infoTorStore = new InfoTorStore(TEST_TOR_URL);
+    public static final InfoAniUpsert infoAniUpsert = new InfoAniUpsert(TEST_ANI_ID);
+    public static final InfoAniFetch infoAniFetch = new InfoAniFetch(TEST_ANI_ID);
+    public static final InfoAniStore infoAniStore = new InfoAniStore(TEST_ANI_ID);
+
+    public static final InfoEpiUpsert infoEpiUpsert = new InfoEpiUpsert(TEST_EPI_ID, TEST_ANI_ID);
+    public static final InfoEpiFetch infoEpiFetch = new InfoEpiFetch(TEST_EPI_ID);
+    public static final InfoEpiStore infoEpiStore = new InfoEpiStore(TEST_EPI_ID);
+
+    public static final InfoTorUpsert infoTorUpsert = new InfoTorUpsert(TEST_TOR_URL, TEST_ANI_ID);
+    public static final InfoTorFetch infoTorFetch = new InfoTorFetch(TEST_TOR_URL);
+    public static final InfoTorStore infoTorStore = new InfoTorStore(TEST_TOR_URL);
 
     static {
         infoAniFetch.air_date = new java.util.Date();
@@ -33,7 +35,6 @@ public class TestInfo {
         infoAniStore.rating_after = 9;
         infoAniStore.remark = "Great anime!";
 
-        infoEpiFetch.ANI_ID = TEST_ANI_ID;
         infoEpiFetch.ep = 1;
         infoEpiFetch.sort = 1.2f;
         infoEpiFetch.air_date = new java.util.Date();
@@ -48,7 +49,6 @@ public class TestInfo {
         infoEpiStore.status_view = "Watched";
         infoEpiStore.remark = "Awesome episode!";
 
-        infoTorFetch.ANI_ID = TEST_ANI_ID;
         infoTorFetch.air_datetime = java.time.OffsetDateTime.now();
         infoTorFetch.size = 1500L;
         infoTorFetch.url_page = "https://example.com/torpage";
@@ -61,10 +61,19 @@ public class TestInfo {
     }
 
     public static void main(String[] args) {
+
+        System.out.println("=== Ani ===");
+        System.out.println(infoAniUpsert);
         System.out.println(infoAniFetch);
         System.out.println(infoAniStore);
+
+        System.out.println("=== Epi ===");
+        System.out.println(infoEpiUpsert);
         System.out.println(infoEpiFetch);
         System.out.println(infoEpiStore);
+
+        System.out.println("=== Tor ===");
+        System.out.println(infoTorUpsert);
         System.out.println(infoTorFetch);
         System.out.println(infoTorStore);
     }

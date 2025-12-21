@@ -29,9 +29,9 @@ public class ExcelReader {
     private CellPosition cursor = new CellPosition(); // 光标位置
     private Map<String, String> variables = new HashMap<>(); // 定义的变量
     private List<List<String>> commands = new ArrayList<>(); // 保存读取的数据
-    List<BlockData> blockDataList = new ArrayList<>(); // 保存块信息
+    public List<BlockData> blockDataList = new ArrayList<>(); // 保存块信息
 
-    ExcelReader(String filePath) throws IOException {
+    public ExcelReader(String filePath) throws IOException {
         // 创建临时文件（系统自动放在临时目录）
         var temp_file = Files.createTempFile("Temp_", ".txt");
         System.out.println("ExcelReader: Copying file to temp file: " + temp_file.toAbsolutePath().toString());
@@ -68,7 +68,7 @@ public class ExcelReader {
     }
 
     /** 解析命令 */
-    void runCommands() {
+    public void runCommands() {
         var it = commands.iterator();
         while (it.hasNext()) {
             var row = it.next();

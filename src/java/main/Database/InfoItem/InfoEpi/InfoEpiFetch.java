@@ -5,7 +5,6 @@ import static util.Util.getDateString;
 
 public class InfoEpiFetch extends InfoEpi {
 
-    public Integer ANI_ID;
     public Integer ep;
     public Float sort;
     public Date air_date;
@@ -22,7 +21,6 @@ public class InfoEpiFetch extends InfoEpi {
     public String toString() {
         return "InfoEpiFetch{" +
                 "EPI_ID=" + EPI_ID +
-                ", ANI_ID=" + ANI_ID +
                 ", ep=" + ep +
                 ", sort=" + sort +
                 ", air_date=" + getDateString(air_date) +

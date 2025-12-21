@@ -30,9 +30,17 @@ public class TableToInfo {
             if (urlRSSIndex != -1)
                 info.url_rss = row[urlRSSIndex];
             if (ratingBeforeIndex != -1)
-                info.rating_before = Integer.parseInt(row[ratingBeforeIndex]);
+                try {
+                    info.rating_before = Integer.parseInt(row[ratingBeforeIndex]);
+                } catch (NumberFormatException e) {
+                    info.rating_before = null;
+                }
             if (ratingAfterIndex != -1)
-                info.rating_after = Integer.parseInt(row[ratingAfterIndex]);
+                try {
+                    info.rating_after = Integer.parseInt(row[ratingAfterIndex]);
+                } catch (NumberFormatException e) {
+                    info.rating_after = null;
+                }
             if (remarkIndex != -1)
                 info.remark = row[remarkIndex];
             infoList.add(info);
@@ -129,8 +137,6 @@ public class TableToInfo {
             return null;
         var info = new InfoEpiFetch(Integer.parseInt(data.get("EPI_ID")));
 
-        if (data.containsKey("ANI_ID"))
-            info.ANI_ID = Integer.parseInt(data.get("ANI_ID"));
         if (data.containsKey("ep"))
             info.ep = Integer.parseInt(data.get("ep"));
         if (data.containsKey("sort"))
@@ -164,12 +170,7 @@ public class TableToInfo {
             return null;
         var info = new InfoTorFetch(data.get("TOR_URL"));
 
-        if (data.containsKey("ANI_ID"))
-            info.ANI_ID = Integer.parseInt(data.get("ANI_ID"));
-        if (data.containsKey("air_datetime"))
-        // info.air_datetime = OffsetDateTime.parse(data.get("air_datetime"));
-        // 2025-12-19T23:30:39.590966
-        {
+        if (data.containsKey("air_datetime")) {
             var datetimeStr = data.get("air_datetime");
             if (datetimeStr != null) {
                 var dateTime = LocalDateTime.parse(datetimeStr);

@@ -3,7 +3,7 @@ package Database.InfoItem.InfoAni;
 import Database.InfoItem.InfoItem;
 
 public class InfoAni extends InfoItem {
-    public Integer ANI_ID;
+    public final Integer ANI_ID;
 
     public InfoAni(Integer ANI_ID) {
         this.ANI_ID = ANI_ID;
@@ -11,8 +11,6 @@ public class InfoAni extends InfoItem {
 
     @Override
     public String toString() {
-        return "InfoAni{" +
-                "ANI_ID=" + ANI_ID +
-                '}';
+        return "InfoAni{" + "ANI_ID=" + ANI_ID + '}';
     }
 }

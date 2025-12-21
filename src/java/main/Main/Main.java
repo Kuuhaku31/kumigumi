@@ -12,9 +12,16 @@ import java.util.List;
 class Main {
 
     Main() {
-        excel_path = Path.of(System.getenv("KG_EXCEL_PATH"));
-        database_path = Path.of(System.getenv("KG_DATABASE_PATH"));
-        dt_path = Path.of(System.getenv("KG_DT_PATH"));
+        var excelPathStr = System.getenv("KG_EXCEL_PATH");
+        var databasePathStr = System.getenv("KG_DATABASE_PATH");
+        var dtPathStr = System.getenv("KG_DT_PATH");
+
+        if (excelPathStr != null)
+            excel_path = Path.of(excelPathStr);
+        if (databasePathStr != null)
+            database_path = Path.of(databasePathStr);
+        if (dtPathStr != null)
+            dt_path = Path.of(dtPathStr);
     }
 
     private Path excel_path; // Excel 文件路径
@@ -22,12 +29,12 @@ class Main {
     private Path dt_path; // 下载路径
     private String mode = null; // 运行模式
 
-    private final String help_msg = "Usage: kumigumi fetch -a<anime_id> [-r<rss_link>] [...]";
+    private final String help_msg = "Usage: kumigumi -ex<excel_path> -db<database_path> -dt<dt_path> [mode]";
 
     // 解析命令行参数
     private void parseArgs(String[] args) {
         if (args.length <= 0) {
-            System.out.println(help_msg);
+            mode = "help";
             return;
         }
 
@@ -129,9 +136,17 @@ class Main {
     void main(String[] args) {
         System.out.println("Hello, kumigumi!?");
 
-        System.setProperty("java.net.useSystemProxies", "true"); // 设置全局代理
-
         parseArgs(args);
+
+        if (excel_path == null || database_path == null || dt_path == null) {
+            System.err.println("请设置必要的路径环境变量或命令行参数!");
+            System.out.println(help_msg);
+            return;
+        }
+        System.out.println("Excel path: " + excel_path.toAbsolutePath());
+        System.out.println("Database path: " + database_path.toAbsolutePath());
+        System.out.println("DT path: " + dt_path.toAbsolutePath());
+        System.setProperty("java.net.useSystemProxies", "true"); // 设置全局代理
 
         if (mode == null)
             System.out.println(help_msg);

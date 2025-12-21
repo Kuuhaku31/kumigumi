@@ -4,6 +4,13 @@
   "configurations": [
     {
       "type": "java",
+      "name": "TestMain",
+      "request": "launch",
+      "mainClass": "Def.TestMain",
+      "projectName": "kumigumi"
+    },
+    {
+      "type": "java",
       "name": "TestFetchTask",
       "request": "launch",
       "mainClass": "Task.TestFetchTask",

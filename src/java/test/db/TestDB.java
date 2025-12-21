@@ -20,9 +20,9 @@ public class TestDB {
         TestInfo.main(null);
         try (var db = new Database.SQLiteAccess(dbURL)) {
             System.out.println("Database opened.");
-            db.Upsert(TestInfo.infoAniFetch);
-            db.Upsert(TestInfo.infoEpiFetch);
-            db.Upsert(TestInfo.infoTorFetch);
+            db.Update(TestInfo.infoAniFetch);
+            db.Update(TestInfo.infoEpiFetch);
+            db.Update(TestInfo.infoTorFetch);
 
             db.Update(TestInfo.infoAniStore);
             db.Update(TestInfo.infoEpiStore);

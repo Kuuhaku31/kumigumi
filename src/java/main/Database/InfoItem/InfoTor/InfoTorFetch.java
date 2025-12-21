@@ -4,7 +4,6 @@ import java.time.OffsetDateTime;
 
 public class InfoTorFetch extends InfoTor {
 
-    public Integer ANI_ID;
     public OffsetDateTime air_datetime;
     public Long size;
     public String url_page;
@@ -20,7 +19,6 @@ public class InfoTorFetch extends InfoTor {
     public String toString() {
         return "InfoTorFetch{" +
                 "TOR_URL='" + TOR_URL + '\'' +
-                ", ANI_ID=" + ANI_ID +
                 ", air_datetime=" + air_datetime +
                 ", size=" + size +
                 ", url_page='" + url_page + '\'' +
