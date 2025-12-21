@@ -2,7 +2,9 @@ package Database.InfoItem.InfoEpi;
 
 import java.time.OffsetDateTime;
 
-public class InfoEpiStore extends InfoEpi {
+import Database.InfoItem.UpdateItem;
+
+public class InfoEpiStore extends InfoEpi implements UpdateItem {
 
     public Integer rating;
     public OffsetDateTime view_datetime;

@@ -1,6 +1,8 @@
 package Database.InfoItem.InfoAni;
 
-public class InfoAniUpsert extends InfoAni {
+import Database.InfoItem.UpsertItem;
+
+public class InfoAniUpsert extends InfoAni implements UpsertItem {
 
     public InfoAniUpsert(Integer ANI_ID) {
         super(ANI_ID);

@@ -7,15 +7,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import Database.InfoItem.InfoAni.InfoAniFetch;
-import Database.InfoItem.InfoEpi.InfoEpiFetch;
-import Database.InfoItem.InfoTor.InfoTorFetch;
-import Database.InfoItem.InfoAni.InfoAniStore;
-import Database.InfoItem.InfoEpi.InfoEpiStore;
-import Database.InfoItem.InfoTor.InfoTorStore;
+import Database.InfoItem.InfoAni.*;
+import Database.InfoItem.InfoEpi.*;
+import Database.InfoItem.InfoTor.*;
 import util.TableData.TableData;
 
 public class TableToInfo {
+
     public static List<InfoAniStore> convertInfoAniStore(TableData tableData) {
         List<InfoAniStore> infoList = new ArrayList<>();
 
@@ -191,4 +189,50 @@ public class TableToInfo {
         return info;
     }
 
+    public static List<InfoAniUpsert> convertInfoAniUpsert(TableData tableData) {
+
+        var aniIdIndex = tableData.GetHeaderIndex("ANI_ID");
+        if (aniIdIndex == -1)
+            return null;
+
+        var rows = tableData.GetData();
+        var infoList = new ArrayList<InfoAniUpsert>();
+        for (var row : rows) {
+            var info = new InfoAniUpsert(Integer.parseInt(row[aniIdIndex]));
+            infoList.add(info);
+        }
+        return infoList;
+    }
+
+    public static List<InfoEpiUpsert> convertInfoEpiUpsert(TableData tableData) {
+
+        var epiIdIndex = tableData.GetHeaderIndex("EPI_ID");
+        var aniIdIndex = tableData.GetHeaderIndex("ANI_ID");
+        if (epiIdIndex == -1 || aniIdIndex == -1)
+            return null;
+
+        var rows = tableData.GetData();
+        var infoList = new ArrayList<InfoEpiUpsert>();
+        for (var row : rows) {
+            var info = new InfoEpiUpsert(Integer.parseInt(row[epiIdIndex]), Integer.parseInt(row[aniIdIndex]));
+            infoList.add(info);
+        }
+        return infoList;
+    }
+
+    public static List<InfoTorUpsert> convertInfoTorUpsert(TableData tableData) {
+
+        var torUrlIndex = tableData.GetHeaderIndex("TOR_URL");
+        var aniIdIndex = tableData.GetHeaderIndex("ANI_ID");
+        if (torUrlIndex == -1 || aniIdIndex == -1)
+            return null;
+
+        var rows = tableData.GetData();
+        var infoList = new ArrayList<InfoTorUpsert>();
+        for (var row : rows) {
+            var info = new InfoTorUpsert(row[torUrlIndex], Integer.parseInt(row[aniIdIndex]));
+            infoList.add(info);
+        }
+        return infoList;
+    }
 }

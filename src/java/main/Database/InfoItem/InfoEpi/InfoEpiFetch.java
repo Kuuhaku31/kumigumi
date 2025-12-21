@@ -1,9 +1,12 @@
 package Database.InfoItem.InfoEpi;
 
 import java.util.Date;
+
+import Database.InfoItem.UpdateItem;
+
 import static util.Util.getDateString;
 
-public class InfoEpiFetch extends InfoEpi {
+public class InfoEpiFetch extends InfoEpi implements UpdateItem {
 
     public Integer ep;
     public Float sort;

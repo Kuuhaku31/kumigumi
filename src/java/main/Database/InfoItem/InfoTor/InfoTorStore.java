@@ -1,6 +1,8 @@
 package Database.InfoItem.InfoTor;
 
-public class InfoTorStore extends InfoTor {
+import Database.InfoItem.UpdateItem;
+
+public class InfoTorStore extends InfoTor implements UpdateItem {
 
     public String status_download;
     public String remark;

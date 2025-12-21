@@ -7,7 +7,8 @@
       "name": "TestMain",
       "request": "launch",
       "mainClass": "Def.TestMain",
-      "projectName": "kumigumi"
+      "projectName": "kumigumi",
+      "vmArgs": ["--enable-native-access=ALL-UNNAMED"]
     },
     {
       "type": "java",

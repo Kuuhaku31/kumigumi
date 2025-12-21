@@ -1,6 +1,8 @@
 package Database.InfoItem.InfoEpi;
 
-public class InfoEpiUpsert extends InfoEpi {
+import Database.InfoItem.UpsertItem;
+
+public class InfoEpiUpsert extends InfoEpi implements UpsertItem {
 
     public final Integer ANI_ID;
 

@@ -1,6 +1,8 @@
 package Database.InfoItem.InfoAni;
 
-public class InfoAniStore extends InfoAni {
+import Database.InfoItem.UpdateItem;
+
+public class InfoAniStore extends InfoAni implements UpdateItem {
 
     public String url_rss;
     public Integer rating_before;

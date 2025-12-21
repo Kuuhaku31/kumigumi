@@ -2,7 +2,9 @@ package Database.InfoItem.InfoTor;
 
 import java.time.OffsetDateTime;
 
-public class InfoTorFetch extends InfoTor {
+import Database.InfoItem.UpdateItem;
+
+public class InfoTorFetch extends InfoTor implements UpdateItem {
 
     public OffsetDateTime air_datetime;
     public Long size;

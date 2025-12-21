@@ -1,6 +1,8 @@
 package Database.InfoItem.InfoTor;
 
-public class InfoTorUpsert extends InfoTor {
+import Database.InfoItem.UpsertItem;
+
+public class InfoTorUpsert extends InfoTor implements UpsertItem {
 
     public final Integer ANI_ID;
 

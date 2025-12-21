@@ -1,9 +1,12 @@
 package Database.InfoItem.InfoAni;
 
 import java.util.Date;
+
+import Database.InfoItem.UpdateItem;
+
 import static util.Util.getDateString;
 
-public class InfoAniFetch extends InfoAni {
+public class InfoAniFetch extends InfoAni implements UpdateItem {
 
     public Date air_date;
     public String title;
