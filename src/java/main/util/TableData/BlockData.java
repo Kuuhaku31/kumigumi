@@ -14,6 +14,8 @@ public class BlockData extends TableData {
         var title = "===" + this.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(this))
                 + "===";
 
-        return title + "\n" + "block name: " + block_name + "\n" + GetDataStr();
+        return title + "\n" + "block name: " + block_name +
+                "\n" + "Count: " + GetData().size() +
+                "\n" + GetDataStr();
     }
 }

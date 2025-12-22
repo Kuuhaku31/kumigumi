@@ -26,8 +26,8 @@ public class TestMain {
 
     public static void main(String[] args) throws IOException, SQLException {
         System.out.println("TestMain");
-        // test0();
-        test1();
+        test0();
+        // test1();
     }
 
     static void test1() throws IOException, SQLException {
@@ -83,7 +83,7 @@ public class TestMain {
         excelReader.runCommands();
 
         // 将 blockDataList 保存到文件
-        try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_FILE_0))) {
+        try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_EXCEL_BLOCKS))) {
             for (var blockData : excelReader.blockDataList) {
                 writer.write(blockData.toString());
                 writer.write("\n\n");
@@ -136,21 +136,22 @@ public class TestMain {
             }
         }
 
-        runFetchTasks();
+        // runFetchTasks();
 
-        try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_FILE_2))) {
-            writer.write("\nFetched Info Items:\n");
-            for (var infoItem : taskBuffer) {
-                writer.write(infoItem.toString());
-                writer.write("\n");
-            }
-        }
+        // try (var writer =
+        // Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_FILE_2))) {
+        // writer.write("\nFetched Info Items:\n");
+        // for (var infoItem : taskBuffer) {
+        // writer.write(infoItem.toString());
+        // writer.write("\n");
+        // }
+        // }
 
         // 保存到数据库
         try (var db = new SQLiteAccess(TestMetaData.DATABASE_PATH)) {
             db.Upsert(upsertList);
             db.Update(updateList);
-            db.Update(taskBuffer);
+            // db.Update(taskBuffer);
         }
     }
 

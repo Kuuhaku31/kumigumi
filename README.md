@@ -167,3 +167,9 @@ bgm 提供两个字段标记各个话的索引：`ep` 和 `sort`
 `InfoTorStore`
 
 ---
+
+```
+=VALUE(TEXTAFTER([@[episode_bangumi_url]], "/ep/"))
+
+找出“只在 A 中、不在 B 中”的数据（A  B）
+```
