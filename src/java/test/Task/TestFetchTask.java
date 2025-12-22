@@ -12,18 +12,19 @@ public class TestFetchTask {
     public static void main(String[] args) {
         System.out.println("TestFetchTask");
 
-        var meta = MetaData.TestMetaData.meta_永远的黄昏;
+        // var meta = MetaData.TestMetaData.meta_永远的黄昏;
         // var meta = MetaData.TestMetaData.meta_笑容职场;
         // var meta = MetaData.TestMetaData.meta_千岁同学;
 
-        var fetchTaskAni = new FetchTask.FetchTaskAni(buffer, meta.ANI_ID);
-        var fetchTaskEpi = new FetchTask.FetchTaskEpi(buffer, meta.ANI_ID);
-        var fetchTaskTor = new FetchTask.FetchTaskTor(buffer, meta.url_rss, meta.ANI_ID);
-        fetchTaskAni.run();
-        fetchTaskEpi.run();
-        fetchTaskTor.run();
+        // var fetchTaskAni = new FetchTask.FetchTaskAni(buffer, meta.ANI_ID);
+        // var fetchTaskEpi = new FetchTask.FetchTaskEpi(buffer, meta.ANI_ID);
+        // var fetchTaskTor = new FetchTask.FetchTaskTor(buffer, meta.url_rss,
+        // meta.ANI_ID);
+        // fetchTaskAni.run();
+        // fetchTaskEpi.run();
+        // fetchTaskTor.run();
 
-        printBufferToFile();
+        // printBufferToFile();
     }
 
     static void printBufferToFile() {

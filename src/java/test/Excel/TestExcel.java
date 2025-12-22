@@ -2,7 +2,7 @@ package Excel;
 
 import java.io.IOException;
 
-import Main.TableToInfo;
+import Main.ItemTranslation;
 
 public class TestExcel {
 
@@ -16,7 +16,7 @@ public class TestExcel {
         reader.runCommands();
         reader.getBlocks();
 
-        var res = TableToInfo.convertInfoTorStore(reader.blockDataList.get(0));
+        var res = ItemTranslation.convertInfoTorStore(reader.blockDataList.get(0));
         for (var info : res) {
             System.out.println(info);
         }

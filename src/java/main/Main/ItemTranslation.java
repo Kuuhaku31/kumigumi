@@ -12,7 +12,37 @@ import Database.InfoItem.InfoEpi.*;
 import Database.InfoItem.InfoTor.*;
 import util.TableData.TableData;
 
-public class TableToInfo {
+public class ItemTranslation {
+
+    public static InfoAniUpsert transniAniUpsert(Map<String, String> data) {
+        if (data == null || data.isEmpty())
+            return null;
+
+        if (!data.containsKey("ANI_ID")) // 保证 ANI_ID 存在
+            return null;
+
+        return new InfoAniUpsert(Integer.parseInt(data.get("ANI_ID")));
+    }
+
+    public static InfoEpiUpsert transieEpiUpsert(Map<String, String> data) {
+        if (data == null || data.isEmpty())
+            return null;
+
+        if (!data.containsKey("EPI_ID") || !data.containsKey("ANI_ID")) // 保证 EPI_ID 和 ANI_ID 存在
+            return null;
+
+        return new InfoEpiUpsert(Integer.parseInt(data.get("EPI_ID")), Integer.parseInt(data.get("ANI_ID")));
+    }
+
+    public static InfoTorUpsert trantoTorUpsert(Map<String, String> data) {
+        if (data == null || data.isEmpty())
+            return null;
+
+        if (!data.containsKey("TOR_URL") || !data.containsKey("ANI_ID")) // 保证 TOR_URL 和 ANI_ID 存在
+            return null;
+
+        return new InfoTorUpsert(data.get("TOR_URL"), Integer.parseInt(data.get("ANI_ID")));
+    }
 
     public static List<InfoAniStore> convertInfoAniStore(TableData tableData) {
         List<InfoAniStore> infoList = new ArrayList<>();

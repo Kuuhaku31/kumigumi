@@ -11,9 +11,9 @@ import Database.InfoItem.InfoTor.InfoTorFetch;
 import static NetAccess.NetAccess.*;
 import static util.Util.printMap;
 import static util.Util.printMapList;
-import static Main.TableToInfo.convertInfoAniFetch;
-import static Main.TableToInfo.convertInfoEpiFetch;
-import static Main.TableToInfo.convertInfoTorFetch;
+import static Main.ItemTranslation.convertInfoAniFetch;
+import static Main.ItemTranslation.convertInfoEpiFetch;
+import static Main.ItemTranslation.convertInfoTorFetch;
 
 import MetaData.TestMetaData;
 

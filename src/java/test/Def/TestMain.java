@@ -6,32 +6,26 @@ import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import Database.SQLiteAccess;
 import Database.InfoItem.UpdateItem;
 import Database.InfoItem.UpsertItem;
-import Database.InfoItem.InfoAni.*;
-import Database.InfoItem.InfoEpi.*;
-import Database.InfoItem.InfoTor.*;
 import Excel.ExcelReader;
 import FetchTask.*;
-import Main.TableToInfo;
+import Main.ItemTranslation;
 import MetaData.TestMetaData;
+import util.TableData.BlockData;
 
 public class TestMain {
 
-    static List<UpsertItem> upsertList = new ArrayList<>();
-    static List<UpdateItem> updateList = new ArrayList<>();
-
-    static List<UpdateItem> upsertTaskBuffer = new ArrayList<>();
-    static List<FetchTask> fetchTaskList = new ArrayList<>();
-
-    public static void main(String[] args) throws IOException, SQLException {
+    public void main(String[] args) throws IOException, SQLException {
         System.out.println("TestMain");
         // test0();
-        // test1();
-        test2();
+        test1();
+        // test2();
     }
 
     // 处理 2026-01 表格
@@ -39,84 +33,48 @@ public class TestMain {
         System.out.println("test2");
 
         // 读取表格
-        var excelReader = new ExcelReader(TestMetaData.EXCEL_FILE_KG_N_PATH);
-
-        // 将 excelReader.commands 保存到文件
-        try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_EXCEL_CMDS))) {
-            writer.write(excelReader.getCommands());
-        }
-
-        // 运行命令
-        excelReader.runCommands();
-
-        // 将 blockDataList 保存到文件
-        try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_EXCEL_BLOCKS))) {
-            writer.write(excelReader.getBlocks());
-        }
+        var excelReader = readExcel(TestMetaData.EXCEL_FILE_KG_N_PATH);
 
         // 处理各个 blockData
+        List<UpsertItem> upsertBuffer = new ArrayList<>(); // 获取的需要插入或者更新的信息
+        List<UpdateItem> fetchBuffer = new ArrayList<>(); // 获取的需要更新的信息
+        List<FetchTask> taskList = new ArrayList<>(); // 任务列表
         for (var blockData : excelReader.blockDataList) {
-            if (blockData.block_name.equals("ani_2601")) {
-                // 创建任务
-                var ani_id_Index = blockData.GetHeaderIndex("ANI_ID");
-                var url_rss_Index = blockData.GetHeaderIndex("url_rss");
-                if (ani_id_Index != -1 && url_rss_Index != -1) {
-
-                    for (var row : blockData.GetData()) {
-                        var ani_id = Integer.parseInt(row[ani_id_Index]);
-                        var url_rss = row[url_rss_Index];
-
-                        // 创建任务
-                        fetchTaskList.add(new FetchTaskAni(upsertTaskBuffer, ani_id));
-                        fetchTaskList.add(new FetchTaskEpi(upsertTaskBuffer, ani_id));
-                        if (url_rss != null && !url_rss.isBlank())
-                            fetchTaskList.add(new FetchTaskTor(upsertTaskBuffer, url_rss, ani_id));
-
-                    }
-                }
-            } else {
+            if (blockData.block_name.equals("ani_2601"))
+                taskList.addAll(buildFetchTasks(upsertBuffer, fetchBuffer, blockData));
+            else
                 System.out.println("Unknown block name: " + blockData.block_name);
-            }
         }
 
         // 批量运行获取任务
-        runFetchTasks();
+        runFetchTasks(taskList);
 
         // 输出任务获取的内容
         try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_UPSERT_TASK_ITEM))) {
+            writer.write("Upserted Info Items:\n");
+            for (var infoItem : upsertBuffer) {
+                writer.write(infoItem.toString());
+                writer.write("\n");
+            }
+
             writer.write("\nFetched Info Items:\n");
-            for (var infoItem : upsertTaskBuffer) {
+            for (var infoItem : fetchBuffer) {
                 writer.write(infoItem.toString());
                 writer.write("\n");
             }
         }
 
-        // 提炼出 UpsertItem
-        for (var infoItem : upsertTaskBuffer) {
-            if (infoItem instanceof InfoAniFetch)
-                upsertList.add(new InfoAniUpsert(
-                        ((InfoAniFetch) infoItem).ANI_ID));
-            if (infoItem instanceof InfoEpiUpsert)
-                upsertList.add(new InfoEpiUpsert(
-                        ((InfoEpiUpsert) infoItem).EPI_ID,
-                        ((InfoEpiUpsert) infoItem).ANI_ID));
-            if (infoItem instanceof InfoTorUpsert)
-                upsertList.add(new InfoTorUpsert(
-                        ((InfoTorUpsert) infoItem).TOR_URL,
-                        ((InfoTorUpsert) infoItem).ANI_ID));
-
-        }
-
         // 插入数据库
         try (var db = new SQLiteAccess(TestMetaData.DATABASE_PATH)) {
-            db.Upsert(upsertList);
-            // db.Update(updateList);
-            db.Update(upsertTaskBuffer);
+            db.Upsert(upsertBuffer);
+            db.Update(fetchBuffer);
         }
     }
 
     static void test1() throws IOException, SQLException {
         System.out.println("test1");
+
+        List<UpdateItem> updateList = new ArrayList<>();
 
         // 读取表格
         var excelReader = new ExcelReader(TestMetaData.EXCEL_FILE_KG_PATH);
@@ -137,11 +95,11 @@ public class TestMain {
         // 处理各个 blockData
         for (var blockData : excelReader.blockDataList) {
             if (blockData.block_name.equals("ani_store_2510")) {
-                updateList.addAll(TableToInfo.convertInfoAniStore(blockData));
+                updateList.addAll(ItemTranslation.convertInfoAniStore(blockData));
             } else if (blockData.block_name.equals("epi_store_2510")) {
-                updateList.addAll(TableToInfo.convertInfoEpiStore(blockData));
+                updateList.addAll(ItemTranslation.convertInfoEpiStore(blockData));
             } else if (blockData.block_name.equals("tor_store_2510")) {
-                updateList.addAll(TableToInfo.convertInfoTorStore(blockData));
+                updateList.addAll(ItemTranslation.convertInfoTorStore(blockData));
             } else {
                 System.out.println("Unknown block name: " + blockData.block_name);
             }
@@ -164,6 +122,13 @@ public class TestMain {
     static void test0() throws IOException, SQLException {
         System.out.println("test0");
 
+        List<UpsertItem> upsertList = new ArrayList<>();
+        List<UpdateItem> updateList = new ArrayList<>();
+
+        List<UpsertItem> upsertBuffer = new ArrayList<>();
+        List<UpdateItem> fetchBuffer = new ArrayList<>();
+        List<FetchTask> fetchTaskList = new ArrayList<>();
+
         var excelReader = new ExcelReader(TestMetaData.EXCEL_FILE_PATH);
         excelReader.runCommands();
 
@@ -178,14 +143,14 @@ public class TestMain {
         // 处理各个 blockData
         for (var blockData : excelReader.blockDataList) {
             if (blockData.block_name.equals("ani_store")) {
-                upsertList.addAll(TableToInfo.convertInfoAniUpsert(blockData));
-                updateList.addAll(TableToInfo.convertInfoAniStore(blockData));
+                upsertList.addAll(ItemTranslation.convertInfoAniUpsert(blockData));
+                updateList.addAll(ItemTranslation.convertInfoAniStore(blockData));
             } else if (blockData.block_name.equals("epi_store")) {
-                upsertList.addAll(TableToInfo.convertInfoEpiUpsert(blockData));
-                updateList.addAll(TableToInfo.convertInfoEpiStore(blockData));
+                upsertList.addAll(ItemTranslation.convertInfoEpiUpsert(blockData));
+                updateList.addAll(ItemTranslation.convertInfoEpiStore(blockData));
             } else if (blockData.block_name.equals("tor_store")) {
-                upsertList.addAll(TableToInfo.convertInfoTorUpsert(blockData));
-                updateList.addAll(TableToInfo.convertInfoTorStore(blockData));
+                upsertList.addAll(ItemTranslation.convertInfoTorUpsert(blockData));
+                updateList.addAll(ItemTranslation.convertInfoTorStore(blockData));
             } else if (blockData.block_name.equals("ani_epi_fetch")) {
                 // 创建任务
                 var ani_id_Index = blockData.GetHeaderIndex("ANI_ID");
@@ -194,10 +159,10 @@ public class TestMain {
                     for (var row : blockData.GetData()) {
                         Integer ani_id = Integer.parseInt(row[ani_id_Index]);
                         String url_rss = row[url_rss_Index];
-                        fetchTaskList.add(new FetchTaskAni(upsertTaskBuffer, ani_id));
-                        fetchTaskList.add(new FetchTaskEpi(upsertTaskBuffer, ani_id));
+                        fetchTaskList.add(new FetchTaskAni(upsertBuffer, fetchBuffer, ani_id));
+                        fetchTaskList.add(new FetchTaskEpi(upsertBuffer, fetchBuffer, ani_id));
                         if (url_rss != null && !url_rss.isBlank())
-                            fetchTaskList.add(new FetchTaskTor(upsertTaskBuffer, url_rss, ani_id));
+                            fetchTaskList.add(new FetchTaskTor(upsertBuffer, fetchBuffer, url_rss, ani_id));
                     }
                 }
             } else {
@@ -221,11 +186,11 @@ public class TestMain {
             }
         }
 
-        runFetchTasks();
+        runFetchTasks(fetchTaskList);
 
         try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_FILE_2))) {
             writer.write("\nFetched Info Items:\n");
-            for (var infoItem : upsertTaskBuffer) {
+            for (var infoItem : fetchBuffer) {
                 writer.write(infoItem.toString());
                 writer.write("\n");
             }
@@ -235,57 +200,93 @@ public class TestMain {
         try (var db = new SQLiteAccess(TestMetaData.DATABASE_PATH)) {
             db.Upsert(upsertList);
             db.Update(updateList);
-            db.Update(upsertTaskBuffer);
+            db.Update(fetchBuffer);
         }
     }
 
+    static ExcelReader readExcel(String path) throws IOException {
+        // 读取表格
+        var excelReader = new ExcelReader(path);
+
+        // 将 excelReader.commands 保存到文件
+        try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_EXCEL_CMDS))) {
+            writer.write(excelReader.getCommands());
+        }
+
+        // 运行命令
+        excelReader.runCommands();
+
+        // 将 blockDataList 保存到文件
+        try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_EXCEL_BLOCKS))) {
+            writer.write(excelReader.getBlocks());
+        }
+
+        return excelReader;
+    }
+
+    static List<FetchTask> buildFetchTasks(
+            List<UpsertItem> UpsertBuffer,
+            List<UpdateItem> fetchBuffer,
+            BlockData blockData) {
+        if (blockData == null)
+            return null;
+
+        // 确保关键字段存在
+        var ani_id_index = blockData.GetHeaderIndex("ANI_ID");
+        var url_rss_index = blockData.GetHeaderIndex("url_rss");
+        if (ani_id_index == -1 || url_rss_index == -1)
+            return null;
+
+        // 创建任务
+        List<FetchTask> res = new ArrayList<>();
+        for (var row : blockData.GetData()) {
+            var ani_id = Integer.parseInt(row[ani_id_index]);
+            var url_rss = row[url_rss_index];
+
+            // 创建任务
+            res.add(new FetchTaskAni(UpsertBuffer, fetchBuffer, ani_id));
+            res.add(new FetchTaskEpi(UpsertBuffer, fetchBuffer, ani_id));
+            if (url_rss != null && !url_rss.isBlank())
+                res.add(new FetchTaskTor(UpsertBuffer, fetchBuffer, url_rss, ani_id));
+
+        }
+        return res;
+    }
+
     // 带进度条的多线程运行 FetchTask
-    static void runFetchTasks() {
+    static void runFetchTasks(List<FetchTask> taskList) throws IOException {
         System.out.println("Starting concurrent task execution...");
 
-        var MAX_THREADS = 10;
+        var MAX_THREADS = 32;
 
-        AtomicInteger doneCount = new AtomicInteger(0);
-        int totalTasks = fetchTaskList.size();
-        List<Thread> threads = new ArrayList<>();
-        for (var fetchTask : fetchTaskList) {
-            Thread thread = new Thread(() -> {
-                fetchTask.run();
-                int done = doneCount.incrementAndGet();
-                ShowProgress(done, totalTasks);
+        var task_count = taskList.size(); // 总数
+        var finished = new AtomicInteger(0); // 完成数
+        ShowProgress(0, task_count); // 更新进度条
+
+        // 并发执行任务
+        var pool = Executors.newFixedThreadPool(MAX_THREADS);
+        for (var task : taskList) {
+            pool.submit(() -> {
+                task.run();
+                var done = finished.incrementAndGet(); // 完成数加一
+                ShowProgress(done, task_count); // 更新进度条
             });
-            threads.add(thread);
-            thread.start();
+        }
+        pool.shutdown();
 
-            // 控制最大并发线程数
-            while (threads.size() >= MAX_THREADS) {
-                threads.removeIf(t -> !t.isAlive());
-                try {
-                    Thread.sleep(50);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
+        // 等待全部完成
+        var ok = false;
+        try {
+            ok = pool.awaitTermination(1, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            System.err.println(e.getMessage());
         }
 
-        // 等待所有线程完成
-        for (var thread : threads) {
-            try {
-                thread.join();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                System.err.println("Thread interrupted: " + e.getMessage());
-            }
-        }
-
-        // 等待所有剩余线程完成
-        for (var t : threads) {
-            try {
-                t.join();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
+        // 输出结果
+        if (ok)
+            System.out.println("并发任务完成");
+        else
+            System.err.println("并发任务出现异常");
 
         System.out.println("All tasks completed.");
     }
