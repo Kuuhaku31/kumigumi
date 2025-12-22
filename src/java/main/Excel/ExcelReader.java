@@ -9,13 +9,13 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.CellValue;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -100,28 +100,33 @@ public class ExcelReader {
         }
     }
 
-    void printCommands() {
-        System.out.println("#Data List:");
+    public String getCommands() {
+        var sb = new StringBuilder();
+        sb.append("#Data List:\n");
         for (var row : commands) {
-            System.out.print("\tRow: [");
+            sb.append("\tRow: [");
             for (var cell : row) {
-                System.out.print(cell + ", ");
+                sb.append(cell).append(", ");
             }
-            System.out.println("]");
+            sb.append("]\n");
         }
+        return sb.toString();
     }
 
-    void printVariables() {
-        // 打印定义的变量
-        System.out.println("#Defined Variables:");
+    public String getVariables() {
+        var sb = new StringBuilder();
+        sb.append("#Defined Variables:\n");
         for (var entry : variables.entrySet())
-            System.out.println("\t" + entry.getKey() + ": " + entry.getValue());
+            sb.append("\t").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+        return sb.toString();
     }
 
-    void printBlocks() {
+    public String getBlocks() {
+        var sb = new StringBuilder();
         for (var blockData : blockDataList) {
-            System.out.println(blockData);
+            sb.append(blockData).append("\n");
         }
+        return sb.toString();
     }
 
     /** 创建表格数据对象 */
@@ -200,8 +205,14 @@ public class ExcelReader {
 
     private String GetCellValue(Cell cell) {
 
-        // 处理空单元格
-        var value = evaluator.evaluate(cell);
+        CellValue value = null;
+        try {
+            value = evaluator.evaluate(cell);
+        } catch (Exception e) {
+            System.out.println("GetCellValue Error: " + e.getMessage());
+            System.out.println(cell);
+            System.exit(1);
+        }
         if (value == null)
             return null;
 
@@ -281,14 +292,14 @@ public class ExcelReader {
             case Text -> value;
             default -> {
                 try {
-                    double double_value = Double.parseDouble(value);
+                    var double_value = Double.parseDouble(value);
                     if (type == StringType.Int)
                         yield String.valueOf((int) double_value);
 
-                    Date date = DateUtil.getJavaDate(double_value);
+                    var date = DateUtil.getJavaDate(double_value);
                     var datetime = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
 
-                    String pattern = switch (type) {
+                    var pattern = switch (type) {
                         case Date -> "yyyy-MM-dd";
                         case Time -> "HH:mm:ss";
                         case Datetime -> "yyyy-MM-dd'T'HH:mm:ssXXX";

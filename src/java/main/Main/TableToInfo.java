@@ -17,12 +17,13 @@ public class TableToInfo {
     public static List<InfoAniStore> convertInfoAniStore(TableData tableData) {
         List<InfoAniStore> infoList = new ArrayList<>();
 
+        var aniIdIndex = tableData.GetHeaderIndex("ANI_ID");
+        var urlRSSIndex = tableData.GetHeaderIndex("url_rss");
+        var ratingBeforeIndex = tableData.GetHeaderIndex("rating_before");
+        var ratingAfterIndex = tableData.GetHeaderIndex("rating_after");
+        var remarkIndex = tableData.GetHeaderIndex("remark");
+
         for (var row : tableData.GetData()) {
-            int aniIdIndex = tableData.GetHeaderIndex("ANI_ID");
-            int urlRSSIndex = tableData.GetHeaderIndex("url_rss");
-            int ratingBeforeIndex = tableData.GetHeaderIndex("rating_before");
-            int ratingAfterIndex = tableData.GetHeaderIndex("rating_after");
-            int remarkIndex = tableData.GetHeaderIndex("remark");
 
             InfoAniStore info = new InfoAniStore(Integer.parseInt(row[aniIdIndex]));
             if (urlRSSIndex != -1)
@@ -50,18 +51,19 @@ public class TableToInfo {
     public static List<InfoEpiStore> convertInfoEpiStore(TableData tableData) {
         List<InfoEpiStore> infoList = new ArrayList<>();
 
+        var epiIdIndex = tableData.GetHeaderIndex("EPI_ID");
+        var ratingIndex = tableData.GetHeaderIndex("rating");
+        var viewDatetimeIndex = tableData.GetHeaderIndex("view_datetime");
+        var statusDownloadIndex = tableData.GetHeaderIndex("status_download");
+        var statusViewIndex = tableData.GetHeaderIndex("status_view");
+        var remarkIndex = tableData.GetHeaderIndex("remark");
+
         for (var row : tableData.GetData()) {
-            int epiIdIndex = tableData.GetHeaderIndex("EPI_ID");
-            int ratingIndex = tableData.GetHeaderIndex("rating");
-            int viewDatetimeIndex = tableData.GetHeaderIndex("view_datetime");
-            int statusDownloadIndex = tableData.GetHeaderIndex("status_download");
-            int statusViewIndex = tableData.GetHeaderIndex("status_view");
-            int remarkIndex = tableData.GetHeaderIndex("remark");
 
             InfoEpiStore info = new InfoEpiStore(Integer.parseInt(row[epiIdIndex]));
-            if (ratingIndex != -1)
+            if (ratingIndex != -1 && row[ratingIndex] != null)
                 info.rating = Integer.parseInt(row[ratingIndex]);
-            if (viewDatetimeIndex != -1) // 类似：'2025-12-20T23:49:51+08:00'
+            if (viewDatetimeIndex != -1 && row[viewDatetimeIndex] != null) // 类似：'2025-12-20T23:49:51+08:00'
                 info.view_datetime = OffsetDateTime.parse(row[viewDatetimeIndex]);
             if (statusDownloadIndex != -1)
                 info.status_download = row[statusDownloadIndex];
@@ -78,10 +80,11 @@ public class TableToInfo {
     public static List<InfoTorStore> convertInfoTorStore(TableData tableData) {
         List<InfoTorStore> infoList = new ArrayList<>();
 
+        var torUrlIndex = tableData.GetHeaderIndex("TOR_URL");
+        var statusDownloadIndex = tableData.GetHeaderIndex("status_download");
+        var remarkIndex = tableData.GetHeaderIndex("remark");
+
         for (var row : tableData.GetData()) {
-            int torUrlIndex = tableData.GetHeaderIndex("TOR_URL");
-            int statusDownloadIndex = tableData.GetHeaderIndex("status_download");
-            int remarkIndex = tableData.GetHeaderIndex("remark");
 
             InfoTorStore info = new InfoTorStore(row[torUrlIndex]);
             if (statusDownloadIndex != -1)

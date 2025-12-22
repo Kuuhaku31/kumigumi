@@ -11,10 +11,10 @@ public class TestExcel {
     public static void main(String[] args) throws IOException {
         System.out.println("TestExcel");
         ExcelReader reader = new ExcelReader(TEST_EXCEL_PATH);
-        reader.printVariables();
-        reader.printCommands();
+        reader.getVariables();
+        reader.getCommands();
         reader.runCommands();
-        reader.printBlocks();
+        reader.getBlocks();
 
         var res = TableToInfo.convertInfoTorStore(reader.blockDataList.get(0));
         for (var info : res) {

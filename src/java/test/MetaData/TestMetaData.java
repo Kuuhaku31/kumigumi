@@ -13,8 +13,14 @@ public class TestMetaData {
     // "D:/repositories/kumigumi/resources/test.db";
     public static final String DATABASE_PATH = "D:/db/kumigumi/kumigumi.db";
     public static final String EXCEL_FILE_PATH = "D:/repositories/kumigumi/resources/kg.xlsx";
+    public static final String EXCEL_FILE_KG_PATH = "D:/OneDrive/kumigumi.xlsx";
 
-    public static final String OUTPUT_FILE_0 = "D:/repositories/kumigumi/resources/output0.text";
-    public static final String OUTPUT_FILE_1 = "D:/repositories/kumigumi/resources/output1.text";
-    public static final String OUTPUT_FILE_2 = "D:/repositories/kumigumi/resources/output2.text";
+    public static final String RESOURCES_PATH = "D:/repositories/kumigumi/resources/";
+    public static final String OUTPUT_EXCEL_CMDS = RESOURCES_PATH + "excel_commands.txt";
+    public static final String OUTPUT_EXCEL_BLOCKS = RESOURCES_PATH + "excel_blocks.txt";
+    public static final String OUTPUT_UPDATE_ITEM = RESOURCES_PATH + "update_items.txt";
+
+    public static final String OUTPUT_FILE_0 = RESOURCES_PATH + "output0.text";
+    public static final String OUTPUT_FILE_1 = RESOURCES_PATH + "output1.text";
+    public static final String OUTPUT_FILE_2 = RESOURCES_PATH + "output2.text";
 }

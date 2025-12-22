@@ -26,6 +26,58 @@ public class TestMain {
 
     public static void main(String[] args) throws IOException, SQLException {
         System.out.println("TestMain");
+        // test0();
+        test1();
+    }
+
+    static void test1() throws IOException, SQLException {
+        System.out.println("test1");
+
+        // 读取表格
+        var excelReader = new ExcelReader(TestMetaData.EXCEL_FILE_KG_PATH);
+
+        // 将 excelReader.commands 保存到文件
+        try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_EXCEL_CMDS))) {
+            writer.write(excelReader.getCommands());
+        }
+
+        // 运行命令
+        excelReader.runCommands();
+
+        // 将 blockDataList 保存到文件
+        try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_EXCEL_BLOCKS))) {
+            writer.write(excelReader.getBlocks());
+        }
+
+        // 处理各个 blockData
+        for (var blockData : excelReader.blockDataList) {
+            if (blockData.block_name.equals("ani_store_2510")) {
+                updateList.addAll(TableToInfo.convertInfoAniStore(blockData));
+            } else if (blockData.block_name.equals("epi_store_2510")) {
+                updateList.addAll(TableToInfo.convertInfoEpiStore(blockData));
+            } else if (blockData.block_name.equals("tor_store_2510")) {
+                updateList.addAll(TableToInfo.convertInfoTorStore(blockData));
+            } else {
+                System.out.println("Unknown block name: " + blockData.block_name);
+            }
+        }
+
+        // 打印 updateList 内容
+        try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_UPDATE_ITEM))) {
+            for (var infoItem : updateList) {
+                writer.write(infoItem.toString());
+                writer.write("\n");
+            }
+        }
+
+        // 保存到数据库
+        try (var db = new SQLiteAccess(TestMetaData.DATABASE_PATH)) {
+            db.Update(updateList);
+        }
+    }
+
+    static void test0() throws IOException, SQLException {
+        System.out.println("test0");
 
         var excelReader = new ExcelReader(TestMetaData.EXCEL_FILE_PATH);
         excelReader.runCommands();
