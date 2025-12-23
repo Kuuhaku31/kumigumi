@@ -24,8 +24,145 @@ public class TestMain {
     public void main(String[] args) throws IOException, SQLException {
         System.out.println("TestMain");
         // test0();
-        test1();
+        // test1();
         // test2();
+        // test3();
+        test4();
+    }
+
+    // 获取 2510 数据
+    static void test4() throws IOException, SQLException {
+        System.out.println("test4");
+
+        List<UpdateItem> updateList = new ArrayList<>();
+
+        // 读取表格
+        System.out.println("Reading excel file...");
+        var excelReader = new ExcelReader(TestMetaData.EXCEL_FILE_KG_N_PATH);
+
+        // 将 excelReader.commands 保存到文件
+        System.out.println("Saving commands to file...");
+        try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_EXCEL_CMDS))) {
+            writer.write(excelReader.getCommands());
+        }
+
+        // 运行命令
+        System.out.println("Running commands...");
+        excelReader.runCommands();
+
+        // 将 blockDataList 保存到文件
+        System.out.println("Saving block data...");
+        try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_EXCEL_BLOCKS))) {
+            writer.write(excelReader.getBlocks());
+        }
+
+        System.out.println("Creating fetch tasks...");
+
+        // 创建任务
+        List<UpsertItem> upsertBuffer = new ArrayList<>();
+        List<UpdateItem> fetchBuffer = new ArrayList<>();
+        List<FetchTask> fetchTaskList = new ArrayList<>();
+
+        // 处理各个 blockData
+        for (var blockData : excelReader.blockDataList) {
+            if (blockData.block_name.equals("fetch2510ani")) {
+                // 创建任务
+                var ani_id_Index = blockData.GetHeaderIndex("ANI_ID");
+                var url_rss_Index = blockData.GetHeaderIndex("url_rss");
+                if (ani_id_Index != -1 && url_rss_Index != -1) {
+                    for (var row : blockData.GetData()) {
+                        Integer ani_id = Integer.parseInt(row[ani_id_Index]);
+                        String url_rss = row[url_rss_Index];
+                        fetchTaskList.add(new FetchTaskAni(upsertBuffer, fetchBuffer, ani_id));
+                        fetchTaskList.add(new FetchTaskEpi(upsertBuffer, fetchBuffer, ani_id));
+                        if (url_rss != null && !url_rss.isBlank())
+                            fetchTaskList.add(new FetchTaskTor(upsertBuffer, fetchBuffer, url_rss, ani_id));
+                    }
+                }
+            } else {
+                System.out.println("Unknown block name: " + blockData.block_name);
+            }
+        }
+
+        // 输出 infoItemList 内容
+        try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_FILE_1))) {
+
+            writer.write("Upsert Items:\n");
+            for (var infoItem : upsertBuffer) {
+                writer.write(infoItem.toString());
+                writer.write("\n");
+            }
+
+            writer.write("\nUpdate Items:\n");
+            for (var infoItem : updateList) {
+                writer.write(infoItem.toString());
+                writer.write("\n");
+            }
+        }
+
+        // 批量运行获取任务
+        runFetchTasks(fetchTaskList);
+
+        // 输出任务获取的内容
+        try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_FILE_2))) {
+            writer.write("\nFetched Info Items:\n");
+            for (var infoItem : fetchBuffer) {
+                writer.write(infoItem.toString());
+                writer.write("\n");
+            }
+        }
+
+        // 保存到数据库
+        try (var db = new SQLiteAccess(TestMetaData.DATABASE_PATH)) {
+            db.Upsert(upsertBuffer);
+            db.Update(updateList);
+            db.Update(fetchBuffer);
+        }
+    }
+
+    // 保存 kg-n 的 2510 epi_store 数据到数据库
+    static void test3() throws IOException, SQLException {
+        System.out.println("test3");
+
+        List<UpdateItem> updateList = new ArrayList<>();
+
+        // 读取表格
+        var excelReader = new ExcelReader(TestMetaData.EXCEL_FILE_KG_N_PATH);
+
+        // 将 excelReader.commands 保存到文件
+        try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_EXCEL_CMDS))) {
+            writer.write(excelReader.getCommands());
+        }
+
+        // 运行命令
+        excelReader.runCommands();
+
+        // 将 blockDataList 保存到文件
+        try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_EXCEL_BLOCKS))) {
+            writer.write(excelReader.getBlocks());
+        }
+
+        // 处理各个 blockData
+        for (var blockData : excelReader.blockDataList) {
+            if (blockData.block_name.equals("store2510epi")) {
+                updateList.addAll(ItemTranslation.convertInfoEpiStore(blockData));
+            } else {
+                System.out.println("Unknown block name: " + blockData.block_name);
+            }
+        }
+
+        // 打印 updateList 内容
+        try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_UPDATE_ITEM))) {
+            for (var infoItem : updateList) {
+                writer.write(infoItem.toString());
+                writer.write("\n");
+            }
+        }
+
+        // 保存到数据库
+        try (var db = new SQLiteAccess(TestMetaData.DATABASE_PATH)) {
+            db.Update(updateList);
+        }
     }
 
     // 处理 2026-01 表格

@@ -4,8 +4,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
+import java.time.format.SignStyle;
+import java.time.temporal.ChronoField;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -99,9 +101,15 @@ class BangumiParser {
         if (str == null || str.isBlank())
             return null;
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        try // 尝试解析为日期
-        {
+        // 尝试解析为日期
+        var formatter = new DateTimeFormatterBuilder()
+                .appendValue(ChronoField.YEAR, 4)
+                .appendLiteral('-')
+                .appendValue(ChronoField.MONTH_OF_YEAR, 1, 2, SignStyle.NOT_NEGATIVE)
+                .appendLiteral('-')
+                .appendValue(ChronoField.DAY_OF_MONTH, 1, 2, SignStyle.NOT_NEGATIVE)
+                .toFormatter();
+        try {
             LocalDate.parse(str, formatter);
             return str; // ✅ 合法，原样返回
         } catch (DateTimeParseException _) {
