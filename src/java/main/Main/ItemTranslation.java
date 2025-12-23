@@ -90,7 +90,10 @@ public class ItemTranslation {
 
         for (var row : tableData.GetData()) {
 
-            InfoEpiStore info = new InfoEpiStore(Integer.parseInt(row[epiIdIndex]));
+            var epi_id = row[epiIdIndex] == null ? null : Integer.parseInt(row[epiIdIndex]);
+            if (epi_id == null)
+                continue; // 跳过无效数据
+            var info = new InfoEpiStore(epi_id);
             if (ratingIndex != -1 && row[ratingIndex] != null)
                 info.rating = Integer.parseInt(row[ratingIndex]);
             if (viewDatetimeIndex != -1 && row[viewDatetimeIndex] != null) // 类似：'2025-12-20T23:49:51+08:00'
@@ -184,7 +187,8 @@ public class ItemTranslation {
                 }
         }
         if (data.containsKey("duration"))
-            info.duration = Integer.parseInt(data.get("duration"));
+            if (data.get("duration") != null)
+                info.duration = Integer.parseInt(data.get("duration"));
         if (data.containsKey("title"))
             info.title = data.get("title");
         if (data.containsKey("title_cn"))

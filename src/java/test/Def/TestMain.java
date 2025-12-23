@@ -34,8 +34,6 @@ public class TestMain {
     static void test4() throws IOException, SQLException {
         System.out.println("test4");
 
-        List<UpdateItem> updateList = new ArrayList<>();
-
         // 读取表格
         System.out.println("Reading excel file...");
         var excelReader = new ExcelReader(TestMetaData.EXCEL_FILE_KG_N_PATH);
@@ -94,7 +92,7 @@ public class TestMain {
             }
 
             writer.write("\nUpdate Items:\n");
-            for (var infoItem : updateList) {
+            for (var infoItem : fetchBuffer) {
                 writer.write(infoItem.toString());
                 writer.write("\n");
             }
@@ -103,8 +101,19 @@ public class TestMain {
         // 批量运行获取任务
         runFetchTasks(fetchTaskList);
 
+        // 输出获取的 map 内容
+        try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_FETCH_MAP))) {
+            writer.write(util.Loger.log);
+        }
+
         // 输出任务获取的内容
         try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_FILE_2))) {
+            writer.write("Upserted Info Items:\n");
+            for (var infoItem : upsertBuffer) {
+                writer.write(infoItem.toString());
+                writer.write("\n");
+            }
+
             writer.write("\nFetched Info Items:\n");
             for (var infoItem : fetchBuffer) {
                 writer.write(infoItem.toString());
@@ -115,7 +124,7 @@ public class TestMain {
         // 保存到数据库
         try (var db = new SQLiteAccess(TestMetaData.DATABASE_PATH)) {
             db.Upsert(upsertBuffer);
-            db.Update(updateList);
+            db.Update(fetchBuffer);
             db.Update(fetchBuffer);
         }
     }
