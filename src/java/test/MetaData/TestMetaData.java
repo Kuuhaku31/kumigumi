@@ -24,6 +24,7 @@ public class TestMetaData {
     public static final String OUTPUT_INFO_ITEM = RESOURCES_PATH + "info_items.txt";
     public static final String OUTPUT_UPSERT_TASK_ITEM = RESOURCES_PATH + "upsert_task_items.txt";
     public static final String OUTPUT_FETCH_MAP = RESOURCES_PATH + "fetch_map.txt";
+    public static final String OUTPUT_INFO_ITEMS = RESOURCES_PATH + "info_items.txt";
 
     public static final String OUTPUT_FILE_0 = RESOURCES_PATH + "output0.text";
     public static final String OUTPUT_FILE_1 = RESOURCES_PATH + "output1.text";

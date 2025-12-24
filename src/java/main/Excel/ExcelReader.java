@@ -42,10 +42,6 @@ public class ExcelReader {
         // 遍历所有行，保存数据
         boolean isReading = true;
         while (isReading) {
-            if (isCursorOut()) {
-                System.out.println("Cursor out of bounds: " + cursor);
-                // break; // 超出行数
-            }
             var dx = 0; // 游标列偏移量
             var row_data = new ArrayList<String>();
             while (true) {
@@ -235,30 +231,6 @@ public class ExcelReader {
 
         cursor.gotoPosition(r, c, newSheet);
         System.out.println("#Goto Position: (" + r + ", " + c + ") in Sheet: " + newSheet);
-    }
-
-    /** 判断是否越界 */
-    private boolean isCursorOut() {
-
-        // 保证工作表存在
-        var sheet = workbook.getSheet(cursor.sheetName());
-        if (sheet == null)
-            return true;
-
-        // 判断行是否越界
-        if (cursor.row() > sheet.getLastRowNum())
-            return true;
-
-        // 保证行存在
-        var row = sheet.getRow(cursor.row());
-        if (row == null)
-            return true;
-
-        // 判断列是否越界
-        if (cursor.col() > row.getLastCellNum())
-            return true;
-
-        return false;
     }
 
     private Cell getCell(int dx) {
