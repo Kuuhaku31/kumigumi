@@ -42,9 +42,10 @@ public class ExcelReader {
         // 遍历所有行，保存数据
         boolean isReading = true;
         while (isReading) {
-            if (isCursorOut())
-                break; // 超出行数
-
+            if (isCursorOut()) {
+                System.out.println("Cursor out of bounds: " + cursor);
+                // break; // 超出行数
+            }
             var dx = 0; // 游标列偏移量
             var row_data = new ArrayList<String>();
             while (true) {
