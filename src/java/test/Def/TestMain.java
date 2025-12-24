@@ -26,8 +26,9 @@ public class TestMain {
         // test0();
         // test1();
         // test2();
-        test3();
+        // test3();
         // test4();
+        test5(); // store tor
     }
 
     static void WriteItemListToFile(List<?> itemList, String filePath) throws IOException {
@@ -98,6 +99,34 @@ public class TestMain {
             BlockData blockData) {
         System.out.println("store2510epi");
         updateList.addAll(ItemTranslation.convertInfoEpiStore(blockData));
+    }
+
+    static void storeTor(
+            List<UpdateItem> updateList,
+            BlockData blockData) {
+        System.out.println("storeTor");
+        updateList.addAll(ItemTranslation.convertInfoTorStore(blockData));
+    }
+
+    // 获取 tor 数据
+    static void test5() throws IOException, SQLException {
+        System.out.println("test5");
+
+        // 读取表格
+        var blockDataList = ReadExcel(TestMetaData.EXCEL_FILE_KG_N_PATH);
+
+        // 处理各个 blockData
+        List<UpdateItem> updateItemList = new ArrayList<>();
+        for (var blockData : blockDataList) {
+            if (blockData.block_name.equals("store_tor")) {
+                storeTor(updateItemList, blockData);
+            } else {
+                System.out.println("Unknown block name: " + blockData.block_name);
+            }
+        }
+
+        // 保存到数据库
+        ToDatabase(null, updateItemList, TestMetaData.DATABASE_PATH);
     }
 
     // 获取 2510 数据
