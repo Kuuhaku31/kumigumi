@@ -25,7 +25,7 @@ public class TestNet {
         }
 
         for (var epi : epi_info_list) {
-            var infoItem = ItemTranslation.transieEpiUpsert(epi);
+            var infoItem = ItemTranslation.transEpiUpsert(epi);
             System.out.println(infoItem);
 
             var infoItem2 = ItemTranslation.convertInfoEpiFetch(epi);

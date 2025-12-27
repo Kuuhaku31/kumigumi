@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import Database.SQLiteAccess;
+import Database.InfoItem.DatabaseItem;
 import Database.InfoItem.UpdateItem;
 import Database.InfoItem.UpsertItem;
 import Excel.ExcelReader;
@@ -55,7 +56,24 @@ public class TestMainUtils {
         return excelReader.blockDataList;
     }
 
-    static void ToDatabase(List<UpsertItem> upsertList, List<UpdateItem> updateList, String databasePath) {
+    // 保存到数据库
+    static void ToDatabase(List<? extends DatabaseItem> items, String databasePath) {
+
+        List<UpsertItem> upsertList = new ArrayList<>();
+        List<UpdateItem> updateList = new ArrayList<>();
+        for (var item : items) {
+            if (item instanceof UpsertItem)
+                upsertList.add((UpsertItem) item);
+            else if (item instanceof UpdateItem)
+                updateList.add((UpdateItem) item);
+            else {
+                System.err.print("Unknown DatabaseItem type: ");
+                System.err.print(item.getClass().getName());
+                System.err.print(", item: ");
+                System.err.println(item.toString());
+            }
+        }
+
         try (var db = new SQLiteAccess(databasePath)) {
             db.Upsert(upsertList);
             db.Update(updateList);
@@ -64,8 +82,9 @@ public class TestMainUtils {
         }
     }
 
-    static List<FetchTask> buildFetchTasks(
-            List<UpsertItem> UpsertBuffer,
+    // 构建 FetchTask 列表
+    static List<FetchTask> BuildFetchTasks(
+            List<UpsertItem> upsertBuffer,
             List<UpdateItem> fetchBuffer,
             BlockData blockData) {
         if (blockData == null)
@@ -84,10 +103,10 @@ public class TestMainUtils {
             var url_rss = row[url_rss_index];
 
             // 创建任务
-            res.add(new FetchTaskAni(UpsertBuffer, fetchBuffer, ani_id));
-            res.add(new FetchTaskEpi(UpsertBuffer, fetchBuffer, ani_id));
+            res.add(new FetchTaskAni(upsertBuffer, fetchBuffer, ani_id));
+            res.add(new FetchTaskEpi(upsertBuffer, fetchBuffer, ani_id));
             if (url_rss != null && !url_rss.isBlank())
-                res.add(new FetchTaskTor(UpsertBuffer, fetchBuffer, url_rss, ani_id));
+                res.add(new FetchTaskTor(upsertBuffer, fetchBuffer, url_rss, ani_id));
 
         }
         return res;
@@ -95,13 +114,17 @@ public class TestMainUtils {
 
     // 带进度条的多线程运行 FetchTask
     static void RunFetchTasks(List<FetchTask> taskList) throws IOException {
+        if (taskList == null || taskList.size() == 0) {
+            System.out.println("No tasks to run.");
+            return;
+        }
         System.out.println("Starting concurrent task execution...");
 
         var MAX_THREADS = 32;
 
         var task_count = taskList.size(); // 总数
         var finished = new AtomicInteger(0); // 完成数
-        ShowProgress(0, task_count); // 更新进度条
+        showProgress(0, task_count); // 更新进度条
 
         // 并发执行任务
         var pool = Executors.newFixedThreadPool(MAX_THREADS);
@@ -109,7 +132,7 @@ public class TestMainUtils {
             pool.submit(() -> {
                 task.run();
                 var done = finished.incrementAndGet(); // 完成数加一
-                ShowProgress(done, task_count); // 更新进度条
+                showProgress(done, task_count); // 更新进度条
             });
         }
         pool.shutdown();
@@ -122,6 +145,8 @@ public class TestMainUtils {
             System.err.println(e.getMessage());
         }
 
+        showProgress(task_count, task_count); // 最终更新进度条
+
         // 输出结果
         if (ok)
             System.out.println("并发任务完成");
@@ -132,7 +157,7 @@ public class TestMainUtils {
     }
 
     // 控制台进度条显示函数
-    static synchronized void ShowProgress(int done, int total) {
+    private static synchronized void showProgress(int done, int total) {
         int percent = (int) ((done * 100.0f) / total);
         int barLen = 30;
         int filled = percent * barLen / 100;

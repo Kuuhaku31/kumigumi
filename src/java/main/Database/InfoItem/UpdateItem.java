@@ -1,5 +1,5 @@
 package Database.InfoItem;
 
-public interface UpdateItem {
+public interface UpdateItem extends DatabaseItem {
 
 }

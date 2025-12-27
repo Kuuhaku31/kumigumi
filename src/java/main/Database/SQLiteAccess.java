@@ -1,3 +1,5 @@
+// cSpell:words jdbc
+
 package Database;
 
 import java.io.Closeable;

@@ -14,7 +14,7 @@ import util.TableData.TableData;
 
 public class ItemTranslation {
 
-    public static InfoAniUpsert transniAniUpsert(Map<String, String> data) {
+    public static InfoAniUpsert transAniUpsert(Map<String, String> data) {
         if (data == null || data.isEmpty())
             return null;
 
@@ -24,7 +24,7 @@ public class ItemTranslation {
         return new InfoAniUpsert(Integer.parseInt(data.get("ANI_ID")));
     }
 
-    public static InfoEpiUpsert transieEpiUpsert(Map<String, String> data) {
+    public static InfoEpiUpsert transEpiUpsert(Map<String, String> data) {
         if (data == null || data.isEmpty())
             return null;
 
@@ -34,7 +34,7 @@ public class ItemTranslation {
         return new InfoEpiUpsert(Integer.parseInt(data.get("EPI_ID")), Integer.parseInt(data.get("ANI_ID")));
     }
 
-    public static InfoTorUpsert trantoTorUpsert(Map<String, String> data) {
+    public static InfoTorUpsert transTorUpsert(Map<String, String> data) {
         if (data == null || data.isEmpty())
             return null;
 

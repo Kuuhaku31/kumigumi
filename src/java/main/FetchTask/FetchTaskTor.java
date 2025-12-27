@@ -24,7 +24,7 @@ public class FetchTaskTor extends FetchTask {
             var torInfoList = NetAccess.FetchTorrentInfo(tor_url);
             for (var tor : torInfoList) {
                 tor.put("ANI_ID", ani_id.toString());
-                bufferUpsert.add(ItemTranslation.trantoTorUpsert(tor));
+                bufferUpsert.add(ItemTranslation.transTorUpsert(tor));
                 bufferUpdate.add(ItemTranslation.convertInfoTorFetch(tor));
             }
         } catch (IOException e) {
