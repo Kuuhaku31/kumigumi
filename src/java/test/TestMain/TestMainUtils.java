@@ -1,0 +1,144 @@
+package TestMain;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import Database.SQLiteAccess;
+import Database.InfoItem.UpdateItem;
+import Database.InfoItem.UpsertItem;
+import Excel.ExcelReader;
+import FetchTask.FetchTask;
+import FetchTask.FetchTaskAni;
+import FetchTask.FetchTaskEpi;
+import FetchTask.FetchTaskTor;
+import MetaData.TestMetaData;
+import util.TableData.BlockData;
+
+public class TestMainUtils {
+    static void WriteItemListToFile(List<?> itemList, String filePath) throws IOException {
+        try (var writer = Files.newBufferedWriter(Path.of(filePath))) {
+            for (var item : itemList) {
+                writer.write(item.toString());
+                writer.write("\n");
+            }
+        }
+    }
+
+    // 读取表格
+    static List<BlockData> ReadExcel(String excelFilePath) throws IOException {
+        System.out.println("Reading excel file...");
+        var excelReader = new ExcelReader(excelFilePath);
+
+        // 将 excelReader.commands 保存到文件
+        System.out.println("Saving commands to file...");
+        try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_EXCEL_CMDS))) {
+            writer.write(excelReader.getCommands());
+        }
+
+        // 运行命令
+        System.out.println("Running commands...");
+        excelReader.runCommands();
+
+        // 将 blockDataList 保存到文件
+        System.out.println("Saving block data...");
+        try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_EXCEL_BLOCKS))) {
+            writer.write(excelReader.getBlocks());
+        }
+
+        return excelReader.blockDataList;
+    }
+
+    static void ToDatabase(List<UpsertItem> upsertList, List<UpdateItem> updateList, String databasePath) {
+        try (var db = new SQLiteAccess(databasePath)) {
+            db.Upsert(upsertList);
+            db.Update(updateList);
+        } catch (SQLException e) {
+            System.err.println("Database operation error: " + e.getMessage());
+        }
+    }
+
+    static List<FetchTask> buildFetchTasks(
+            List<UpsertItem> UpsertBuffer,
+            List<UpdateItem> fetchBuffer,
+            BlockData blockData) {
+        if (blockData == null)
+            return null;
+
+        // 确保关键字段存在
+        var ani_id_index = blockData.GetHeaderIndex("ANI_ID");
+        var url_rss_index = blockData.GetHeaderIndex("url_rss");
+        if (ani_id_index == -1 || url_rss_index == -1)
+            return null;
+
+        // 创建任务
+        List<FetchTask> res = new ArrayList<>();
+        for (var row : blockData.GetData()) {
+            var ani_id = Integer.parseInt(row[ani_id_index]);
+            var url_rss = row[url_rss_index];
+
+            // 创建任务
+            res.add(new FetchTaskAni(UpsertBuffer, fetchBuffer, ani_id));
+            res.add(new FetchTaskEpi(UpsertBuffer, fetchBuffer, ani_id));
+            if (url_rss != null && !url_rss.isBlank())
+                res.add(new FetchTaskTor(UpsertBuffer, fetchBuffer, url_rss, ani_id));
+
+        }
+        return res;
+    }
+
+    // 带进度条的多线程运行 FetchTask
+    static void RunFetchTasks(List<FetchTask> taskList) throws IOException {
+        System.out.println("Starting concurrent task execution...");
+
+        var MAX_THREADS = 32;
+
+        var task_count = taskList.size(); // 总数
+        var finished = new AtomicInteger(0); // 完成数
+        ShowProgress(0, task_count); // 更新进度条
+
+        // 并发执行任务
+        var pool = Executors.newFixedThreadPool(MAX_THREADS);
+        for (var task : taskList) {
+            pool.submit(() -> {
+                task.run();
+                var done = finished.incrementAndGet(); // 完成数加一
+                ShowProgress(done, task_count); // 更新进度条
+            });
+        }
+        pool.shutdown();
+
+        // 等待全部完成
+        var ok = false;
+        try {
+            ok = pool.awaitTermination(1, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            System.err.println(e.getMessage());
+        }
+
+        // 输出结果
+        if (ok)
+            System.out.println("并发任务完成");
+        else
+            System.err.println("并发任务出现异常");
+
+        System.out.println("All tasks completed.");
+    }
+
+    // 控制台进度条显示函数
+    static synchronized void ShowProgress(int done, int total) {
+        int percent = (int) ((done * 100.0f) / total);
+        int barLen = 30;
+        int filled = percent * barLen / 100;
+        String bar = "=".repeat(filled) + " ".repeat(barLen - filled);
+        System.out.printf("\r开始并发执行任务: [%s] %3d%% (%d/%d)", bar, percent, done, total);
+        if (done == total)
+            System.out.println();
+    }
+}
