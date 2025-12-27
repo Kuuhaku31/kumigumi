@@ -154,7 +154,7 @@ public class TestMain {
 
         // 输出获取的 map 内容
         try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_FETCH_MAP))) {
-            writer.write(util.Loger.log);
+            writer.write(util.Logger.log);
         }
 
         // 输出任务获取的内容

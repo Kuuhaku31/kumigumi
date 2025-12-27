@@ -1,6 +1,6 @@
 package util;
 
-public class Loger {
+public class Logger {
     public static String log = "";
 
 }
