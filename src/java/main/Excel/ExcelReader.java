@@ -29,7 +29,40 @@ public class ExcelReader {
     private CellPosition cursor = new CellPosition(); // 光标位置
     private Map<String, String> variables = new HashMap<>(); // 定义的变量
     private List<List<String>> commands = new ArrayList<>(); // 保存读取的数据
-    public List<BlockData> blockDataList = new ArrayList<>(); // 保存块信息
+    private List<BlockData> blockDataList = new ArrayList<>(); // 保存块信息
+
+    public List<BlockData> getBlockDataList() {
+        return blockDataList;
+    }
+
+    public String getCommandsInfo() {
+        var sb = new StringBuilder();
+        sb.append("#Data List:\n");
+        for (var row : commands) {
+            sb.append("\tRow: [");
+            for (var cell : row) {
+                sb.append(cell).append(", ");
+            }
+            sb.append("]\n");
+        }
+        return sb.toString();
+    }
+
+    public String getVariables() {
+        var sb = new StringBuilder();
+        sb.append("#Defined Variables:\n");
+        for (var entry : variables.entrySet())
+            sb.append("\t").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+        return sb.toString();
+    }
+
+    public String getBlocksInfo() {
+        var sb = new StringBuilder();
+        for (var blockData : blockDataList) {
+            sb.append(blockData).append("\n");
+        }
+        return sb.toString();
+    }
 
     public ExcelReader(String filePath) throws IOException {
         // 创建临时文件（系统自动放在临时目录）
@@ -62,10 +95,12 @@ public class ExcelReader {
             if (row_data.size() != 0)
                 commands.add(row_data); // 保存该行数据
         }
+
+        runCommands(); // 解析命令
     }
 
     /** 解析命令 */
-    public void runCommands() {
+    private void runCommands() {
         var it = commands.iterator();
         while (it.hasNext()) {
             var row = it.next();
@@ -95,35 +130,6 @@ public class ExcelReader {
                 System.out.println("Parsed Block: " + blockMeta);
             }
         }
-    }
-
-    public String getCommands() {
-        var sb = new StringBuilder();
-        sb.append("#Data List:\n");
-        for (var row : commands) {
-            sb.append("\tRow: [");
-            for (var cell : row) {
-                sb.append(cell).append(", ");
-            }
-            sb.append("]\n");
-        }
-        return sb.toString();
-    }
-
-    public String getVariables() {
-        var sb = new StringBuilder();
-        sb.append("#Defined Variables:\n");
-        for (var entry : variables.entrySet())
-            sb.append("\t").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
-        return sb.toString();
-    }
-
-    public String getBlocks() {
-        var sb = new StringBuilder();
-        for (var blockData : blockDataList) {
-            sb.append(blockData).append("\n");
-        }
-        return sb.toString();
     }
 
     /** 创建表格数据对象 */

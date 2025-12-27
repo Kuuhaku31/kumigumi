@@ -12,8 +12,10 @@ import Database.InfoItem.InfoEpi.*;
 import Database.InfoItem.InfoTor.*;
 import util.TableData.TableData;
 
+/** 数据转换工具类 */
 public class ItemTranslation {
 
+    /** Map -> InfoAniUpsert */
     public static InfoAniUpsert transAniUpsert(Map<String, String> data) {
         if (data == null || data.isEmpty())
             return null;
@@ -24,6 +26,7 @@ public class ItemTranslation {
         return new InfoAniUpsert(Integer.parseInt(data.get("ANI_ID")));
     }
 
+    /** Map -> InfoEpiUpsert */
     public static InfoEpiUpsert transEpiUpsert(Map<String, String> data) {
         if (data == null || data.isEmpty())
             return null;
@@ -34,6 +37,7 @@ public class ItemTranslation {
         return new InfoEpiUpsert(Integer.parseInt(data.get("EPI_ID")), Integer.parseInt(data.get("ANI_ID")));
     }
 
+    /** Map -> InfoTorUpsert */
     public static InfoTorUpsert transTorUpsert(Map<String, String> data) {
         if (data == null || data.isEmpty())
             return null;
@@ -44,6 +48,7 @@ public class ItemTranslation {
         return new InfoTorUpsert(data.get("TOR_URL"), Integer.parseInt(data.get("ANI_ID")));
     }
 
+    /** TableData -> InfoAniStore */
     public static List<InfoAniStore> convertInfoAniStore(TableData tableData) {
         List<InfoAniStore> infoList = new ArrayList<>();
 
@@ -78,6 +83,7 @@ public class ItemTranslation {
         return infoList;
     }
 
+    /** TableData -> InfoEpiStore */
     public static List<InfoEpiStore> convertInfoEpiStore(TableData tableData) {
         List<InfoEpiStore> infoList = new ArrayList<>();
 
@@ -110,6 +116,7 @@ public class ItemTranslation {
         return infoList;
     }
 
+    /** TableData -> InfoTorStore */
     public static List<InfoTorStore> convertInfoTorStore(TableData tableData) {
         List<InfoTorStore> infoList = new ArrayList<>();
 
@@ -130,6 +137,7 @@ public class ItemTranslation {
         return infoList;
     }
 
+    /** Map -> InfoAniFetch */
     public static InfoAniFetch convertInfoAniFetch(Map<String, String> data) {
 
         if (!data.containsKey("ANI_ID")) // 保证 ANI_ID 存在
@@ -165,6 +173,7 @@ public class ItemTranslation {
         return info;
     }
 
+    /** Map -> InfoEpiFetch */
     public static InfoEpiFetch convertInfoEpiFetch(Map<String, String> data) {
 
         if (!data.containsKey("EPI_ID")) // 保证 EPI_ID 存在
@@ -199,6 +208,7 @@ public class ItemTranslation {
         return info;
     }
 
+    /** Map -> InfoTorFetch */
     public static InfoTorFetch convertInfoTorFetch(Map<String, String> data) {
 
         if (!data.containsKey("TOR_URL")) // 保证 TOR_URL 存在
@@ -226,6 +236,7 @@ public class ItemTranslation {
         return info;
     }
 
+    /** TableData -> InfoAniUpsert */
     public static List<InfoAniUpsert> convertInfoAniUpsert(TableData tableData) {
 
         var aniIdIndex = tableData.GetHeaderIndex("ANI_ID");
@@ -241,6 +252,7 @@ public class ItemTranslation {
         return infoList;
     }
 
+    /** TableData -> InfoEpiUpsert */
     public static List<InfoEpiUpsert> convertInfoEpiUpsert(TableData tableData) {
 
         var epiIdIndex = tableData.GetHeaderIndex("EPI_ID");
@@ -257,6 +269,7 @@ public class ItemTranslation {
         return infoList;
     }
 
+    /** TableData -> InfoTorUpsert */
     public static List<InfoTorUpsert> convertInfoTorUpsert(TableData tableData) {
 
         var torUrlIndex = tableData.GetHeaderIndex("TOR_URL");

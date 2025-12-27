@@ -40,20 +40,16 @@ public class TestMainUtils {
         // 将 excelReader.commands 保存到文件
         System.out.println("Saving commands to file...");
         try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_EXCEL_CMDS))) {
-            writer.write(excelReader.getCommands());
+            writer.write(excelReader.getCommandsInfo());
         }
-
-        // 运行命令
-        System.out.println("Running commands...");
-        excelReader.runCommands();
 
         // 将 blockDataList 保存到文件
         System.out.println("Saving block data...");
         try (var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_EXCEL_BLOCKS))) {
-            writer.write(excelReader.getBlocks());
+            writer.write(excelReader.getBlocksInfo());
         }
 
-        return excelReader.blockDataList;
+        return excelReader.getBlockDataList();
     }
 
     // 保存到数据库

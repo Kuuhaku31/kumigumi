@@ -2,7 +2,7 @@ package Excel;
 
 import java.io.IOException;
 
-import Main.ItemTranslation;
+// import Main.ItemTranslation;
 
 public class TestExcel {
 
@@ -12,14 +12,13 @@ public class TestExcel {
         System.out.println("TestExcel");
         ExcelReader reader = new ExcelReader(TEST_EXCEL_PATH);
         reader.getVariables();
-        reader.getCommands();
-        reader.runCommands();
-        reader.getBlocks();
+        reader.getCommandsInfo();
+        reader.getBlocksInfo();
 
-        var res = ItemTranslation.convertInfoTorStore(reader.blockDataList.get(0));
-        for (var info : res) {
-            System.out.println(info);
-        }
+        // var res = ItemTranslation.convertInfoTorStore(reader.blockDataList.get(0));
+        // for (var info : res) {
+        // System.out.println(info);
+        // }
     }
 
 }

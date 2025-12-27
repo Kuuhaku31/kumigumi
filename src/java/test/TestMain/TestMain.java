@@ -37,6 +37,7 @@ public class TestMain {
         List<UpdateItem> bufferUpdate = new ArrayList<>();
         List<FetchTask> fetchTaskList = new ArrayList<>();
 
+        // CommandParser
         for (var blockData : blockDataList) {
             if (blockData.block_name.equals("store2510ani")) {
                 dbItems.addAll(ItemTranslation.convertInfoAniUpsert(blockData));
