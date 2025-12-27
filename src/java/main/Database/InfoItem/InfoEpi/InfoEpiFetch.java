@@ -30,7 +30,10 @@ public class InfoEpiFetch extends InfoEpi implements UpdateItem {
                 ", duration=" + duration +
                 ", title='" + title + '\'' +
                 ", title_cn='" + title_cn + '\'' +
-                ", description='" + description.replace("\r\n", "\\n") + '\'' +
+                ", description='" +
+                (description == null ? null
+                        : description.replace("\r", "\\r").replace("\n", "\\n"))
+                + '\'' +
                 '}';
     }
 }

@@ -77,7 +77,6 @@ class SQLiteStatementCache {
         psEpiFetch = conn.prepareStatement("""
                 UPDATE episode
                 SET
-                    EPI_ID      = ?,
                     ep          = ?,
                     sort        = ?,
                     air_date    = ?,
@@ -102,7 +101,6 @@ class SQLiteStatementCache {
         psTorFetch = conn.prepareStatement("""
                 UPDATE torrent
                 SET
-                    TOR_URL         = ?,
                     air_datetime    = ?,
                     size            = ?,
                     url_page        = ?,

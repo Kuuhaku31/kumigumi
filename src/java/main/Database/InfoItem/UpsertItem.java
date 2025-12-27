@@ -1,5 +1,5 @@
 package Database.InfoItem;
 
-public interface UpsertItem {
+public interface UpsertItem extends DatabaseItem {
 
 }

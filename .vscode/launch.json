@@ -4,9 +4,23 @@
   "configurations": [
     {
       "type": "java",
+      "name": "BatchDownloader",
+      "request": "launch",
+      "mainClass": "net.BatchDownloader",
+      "projectName": "kumigumi"
+    },
+    {
+      "type": "java",
+      "name": "TestNet",
+      "request": "launch",
+      "mainClass": "net.TestNet",
+      "projectName": "kumigumi"
+    },
+    {
+      "type": "java",
       "name": "TestMain",
       "request": "launch",
-      "mainClass": "Def.TestMain",
+      "mainClass": "TestMain.TestMain",
       "projectName": "kumigumi",
       "vmArgs": ["--enable-native-access=ALL-UNNAMED"]
     },

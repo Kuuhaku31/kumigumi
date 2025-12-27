@@ -9,13 +9,13 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.CellValue;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -29,7 +29,40 @@ public class ExcelReader {
     private CellPosition cursor = new CellPosition(); // 光标位置
     private Map<String, String> variables = new HashMap<>(); // 定义的变量
     private List<List<String>> commands = new ArrayList<>(); // 保存读取的数据
-    public List<BlockData> blockDataList = new ArrayList<>(); // 保存块信息
+    private List<BlockData> blockDataList = new ArrayList<>(); // 保存块信息
+
+    public List<BlockData> getBlockDataList() {
+        return blockDataList;
+    }
+
+    public String getCommandsInfo() {
+        var sb = new StringBuilder();
+        sb.append("#Data List:\n");
+        for (var row : commands) {
+            sb.append("\tRow: [");
+            for (var cell : row) {
+                sb.append(cell).append(", ");
+            }
+            sb.append("]\n");
+        }
+        return sb.toString();
+    }
+
+    public String getVariables() {
+        var sb = new StringBuilder();
+        sb.append("#Defined Variables:\n");
+        for (var entry : variables.entrySet())
+            sb.append("\t").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+        return sb.toString();
+    }
+
+    public String getBlocksInfo() {
+        var sb = new StringBuilder();
+        for (var blockData : blockDataList) {
+            sb.append(blockData).append("\n");
+        }
+        return sb.toString();
+    }
 
     public ExcelReader(String filePath) throws IOException {
         // 创建临时文件（系统自动放在临时目录）
@@ -42,9 +75,6 @@ public class ExcelReader {
         // 遍历所有行，保存数据
         boolean isReading = true;
         while (isReading) {
-            if (isCursorOut())
-                break; // 超出行数
-
             var dx = 0; // 游标列偏移量
             var row_data = new ArrayList<String>();
             while (true) {
@@ -65,10 +95,12 @@ public class ExcelReader {
             if (row_data.size() != 0)
                 commands.add(row_data); // 保存该行数据
         }
+
+        runCommands(); // 解析命令
     }
 
     /** 解析命令 */
-    public void runCommands() {
+    private void runCommands() {
         var it = commands.iterator();
         while (it.hasNext()) {
             var row = it.next();
@@ -97,30 +129,6 @@ public class ExcelReader {
                 createBlocks(blockMeta); // 创建块数据
                 System.out.println("Parsed Block: " + blockMeta);
             }
-        }
-    }
-
-    void printCommands() {
-        System.out.println("#Data List:");
-        for (var row : commands) {
-            System.out.print("\tRow: [");
-            for (var cell : row) {
-                System.out.print(cell + ", ");
-            }
-            System.out.println("]");
-        }
-    }
-
-    void printVariables() {
-        // 打印定义的变量
-        System.out.println("#Defined Variables:");
-        for (var entry : variables.entrySet())
-            System.out.println("\t" + entry.getKey() + ": " + entry.getValue());
-    }
-
-    void printBlocks() {
-        for (var blockData : blockDataList) {
-            System.out.println(blockData);
         }
     }
 
@@ -200,8 +208,14 @@ public class ExcelReader {
 
     private String GetCellValue(Cell cell) {
 
-        // 处理空单元格
-        var value = evaluator.evaluate(cell);
+        CellValue value = null;
+        try {
+            value = evaluator.evaluate(cell);
+        } catch (Exception e) {
+            System.out.println("GetCellValue Error: " + e.getMessage());
+            System.out.println(cell);
+            System.exit(1);
+        }
         if (value == null)
             return null;
 
@@ -223,30 +237,6 @@ public class ExcelReader {
 
         cursor.gotoPosition(r, c, newSheet);
         System.out.println("#Goto Position: (" + r + ", " + c + ") in Sheet: " + newSheet);
-    }
-
-    /** 判断是否越界 */
-    private boolean isCursorOut() {
-
-        // 保证工作表存在
-        var sheet = workbook.getSheet(cursor.sheetName());
-        if (sheet == null)
-            return true;
-
-        // 判断行是否越界
-        if (cursor.row() > sheet.getLastRowNum())
-            return true;
-
-        // 保证行存在
-        var row = sheet.getRow(cursor.row());
-        if (row == null)
-            return true;
-
-        // 判断列是否越界
-        if (cursor.col() > row.getLastCellNum())
-            return true;
-
-        return false;
     }
 
     private Cell getCell(int dx) {
@@ -281,14 +271,14 @@ public class ExcelReader {
             case Text -> value;
             default -> {
                 try {
-                    double double_value = Double.parseDouble(value);
+                    var double_value = Double.parseDouble(value);
                     if (type == StringType.Int)
                         yield String.valueOf((int) double_value);
 
-                    Date date = DateUtil.getJavaDate(double_value);
+                    var date = DateUtil.getJavaDate(double_value);
                     var datetime = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
 
-                    String pattern = switch (type) {
+                    var pattern = switch (type) {
                         case Date -> "yyyy-MM-dd";
                         case Time -> "HH:mm:ss";
                         case Datetime -> "yyyy-MM-dd'T'HH:mm:ssXXX";
