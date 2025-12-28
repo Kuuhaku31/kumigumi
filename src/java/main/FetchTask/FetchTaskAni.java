@@ -29,4 +29,9 @@ public class FetchTaskAni extends FetchTask {
             System.err.println("Error fetching anime info for ANI_ID=" + ani_id + ": " + e.getMessage());
         }
     }
+
+    @Override
+    public String toString() {
+        return "FetchTaskAni{ANI_ID=" + ani_id + "}";
+    }
 }

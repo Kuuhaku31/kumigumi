@@ -33,6 +33,10 @@ public class ExcelReader {
         return blockDataList;
     }
 
+    public List<List<String>> getCommands() {
+        return commands;
+    }
+
     public String getCommandsInfo() {
         var sb = new StringBuilder();
         sb.append("#Data List:\n");

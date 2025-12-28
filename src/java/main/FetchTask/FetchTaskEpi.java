@@ -32,4 +32,8 @@ public class FetchTaskEpi extends FetchTask {
         }
     }
 
+    @Override
+    public String toString() {
+        return "FetchTaskEpi{ANI_ID=" + ani_id + "}";
+    }
 }

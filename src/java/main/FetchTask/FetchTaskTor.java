@@ -32,4 +32,9 @@ public class FetchTaskTor extends FetchTask {
             System.err.println("Error fetching torrent info for TOR_URL=" + tor_url + ": " + e.getMessage());
         }
     }
+
+    @Override
+    public String toString() {
+        return "FetchTaskTor{TOR_URL=" + tor_url + ", ANI_ID=" + ani_id + "}";
+    }
 }
