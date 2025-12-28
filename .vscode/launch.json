@@ -4,6 +4,13 @@
   "configurations": [
     {
       "type": "java",
+      "name": "TestExcelDataBlock",
+      "request": "launch",
+      "mainClass": "Excel.TestExcelDataBlock",
+      "projectName": "kumigumi"
+    },
+    {
+      "type": "java",
       "name": "BatchDownloader",
       "request": "launch",
       "mainClass": "net.BatchDownloader",
