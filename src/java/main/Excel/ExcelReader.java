@@ -94,11 +94,11 @@ public class ExcelReader {
                 commands.add(row_data); // 保存该行数据
         }
 
-        runCommands(); // 解析命令
+        createBlockData(); // 解析命令
     }
 
     /** 解析命令 */
-    private void runCommands() {
+    private void createBlockData() {
         var it = commands.iterator();
         while (it.hasNext()) {
             var row = it.next();

@@ -168,6 +168,8 @@ bgm 提供两个字段标记各个话的索引：`ep` 和 `sort`
 
 ---
 
+<!-- cSpell:words TEXTAFTER -->
+
 ```
 =VALUE(TEXTAFTER([@[episode_bangumi_url]], "/ep/"))
 
@@ -176,9 +178,65 @@ bgm 提供两个字段标记各个话的索引：`ep` 和 `sort`
 
 ---
 
-### 关于数据的转换
+### Excel 指令
 
-Excel:
+1. 创建 `DataBlock` 数据块
 
-`=""` -> `null`
-BLANK -> `null`
+```
+_block  <BlockName>
+_sheet  <SheetName>
+_from   <RowIndex>
+_to     <RowIndex>
+
+<key1>   <key1 column>
+<key2>   <key2 column>
+...
+
+_block_end
+```
+
+- 创建一个名为 `<BlockName>` 的数据块
+- 数据块内容来源于 Excel 文件中名为 `<SheetName>` 的工作表，从第 `<RowIndex>` 行到第 `<RowIndex>` 行的数据
+
+---
+
+2. 创建 `UpdateItemName` 信息项
+
+```
+_item_ani_store <UpdateItemName> <BlockName1> <BlockName2> ...
+_item_epi_store <UpdateItemName> <BlockName1> <BlockName2> ...
+_item_tor_store <UpdateItemName> <BlockName1> <BlockName2> ...
+```
+
+- 创建一个名为 `<UpdateItemName>` 的信息项，信息项类型为 `List<InfoAniStore>` / `List<InfoEpiStore>` / `List<InfoTorStore>`
+- 信息项内容来源于数据块 `<BlockName1>`、`<BlockName2>` 等
+
+---
+
+3. 创建 `FetchTask` 抓取任务
+
+```
+_fetch_task_ani_epi <FetchTaskName> <BlockName1> <BlockName2> ...
+```
+
+- 创建一个名为 `<FetchTaskName>` 的抓取任务，抓取任务类型为 `List<FetchTask>`
+- 抓取任务内容来源于数据块 `<BlockName1>`、`<BlockName2>` 等
+
+---
+
+4. 运行 `FetchTask` 抓取任务
+
+```
+_run_fetch_task <UpsertItemName> <UpdateItemName> <FetchTaskName1> <FetchTaskName2> ...
+```
+
+- 运行名为 `<FetchTaskName>` 的抓取任务
+- 生成 `<UpsertItemName>` 和 `<UpdateItemName>` 信息项，分别用于插入和更新数据库
+
+---
+
+5. 用 `UpsertItemName` 和 `UpdateItemName` 信息项更新数据库
+
+```
+_to_db <UpsertItemName> <UpdateItemName>
+```
