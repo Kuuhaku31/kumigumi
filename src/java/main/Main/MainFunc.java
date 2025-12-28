@@ -1,17 +1,16 @@
-package TestMain;
+package Main;
 
 import java.util.List;
 
 import Database.InfoItem.UpdateItem;
 import Database.InfoItem.UpsertItem;
+import Excel.BlockData;
 import FetchTask.FetchTask;
 import FetchTask.FetchTaskAni;
 import FetchTask.FetchTaskEpi;
 import FetchTask.FetchTaskTor;
-import Main.ItemTranslation;
-import util.TableData.BlockData;
 
-public class TestMainFunc {
+public class MainFunc {
     static void fetch2510ani(
             List<UpsertItem> upsertBuffer,
             List<UpdateItem> fetchBuffer,

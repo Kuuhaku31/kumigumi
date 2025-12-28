@@ -2,10 +2,11 @@ package FetchTask;
 
 import java.io.IOException;
 import java.util.List;
-import Main.ItemTranslation;
+
 import NetAccess.NetAccess;
 import Database.InfoItem.UpdateItem;
 import Database.InfoItem.UpsertItem;
+import Main.ItemTranslation;
 
 public class FetchTaskTor extends FetchTask {
 

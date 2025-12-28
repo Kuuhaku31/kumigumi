@@ -1,7 +1,5 @@
 package util;
 
-import util.TableData.TableData;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;

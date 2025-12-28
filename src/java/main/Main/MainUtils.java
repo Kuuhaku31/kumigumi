@@ -1,4 +1,4 @@
-package TestMain;
+package Main;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,15 +14,15 @@ import Database.SQLiteAccess;
 import Database.InfoItem.DatabaseItem;
 import Database.InfoItem.UpdateItem;
 import Database.InfoItem.UpsertItem;
+import Excel.BlockData;
 import Excel.ExcelReader;
 import FetchTask.FetchTask;
 import FetchTask.FetchTaskAni;
 import FetchTask.FetchTaskEpi;
 import FetchTask.FetchTaskTor;
 import MetaData.TestMetaData;
-import util.TableData.BlockData;
 
-public class TestMainUtils {
+public class MainUtils {
     static void WriteItemListToFile(List<?> itemList, String filePath) throws IOException {
         try (var writer = Files.newBufferedWriter(Path.of(filePath))) {
             for (var item : itemList) {
@@ -140,8 +140,6 @@ public class TestMainUtils {
         } catch (InterruptedException e) {
             System.err.println(e.getMessage());
         }
-
-        showProgress(task_count, task_count); // 最终更新进度条
 
         // 输出结果
         if (ok)

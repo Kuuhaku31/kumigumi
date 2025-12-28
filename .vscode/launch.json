@@ -4,6 +4,14 @@
   "configurations": [
     {
       "type": "java",
+      "name": "Main",
+      "request": "launch",
+      "mainClass": "Main.Main",
+      "projectName": "kumigumi",
+      "vmArgs": ["--enable-native-access=ALL-UNNAMED"]
+    },
+    {
+      "type": "java",
       "name": "TestExcelDataBlock",
       "request": "launch",
       "mainClass": "Excel.TestExcelDataBlock",
@@ -22,14 +30,6 @@
       "request": "launch",
       "mainClass": "net.TestNet",
       "projectName": "kumigumi"
-    },
-    {
-      "type": "java",
-      "name": "TestMain",
-      "request": "launch",
-      "mainClass": "TestMain.TestMain",
-      "projectName": "kumigumi",
-      "vmArgs": ["--enable-native-access=ALL-UNNAMED"]
     },
     {
       "type": "java",

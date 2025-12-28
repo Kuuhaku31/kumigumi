@@ -1,161 +1,248 @@
 package Main;
 
-import Task.TaskManager;
-
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-class Main {
+import Database.InfoItem.DatabaseItem;
+import Database.InfoItem.UpdateItem;
+import Database.InfoItem.UpsertItem;
+import Excel.BlockData;
+import FetchTask.*;
+import MetaData.TestMetaData;
 
-    Main() {
-        var excelPathStr = System.getenv("KG_EXCEL_PATH");
-        var databasePathStr = System.getenv("KG_DATABASE_PATH");
-        var dtPathStr = System.getenv("KG_DT_PATH");
+public class Main {
 
-        if (excelPathStr != null)
-            excel_path = Path.of(excelPathStr);
-        if (databasePathStr != null)
-            database_path = Path.of(databasePathStr);
-        if (dtPathStr != null)
-            dt_path = Path.of(dtPathStr);
+    public void main(String[] args) throws IOException, SQLException {
+        System.out.println("TestMain");
+        // test0();
+        // test1();
+        // test2();
+        // test3(); // 保存 kg-n 的 2510 epi_store 数据到数据库
+        // test4(); // 获取 2510 数据
+        // test5(); // store tor
+        testMain();
     }
 
-    private Path excel_path; // Excel 文件路径
-    private Path database_path; // 数据库文件路径
-    private Path dt_path; // 下载路径
-    private String mode = null; // 运行模式
+    static void testMain() throws IOException {
+        System.out.println("testMain()");
 
-    private final String help_msg = "Usage: kumigumi -ex<excel_path> -db<database_path> -dt<dt_path> [mode]";
+        List<BlockData> blockDataList = MainUtils.ReadExcel(TestMetaData.EXCEL_FILE_KG_N_PATH);
+        List<DatabaseItem> dbItems = new ArrayList<>();
 
-    // 解析命令行参数
-    private void parseArgs(String[] args) {
-        if (args.length <= 0) {
-            mode = "help";
-            return;
-        }
+        // 构建任务
+        List<UpsertItem> bufferUpsert = new ArrayList<>();
+        List<UpdateItem> bufferUpdate = new ArrayList<>();
+        List<FetchTask> fetchTaskList = new ArrayList<>();
 
-        System.out.println(Arrays.toString(args));
-        for (int i = 0; i < args.length; i++) {
-            var arg = args[i];
-            if (arg.startsWith("-ex")) {
-                excel_path = Path.of(arg.substring(3));
-            } else if (arg.startsWith("-db")) {
-                database_path = Path.of(arg.substring(3));
-            } else if (arg.startsWith("-dt")) {
-                dt_path = Path.of(arg.substring(3));
-            } else if (arg.equals("--help") || arg.equals("-h")) {
-                mode = "help";
-            } else if (i == 0) {
-                mode = arg;
+        // CommandParser
+        for (var blockData : blockDataList) {
+            if (blockData.block_name.equals("store2510ani")) {
+                dbItems.addAll(ItemTranslation.convertInfoAniUpsert(blockData));
+                dbItems.addAll(ItemTranslation.convertInfoAniStore(blockData));
+            } else if (blockData.block_name.equals("store2510epi")) {
+                dbItems.addAll(ItemTranslation.convertInfoEpiUpsert(blockData));
+                dbItems.addAll(ItemTranslation.convertInfoEpiStore(blockData));
+            } else if (blockData.block_name.equals("store_tor")) {
+                dbItems.addAll(ItemTranslation.convertInfoTorUpsert(blockData));
+                dbItems.addAll(ItemTranslation.convertInfoTorStore(blockData));
+            } else if (blockData.block_name.equals("fetch2510")) {
+                fetchTaskList.addAll(MainUtils.BuildFetchTasks(bufferUpsert, bufferUpdate, blockData));
+            } else {
+                System.out.println("Unknown block name: " + blockData.block_name);
             }
         }
+
+        MainUtils.RunFetchTasks(fetchTaskList);
+
+        dbItems.addAll(bufferUpsert);
+        dbItems.addAll(bufferUpdate);
+
+        MainUtils.WriteItemListToFile(dbItems, TestMetaData.OUTPUT_INFO_ITEM);
+
+        MainUtils.ToDatabase(dbItems, TestMetaData.DATABASE_PATH);
     }
 
-    // 创建路径
-    private void createDTPath() {
-        if (Files.notExists(dt_path)) {
-            try {
-                Files.createDirectories(dt_path);
-            } catch (IOException e) {
-                System.err.println("无法创建下载路径: " + e.getMessage());
+    // 获取 tor 数据
+    static void test5() throws IOException, SQLException {
+        System.out.println("test5");
+
+        List<BlockData> 表格数据块列表;
+        List<UpdateItem> 更新项目列表;
+
+        表格数据块列表 = MainUtils.ReadExcel(TestMetaData.EXCEL_FILE_KG_N_PATH); // 读取表格
+        更新项目列表 = new ArrayList<>();
+
+        // 处理各个 blockData
+        for (var blockData : 表格数据块列表) {
+            if (blockData.block_name.equals("store_tor")) {
+                MainFunc.storeTor(更新项目列表, blockData);
+            } else {
+                System.out.println("Unknown block name: " + blockData.block_name);
             }
         }
+        // 保存到数据库
+        MainUtils.ToDatabase(更新项目列表, TestMetaData.DATABASE_PATH);
     }
 
-    private void mode() {
-        var kg = new Kumigumi();
+    // 获取 2510 数据
+    static void test4() throws IOException, SQLException {
+        System.out.println("test4");
 
-        kg.ReadExcel(excel_path); // 先一次性读取 Excel 全部数据块，并分类
+        List<BlockData> 表格数据块列表 = MainUtils.ReadExcel(TestMetaData.EXCEL_FILE_KG_N_PATH);
 
-        switch (mode) {
-            case "import": {
-                // System.out.println("Importing from Excel...");
-                // kg.UpsertExcelData();
-                break;
+        List<UpsertItem> 插更缓存 = new ArrayList<>();
+        List<UpdateItem> 获取缓存 = new ArrayList<>();
+        List<FetchTask> 任务列表 = new ArrayList<>();
+
+        // 处理各个 blockData
+        for (var blockData : 表格数据块列表) {
+            if (blockData.block_name.equals("fetch2510ani")) {
+                MainFunc.fetch2510ani(插更缓存, 获取缓存, 任务列表, blockData);
+            } else {
+                System.out.println("Unknown block name: " + blockData.block_name);
             }
-            case "fetch_excel": {
-                // System.out.println("Fetching from Excel...");
-                //
-                // var tasks = kg.ParseFetchTaskFromBlock();
-                // Multithreading(tasks);
-                // // DataBuffer.SaveDataList(tasks);
-                // kg.UpsertDatabase();
-                break;
-            }
-            case "dt": {
-                // System.out.println("Downloading torrents...");
-                //
-                // var tasks = kg.PraseTorrentDownloadTaskList(dt_path, "未下载");
-                // Multithreading(tasks);
-
-                break;
-            }
-            case "all": {
-
-                System.out.println("Fetching & Importing...");
-
-                // Step01. 创建下载任务
-                List<TaskManager.Task> tasks = new ArrayList<>();
-                tasks.addAll(kg.getFetchTask()); // 添加所有 fetch 任务
-                tasks.addAll(kg.getDTTask(dt_path, "未下载")); // 添加 dt 任务
-
-                TaskManager.addTask(tasks);
-
-                // Step02. 执行执下载行任务，将获取的数据存到缓冲区
-                TaskManager.runTasks();
-
-                // 获取运行结果
-                var completed_tasks = TaskManager.getCompletedTask();
-                var failed_tasks = TaskManager.getFailedTasks();
-                if (!failed_tasks.isEmpty()) {
-                    System.err.println("以下任务执行失败:");
-                    for (var task : failed_tasks) {
-                        System.err.println(task);
-                    }
-                }
-                kg.addTaskRes(completed_tasks);
-
-                // 执行数据库更新
-                kg.toDatabase();
-
-                kg.SaveLog();
-
-                break;
-            }
-
-            default:
-                break;
         }
+
+        // 批量运行获取任务
+        MainUtils.RunFetchTasks(任务列表);
+
+        // 输出任务获取的内容
+        MainUtils.WriteItemListToFile(插更缓存, TestMetaData.OUTPUT_UPSERT_TASK_ITEM);
+
+        // 保存到数据库
+        List<DatabaseItem> allItems = new ArrayList<>();
+        allItems.addAll(插更缓存);
+        allItems.addAll(获取缓存);
+        MainUtils.ToDatabase(allItems, TestMetaData.DATABASE_PATH);
     }
 
-    // kumigumi 入口函数
-    void main(String[] args) {
-        System.out.println("Hello, kumigumi!?");
+    // 保存 kg-n 的 2510 epi_store 数据到数据库
+    static void test3() throws IOException, SQLException {
+        System.out.println("test3");
 
-        parseArgs(args);
+        List<BlockData> 表格数据块列表 = MainUtils.ReadExcel(TestMetaData.EXCEL_FILE_KG_N_PATH);
 
-        if (excel_path == null || database_path == null || dt_path == null) {
-            System.err.println("请设置必要的路径环境变量或命令行参数!");
-            System.out.println(help_msg);
-            return;
+        // 处理各个 blockData
+        List<UpdateItem> 更新项目列表 = new ArrayList<>();
+        for (var blockData : 表格数据块列表) {
+            if (blockData.block_name.equals("store2510epi"))
+                MainFunc.store2510epi(更新项目列表, blockData);
+            else {
+                System.out.println("Unknown block name: " + blockData.block_name);
+            }
         }
-        System.out.println("Excel path: " + excel_path.toAbsolutePath());
-        System.out.println("Database path: " + database_path.toAbsolutePath());
-        System.out.println("DT path: " + dt_path.toAbsolutePath());
-        System.setProperty("java.net.useSystemProxies", "true"); // 设置全局代理
 
-        if (mode == null)
-            System.out.println(help_msg);
-        else if (mode.equals("help"))
-            System.out.println(help_msg);
-        else {
-            createDTPath();
-            mode();
-        }
-        System.out.println("Done.");
+        // 打印 更新项目列表 内容
+        MainUtils.WriteItemListToFile(更新项目列表, TestMetaData.OUTPUT_INFO_ITEMS);
+
+        // 保存到数据库
+        MainUtils.ToDatabase(更新项目列表, TestMetaData.DATABASE_PATH);
     }
+
+    // 处理 2026-01 表格
+    static void test2() throws IOException, SQLException {
+        System.out.println("test2");
+
+        List<BlockData> 表格数据块列表 = MainUtils.ReadExcel(TestMetaData.EXCEL_FILE_KG_N_PATH);
+
+        // 处理各个 blockData
+        List<UpsertItem> upsertBuffer = new ArrayList<>(); // 获取的需要插入或者更新的信息
+        List<UpdateItem> fetchBuffer = new ArrayList<>(); // 获取的需要更新的信息
+        List<FetchTask> taskList = new ArrayList<>(); // 任务列表
+        for (var blockData : 表格数据块列表) {
+            if (blockData.block_name.equals("ani_2601"))
+                taskList.addAll(MainUtils.BuildFetchTasks(upsertBuffer, fetchBuffer, blockData));
+            else
+                System.out.println("Unknown block name: " + blockData.block_name);
+        }
+
+        // 批量运行获取任务
+        MainUtils.RunFetchTasks(taskList);
+
+        // 输出任务获取的内容
+        List<DatabaseItem> dbItems = new ArrayList<>();
+        dbItems.addAll(upsertBuffer);
+        dbItems.addAll(fetchBuffer);
+        MainUtils.WriteItemListToFile(dbItems, TestMetaData.OUTPUT_INFO_ITEM);
+
+        // 插入数据库
+        MainUtils.ToDatabase(dbItems, TestMetaData.DATABASE_PATH);
+    }
+
+    static void test1() throws IOException, SQLException {
+        System.out.println("test1");
+
+        // 读取表格
+        var blockDataList = MainUtils.ReadExcel(TestMetaData.EXCEL_FILE_KG_PATH);
+
+        // 处理各个 blockData
+        List<UpdateItem> updateList = new ArrayList<>();
+        for (var blockData : blockDataList) {
+            if (blockData.block_name.equals("ani_store_2510")) {
+                updateList.addAll(ItemTranslation.convertInfoAniStore(blockData));
+            } else if (blockData.block_name.equals("epi_store_2510")) {
+                updateList.addAll(ItemTranslation.convertInfoEpiStore(blockData));
+            } else if (blockData.block_name.equals("tor_store_2510")) {
+                updateList.addAll(ItemTranslation.convertInfoTorStore(blockData));
+            } else {
+                System.out.println("Unknown block name: " + blockData.block_name);
+            }
+        }
+
+        // 打印 updateList 内容
+        MainUtils.WriteItemListToFile(updateList, TestMetaData.OUTPUT_INFO_ITEMS);
+
+        // 保存到数据库
+        MainUtils.ToDatabase(updateList, TestMetaData.DATABASE_PATH);
+    }
+
+    static void test0() throws IOException, SQLException {
+        System.out.println("test0");
+
+        List<BlockData> 表格数据块列表 = MainUtils.ReadExcel(TestMetaData.EXCEL_FILE_KG_N_PATH);
+
+        // 处理各个 blockData
+        List<UpsertItem> upsertListStore = new ArrayList<>();
+        List<UpdateItem> updateListStore = new ArrayList<>();
+
+        List<UpsertItem> bufferUpsertFetch = new ArrayList<>();
+        List<UpdateItem> bufferUpdateFetch = new ArrayList<>();
+        List<FetchTask> fetchTaskList = new ArrayList<>();
+
+        for (var blockData : 表格数据块列表) {
+            if (blockData.block_name.equals("ani_store")) {
+                upsertListStore.addAll(ItemTranslation.convertInfoAniUpsert(blockData));
+                updateListStore.addAll(ItemTranslation.convertInfoAniStore(blockData));
+            } else if (blockData.block_name.equals("epi_store")) {
+                upsertListStore.addAll(ItemTranslation.convertInfoEpiUpsert(blockData));
+                updateListStore.addAll(ItemTranslation.convertInfoEpiStore(blockData));
+            } else if (blockData.block_name.equals("tor_store")) {
+                upsertListStore.addAll(ItemTranslation.convertInfoTorUpsert(blockData));
+                updateListStore.addAll(ItemTranslation.convertInfoTorStore(blockData));
+            } else if (blockData.block_name.equals("ani_epi_fetch")) {
+                fetchTaskList.addAll(MainUtils.BuildFetchTasks(bufferUpsertFetch, bufferUpdateFetch, blockData));
+            } else {
+                System.out.println("Unknown block name: " + blockData.block_name);
+            }
+        }
+
+        if (fetchTaskList.isEmpty())
+            System.out.println("No fetch tasks to run.");
+        else
+            MainUtils.RunFetchTasks(fetchTaskList);
+
+        // 输出 infoItemList 内容
+        List<DatabaseItem> dbItems = new ArrayList<>();
+        dbItems.addAll(upsertListStore);
+        dbItems.addAll(updateListStore);
+        dbItems.addAll(bufferUpsertFetch);
+        dbItems.addAll(bufferUpdateFetch);
+        MainUtils.WriteItemListToFile(dbItems, TestMetaData.OUTPUT_INFO_ITEM);
+
+        // 保存到数据库
+        MainUtils.ToDatabase(dbItems, TestMetaData.DATABASE_PATH);
+    }
+
 }

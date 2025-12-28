@@ -2,11 +2,12 @@ package FetchTask;
 
 import Database.InfoItem.UpdateItem;
 import Database.InfoItem.UpsertItem;
+import Main.ItemTranslation;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
-import Main.ItemTranslation;
+
 import NetAccess.NetAccess;
 
 public class FetchTaskAni extends FetchTask {

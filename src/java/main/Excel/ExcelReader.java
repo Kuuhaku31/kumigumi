@@ -20,8 +20,6 @@ import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import util.TableData.BlockData;
-
 public class ExcelReader {
     private XSSFWorkbook workbook; // Excel 工作簿
     private FormulaEvaluator evaluator;// 公式计算器

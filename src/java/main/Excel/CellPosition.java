@@ -1,6 +1,6 @@
 package Excel;
 
-public class CellPosition {
+class CellPosition {
     private String sheetName = "main";
     private int row = 0;
     private int col = 0;

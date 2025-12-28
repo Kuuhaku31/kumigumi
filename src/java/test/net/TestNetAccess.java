@@ -3,9 +3,9 @@ package net;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import static NetAccess.NetAccess.*;
-
 import MetaData.TestMetaData;
+
+import static NetAccess.NetAccess.*;
 
 public class TestNetAccess {
 

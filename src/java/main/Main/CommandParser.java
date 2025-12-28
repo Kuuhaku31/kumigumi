@@ -1,4 +1,4 @@
-package TestMain;
+package Main;
 
 public final class CommandParser {
 

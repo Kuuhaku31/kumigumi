@@ -1,6 +1,4 @@
-package util.TableData;
-
-import org.jetbrains.annotations.NotNull;
+package util;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,7 +7,7 @@ public class TableData {
     private final String[] headers;
     private final List<String[]> data = new ArrayList<>();
 
-    public TableData(String @NotNull [] headers) {
+    public TableData(String[] headers) {
         this.headers = headers.clone();
     }
 

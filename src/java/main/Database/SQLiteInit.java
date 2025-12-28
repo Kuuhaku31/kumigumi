@@ -3,7 +3,7 @@ package Database;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class SQLiteInit {
+class SQLiteInit {
 
     private static final String sqlCreateAniTable = """
             CREATE TABLE "anime" (

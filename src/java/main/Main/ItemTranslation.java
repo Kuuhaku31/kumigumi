@@ -10,7 +10,7 @@ import java.util.Map;
 import Database.InfoItem.InfoAni.*;
 import Database.InfoItem.InfoEpi.*;
 import Database.InfoItem.InfoTor.*;
-import util.TableData.TableData;
+import util.TableData;
 
 /** 数据转换工具类 */
 public class ItemTranslation {
