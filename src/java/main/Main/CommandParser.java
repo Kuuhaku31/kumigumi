@@ -1,5 +1,5 @@
 package Main;
 
-public final class CommandParser {
+final class CommandParser {
 
 }

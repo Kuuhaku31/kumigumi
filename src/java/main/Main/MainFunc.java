@@ -10,7 +10,7 @@ import FetchTask.FetchTaskAni;
 import FetchTask.FetchTaskEpi;
 import FetchTask.FetchTaskTor;
 
-public class MainFunc {
+class MainFunc {
     static void fetch2510ani(
             List<UpsertItem> upsertBuffer,
             List<UpdateItem> fetchBuffer,

@@ -22,8 +22,8 @@ import FetchTask.FetchTaskEpi;
 import FetchTask.FetchTaskTor;
 import MetaData.TestMetaData;
 
-public class MainUtils {
-    public static void WriteItemListToFile(List<?> itemList, String filePath) throws IOException {
+class MainUtils {
+    static void WriteItemListToFile(List<?> itemList, String filePath) throws IOException {
         try (var writer = Files.newBufferedWriter(Path.of(filePath))) {
             for (var item : itemList) {
                 writer.write(item.toString());
@@ -53,7 +53,7 @@ public class MainUtils {
     }
 
     // 保存到数据库
-    public static void ToDatabase(List<? extends DatabaseItem> items, String databasePath) {
+    static void ToDatabase(List<? extends DatabaseItem> items, String databasePath) {
 
         List<UpsertItem> upsertList = new ArrayList<>();
         List<UpdateItem> updateList = new ArrayList<>();
@@ -109,7 +109,7 @@ public class MainUtils {
     }
 
     // 带进度条的多线程运行 FetchTask
-    public static void RunFetchTasks(List<FetchTask> taskList) throws IOException {
+    static void RunFetchTasks(List<FetchTask> taskList) throws IOException {
         if (taskList == null || taskList.size() == 0) {
             System.out.println("No tasks to run.");
             return;
