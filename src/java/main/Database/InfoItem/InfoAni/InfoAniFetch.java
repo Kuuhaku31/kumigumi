@@ -29,7 +29,7 @@ public class InfoAniFetch extends InfoAni implements UpdateItem {
                 ", title='" + title + '\'' +
                 ", title_cn='" + title_cn + '\'' +
                 ", aliases='" + aliases + '\'' +
-                ", description='" + description.replace("\r\n", "\\n") + '\'' +
+                ", description='" + (description == null ? "null" : description.replace("\r\n", "\\n")) + '\'' +
                 ", episode_count=" + episode_count +
                 ", url_official_site='" + url_official_site + '\'' +
                 ", url_cover='" + url_cover + '\'' +

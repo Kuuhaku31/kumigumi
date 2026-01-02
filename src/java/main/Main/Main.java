@@ -28,7 +28,9 @@ public class Main {
 
     @FunctionalInterface
     private interface FetchTaskFactory {
-        List<? extends FetchTask> create(List<UpsertItem> upsertBuffer, List<UpdateItem> updateBuffer,
+        List<? extends FetchTask> create(
+                List<UpsertItem> upsertBuffer,
+                List<UpdateItem> updateBuffer,
                 BlockData blockData);
     }
 
@@ -187,9 +189,9 @@ public class Main {
                     }
 
                     // 保存结果
-                    if (combinedUpsert.size() > 0)
+                    if (!combinedUpsert.isEmpty())
                         dbItemMap.put(varUpsertName, combinedUpsert);
-                    if (combinedUpdate.size() > 0)
+                    if (!combinedUpdate.isEmpty())
                         dbItemMap.put(varUpdateName, combinedUpdate);
                 }
 
@@ -199,7 +201,7 @@ public class Main {
                     for (var i = 1; i < cmd.size(); i++) {
                         var varName = cmd.get(i);
                         var items = dbItemMap.get(varName);
-                        if (items != null && items.size() > 0) {
+                        if (items != null && !items.isEmpty()) {
                             dbItems.addAll(items);
                         }
                     }
