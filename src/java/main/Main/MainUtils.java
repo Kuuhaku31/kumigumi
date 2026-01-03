@@ -24,6 +24,10 @@ import MetaData.TestMetaData;
 
 class MainUtils {
     static void WriteItemListToFile(List<?> itemList, String filePath) throws IOException {
+        // 保证目录存在
+        Files.createDirectories(Path.of(filePath).getParent());
+
+        // 写入文件
         try (var writer = Files.newBufferedWriter(Path.of(filePath))) {
             for (var item : itemList) {
                 writer.write(item.toString());
