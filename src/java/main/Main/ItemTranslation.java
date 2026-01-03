@@ -224,8 +224,12 @@ public class ItemTranslation {
         if (data.containsKey("air_datetime")) {
             var datetimeStr = data.get("air_datetime");
             if (datetimeStr != null) {
-                var dateTime = LocalDateTime.parse(datetimeStr);
-                info.air_datetime = dateTime.atOffset(OffsetDateTime.now().getOffset());
+                try {
+                    var dateTime = LocalDateTime.parse(datetimeStr);
+                    info.air_datetime = dateTime.atOffset(OffsetDateTime.now().getOffset());
+                } catch (Exception _) {
+                    info.air_datetime = null;
+                }
             }
         }
         if (data.containsKey("size"))
@@ -374,15 +378,23 @@ public class ItemTranslation {
             try {
                 ani_id = Integer.parseInt(row[ani_id_index]);
             } catch (NumberFormatException e) {
-                System.err.println("Invalid ANI_ID: " + row[ani_id_index]);
+                // System.err.println("Invalid ANI_ID: " + row[ani_id_index]);
                 continue; // 跳过无效数据
             }
             String url_rss = row[url_rss_index];
             if (url_rss == null || url_rss.isBlank()) {
-                System.err.println("Empty url_rss for ANI_ID: " + ani_id);
+                // System.err.println("Empty url_rss for ANI_ID: " + ani_id);
                 continue; // 跳过无效数据
+            } else {
+
+                // 根据分号分割多个 RSS URL
+                for (var url : url_rss.split(";")) {
+                    var trimmedUrl = url.trim();
+                    if (!trimmedUrl.isEmpty()) {
+                        res.add(new FetchTaskTor(upsertBuffer, fetchBuffer, trimmedUrl, ani_id));
+                    }
+                }
             }
-            res.add(new FetchTaskTor(upsertBuffer, fetchBuffer, url_rss, ani_id));
         }
 
         return res;

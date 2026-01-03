@@ -71,7 +71,7 @@ class RSSParser {
 
             try {
                 var rssFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", java.util.Locale.ENGLISH);
-                var dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                var dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
                 // 解析字符串为 Date 转成标准格式字符串
                 var air_datetime = dateTimeFormat.format(rssFormat.parse(item.getPubDate().orElse(null)));
