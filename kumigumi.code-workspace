@@ -2,9 +2,13 @@
   "folders": [
   {
     "path": "."
+  },
+  {
+    "path": "../../.kh/path"
   }],
   "settings":
   {
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "maven.view": "flat"
   }
 }
