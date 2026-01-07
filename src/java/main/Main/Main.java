@@ -85,7 +85,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         System.out.println("Main");
 
-        var excelReader = new ExcelReader(TestMetaData.EXCEL_FILE_KG_N_PATH);
+        var excelReader = new ExcelReader(TestMetaData.EXCEL_FILE_KG_PATH);
         var blockDataList = excelReader.getBlockDataList();
         var blockLookup = indexBlocks(blockDataList);
 
