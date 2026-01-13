@@ -1,3 +1,5 @@
+<!-- cSpell:disable -->
+
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -56,6 +58,14 @@
             <artifactId>rssreader</artifactId>
             <version>3.10.0</version>
         </dependency>
+
+        <!-- httpclient5  -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>5.3</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -85,4 +95,3 @@
 
 </project>
 
-<!-- cSpell:words jsoup jdbc apptasticsoftware rssreader xerial fasterxml databind -->

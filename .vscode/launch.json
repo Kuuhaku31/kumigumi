@@ -43,7 +43,8 @@
       "name": "BatchDownloader",
       "request": "launch",
       "mainClass": "net.BatchDownloader",
-      "projectName": "kumigumi"
+      "projectName": "kumigumi",
+      "args": ["./resources/urls.txt", "./resources/failed_urls.txt"]
     },
     {
       "type": "java",

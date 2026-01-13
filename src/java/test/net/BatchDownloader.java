@@ -1,86 +1,146 @@
 package net;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.List;
 
 public class BatchDownloader {
 
+    // 最大重试次数
+    private static final int MAX_RETRY = 3;
+
+    // 缓冲区大小
+    private static final int BUFFER_SIZE = 8192;
+
+    // 失败 URL 记录文件
+    private static String failed_url_file_path = null;
+
     public static void main(String[] args) {
 
-        // 使用主机代理
-        System.setProperty("java.net.useSystemProxies", "true");
+        String url_file_path = null;
+        if (args.length > 1) {
+            url_file_path = args[0];
+            failed_url_file_path = args[1];
+        } else {
+            System.out.println("请提供包含 URL 列表的文件路径和失败 URL 记录文件路径作为参数");
+            return;
+        }
 
-        // 1. URL 文件路径（自行修改）
-        var urlFile = Paths.get("resources/urls.txt");
-
-        // 2. 用户默认下载目录
-        var downloadDir = Paths.get("D:/Downloads/dt");
+        Path urlFile = Paths.get(url_file_path); // 存放 URL 的文件
+        Path downloadDir = Paths.get(System.getProperty("user.home"), "Downloads");
 
         try {
-            if (!Files.exists(downloadDir)) {
-                Files.createDirectories(downloadDir);
-            }
+            Files.createDirectories(downloadDir);
+            List<String> urls = Files.readAllLines(urlFile, StandardCharsets.UTF_8);
 
-            List<String> urls = Files.readAllLines(urlFile);
-
-            for (String line : urls) {
-                String urlStr = line.trim();
-                if (urlStr.isEmpty()) {
+            for (String url : urls) {
+                if (url.isBlank())
                     continue;
-                }
-
-                downloadFile(urlStr, downloadDir);
+                downloadWithRetry(url.trim(), downloadDir);
             }
 
-            System.out.println("全部下载完成");
+            System.out.println("下载任务完成");
 
         } catch (IOException e) {
+            System.err.println("程序初始化失败");
             e.printStackTrace();
         }
     }
 
-    private static void downloadFile(String urlStr, Path downloadDir) {
-        HttpURLConnection conn = null;
+    /**
+     * 带重试机制的下载
+     */
+    private static void downloadWithRetry(String fileUrl, Path downloadDir) {
+        for (int i = 1; i <= MAX_RETRY; i++) {
+            try {
+                downloadFile(fileUrl, downloadDir);
+                System.out.println("下载成功: " + fileUrl);
+                return;
+            } catch (Exception e) {
+                System.err.println("第 " + i + " 次下载失败: " + fileUrl);
+                if (i == MAX_RETRY) {
+                    recordFailedUrl(fileUrl);
+                }
+            }
+        }
+    }
+
+    /**
+     * 实际下载逻辑
+     */
+    private static void downloadFile(String fileUrl, Path downloadDir) throws IOException {
+        URI uri;
         try {
-            var url = URI.create(urlStr).toURL();
-            conn = (HttpURLConnection) url.openConnection();
+            uri = new URI(fileUrl);
+        } catch (URISyntaxException e) {
+            System.err.println("URL 语法错误: " + fileUrl);
+            throw new IOException("无效的 URL: " + fileUrl, e);
+        }
+        URL url = uri.toURL();
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-            // 必须设置的请求头
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(15000);
-            conn.setReadTimeout(30000);
+        conn.setRequestMethod("GET");
+        conn.setConnectTimeout(10_000);
+        conn.setReadTimeout(15_000);
+        conn.setUseCaches(false);
 
-            conn.setRequestProperty("User-Agent",
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
-            conn.setRequestProperty("Accept", "*/*");
-            conn.setRequestProperty("Connection", "keep-alive");
+        // 关键：设置 User-Agent
+        conn.setRequestProperty(
+                "User-Agent",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
 
-            var code = conn.getResponseCode();
-            if (code != HttpURLConnection.HTTP_OK) {
-                throw new IOException("HTTP 状态码异常: " + code);
+        int responseCode = conn.getResponseCode();
+        if (responseCode != HttpURLConnection.HTTP_OK &&
+                responseCode != HttpURLConnection.HTTP_PARTIAL) {
+            throw new IOException("HTTP 响应码异常: " + responseCode);
+        }
+
+        String fileName = extractFileName(url);
+        Path targetFile = downloadDir.resolve(fileName);
+
+        try (
+                InputStream in = new BufferedInputStream(conn.getInputStream());
+                OutputStream out = new BufferedOutputStream(
+                        Files.newOutputStream(targetFile,
+                                StandardOpenOption.CREATE,
+                                StandardOpenOption.TRUNCATE_EXISTING))) {
+            byte[] buffer = new byte[BUFFER_SIZE];
+            int len;
+            while ((len = in.read(buffer)) != -1) {
+                out.write(buffer, 0, len);
             }
-
-            var fileName = Paths.get(url.getPath()).getFileName().toString();
-            var target = downloadDir.resolve(fileName);
-
-            try (InputStream in = conn.getInputStream()) {
-                Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
-            }
-
-            System.out.println("下载成功: " + fileName);
-
-        } catch (Exception e) {
-            System.err.println("下载失败: " + urlStr);
-            e.printStackTrace();
         } finally {
-            if (conn != null) {
-                conn.disconnect();
-            }
+            conn.disconnect();
         }
     }
 
+    /**
+     * 从 URL 中提取文件名
+     */
+    private static String extractFileName(URL url) {
+        String path = url.getPath();
+        int idx = path.lastIndexOf('/');
+        return (idx >= 0) ? path.substring(idx + 1) : "unknown.file";
+    }
+
+    /**
+     * 记录失败 URL
+     */
+    private static void recordFailedUrl(String url) {
+        try {
+            Files.writeString(
+                    Paths.get(failed_url_file_path),
+                    url + System.lineSeparator(),
+                    StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            System.err.println("无法记录失败 URL: " + url);
+        }
+    }
 }
