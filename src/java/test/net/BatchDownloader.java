@@ -20,6 +20,10 @@ public class BatchDownloader {
     // 失败 URL 记录文件
     private static String failed_url_file_path = null;
 
+    private static int total_count;
+    private static int success_count;
+    private static int failed_count;
+
     public static void main(String[] args) {
 
         String url_file_path = null;
@@ -32,11 +36,12 @@ public class BatchDownloader {
         }
 
         Path urlFile = Paths.get(url_file_path); // 存放 URL 的文件
-        Path downloadDir = Paths.get(System.getProperty("user.home"), "Downloads");
+        var downloadDir = Paths.get("D:/Downloads/dt");
 
         try {
             Files.createDirectories(downloadDir);
             List<String> urls = Files.readAllLines(urlFile, StandardCharsets.UTF_8);
+            total_count = urls.size();
 
             for (String url : urls) {
                 if (url.isBlank())
@@ -50,6 +55,8 @@ public class BatchDownloader {
             System.err.println("程序初始化失败");
             e.printStackTrace();
         }
+
+        System.out.println("总计: " + total_count + ", 成功: " + success_count + ", 失败: " + failed_count);
     }
 
     /**
@@ -60,11 +67,13 @@ public class BatchDownloader {
             try {
                 downloadFile(fileUrl, downloadDir);
                 System.out.println("下载成功: " + fileUrl);
+                success_count++;
                 return;
             } catch (Exception e) {
                 System.err.println("第 " + i + " 次下载失败: " + fileUrl);
                 if (i == MAX_RETRY) {
                     recordFailedUrl(fileUrl);
+                    failed_count++;
                 }
             }
         }
