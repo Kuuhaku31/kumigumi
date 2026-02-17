@@ -14,7 +14,7 @@ public class TestMetaData {
     // "D:/repositories/kumigumi/resources/test.db";
     public static final String DATABASE_PATH = "D:/db/kumigumi/kumigumi.db";
     public static final String EXCEL_FILE_PATH = "D:/repositories/kumigumi/resources/kg.xlsx";
-    public static final String EXCEL_FILE_KG_PATH = "D:/OneDrive/kumigumi.xlsx";
+    public static final String EXCEL_FILE_KG_PATH = "D:/OneDrive/def/kumigumi.xlsx";
     public static final String EXCEL_FILE_KG_N_PATH = "D:/OneDrive/kumigumi-n.xlsx";
 
     public static final String RESOURCES_PATH = "D:/repositories/kumigumi/resources/";
