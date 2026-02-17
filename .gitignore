@@ -7,3 +7,5 @@
 
 *.jar
 /*.code-workspace
+
+*.torrent

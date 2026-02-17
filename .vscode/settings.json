@@ -4,5 +4,12 @@
   "java.project.outputPath": "bin",
   "java.autobuild.enabled": false,
   "java.configuration.updateBuildConfiguration": "interactive",
-  "cSpell.words": ["Mikan", "Nyaa", "XSSF"]
+  "cSpell.words": [
+    "bdecode",
+    "bencode",
+    "bencoded",
+    "Mikan",
+    "Nyaa",
+    "XSSF"
+  ]
 }
