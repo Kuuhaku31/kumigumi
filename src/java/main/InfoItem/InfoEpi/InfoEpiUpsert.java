@@ -1,6 +1,6 @@
-package Database.InfoItem.InfoEpi;
+package InfoItem.InfoEpi;
 
-import Database.InfoItem.UpsertItem;
+import Database.Item.UpsertItem;
 
 public class InfoEpiUpsert extends InfoEpi implements UpsertItem {
 

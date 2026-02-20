@@ -1,6 +1,6 @@
-package Database.InfoItem.InfoEpi;
+package InfoItem.InfoEpi;
 
-import Database.InfoItem.InfoItem;
+import InfoItem.InfoItem;
 
 public class InfoEpi extends InfoItem {
     public final Integer EPI_ID;
@@ -11,6 +11,7 @@ public class InfoEpi extends InfoItem {
 
     @Override
     public String toString() {
-        return "InfoEpi{" + "EPI_ID=" + EPI_ID + '}';
+        return "InfoEpi{"
+            + "EPI_ID=" + EPI_ID + '}';
     }
 }

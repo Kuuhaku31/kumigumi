@@ -1,4 +1,4 @@
-package Database.InfoItem;
+package InfoItem;
 
 public abstract class InfoItem {
 }

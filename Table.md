@@ -13,12 +13,11 @@
 | `episode_count`     | integer  | 番组话数          |                |
 | `url_official_site` | text     | 番组官网链接      |                |
 | `url_cover`         | text     | 番组封面链接      |                |
+| ------------------- | -------- | ----------------- | -------------- |
 | `url_rss`           | text     | 番组 RSS 订阅链接 | 手动维护       |
 | `rating_before`     | integer  | 番组观前预期      | 手动维护       |
 | `rating_after`      | integer  | 番组观后评分      | 手动维护       |
 | `remark`            | text     | 备注              | 手动维护       |
-
----
 
 ## `episode` 表
 
@@ -33,6 +32,7 @@
 | `title`           | text     | 话标题          |                                       |
 | `title_cn`        | text     | 话标题译名      |                                       |
 | `description`     | text     | 单集介绍        |                                       |
+| ----------------- | -------- | --------------- | ------------------------------------- |
 | `rating`          | integer  | 话评分          | 手动维护                              |
 | `view_datetime`   | text     | 观看日期时间    | 手动维护（yyyy-MM-ddThh:mm:ss+hh:mm） |
 | `status_download` | text     | 话下载情况      | 手动维护                              |
@@ -73,21 +73,29 @@ bgm 提供两个字段标记各个话的索引：`ep` 和 `sort`
 - `ep` = 0：表示该话非正片
 - `sort` = 12.5：表示该话非正片的编号为 12.5
 
----
-
 ## `torrent` 表
 
-| 键名              | 数据类型 | 解释            | 备注     |
-| ----------------- | -------- | --------------- | -------- |
-| `TOR_HASH`        | text     | 种子 info_hash  | 主键     |
-| `ANI_ID`          | integer  | 番组 bangumi ID | 外键     |
-| `air_datetime`    | datetime | 发布日期时间    |          |
-| `size`            | integer  | 种子大小        | （字节） |
-| `url_page`        | text     | 种子页面链接    |          |
-| `title`           | text     | 种子标题        |          |
-| `subtitle_group`  | text     | 种子字幕组      |          |
-| `description`     | text     | 种子描述        |          |
-| `status_download` | text     | 种子下载情况    | 手动维护 |
-| `remark`          | text     | 备注            | 手动维护 |
+| 键名           | 数据类型 | 解释           | 备注       |
+| -------------- | -------- | -------------- | ---------- |
+| `TOR_HASH`     | text     | 种子 info_hash | 主键       |
+| `file_name`    | text     | 文件名称       |            |
+| `file_size`    | integer  | 文件大小       | （字节）   |
+| `torrent_file` | blob     | 种子文件       | 二进制数据 |
+| `remark`       | text     | 备注           | 手动维护   |
+
+## `ani_tor` 表
+
+| 键名              | 数据类型 | 解释            | 备注                      |
+| ----------------- | -------- | --------------- | ------------------------- |
+| `ANI_ID`          | integer  | 番组 bangumi ID | 主键                      |
+| `TOR_HASH`        | text     | 种子 info_hash  | 主键                      |
+| `air_datetime`    | text     | 发布日期时间    | YYYY-MM-DDThh:mm:ss+hh:mm |
+| `url_download`    | text     | 种子下载链接    |                           |
+| `url_page`        | text     | 种子页面链接    |                           |
+| `title`           | text     | 种子标题        |                           |
+| `subtitle_group`  | text     | 种子字幕组      |                           |
+| `description`     | text     | 种子描述        |                           |
+| `status_download` | text     | 种子下载情况    | 手动维护                  |
+| `remark`          | text     | 备注            | 手动维护                  |
 
 `status_download`: 0 : `未下载`, 1 : `已下载`, 2 : `不下载`

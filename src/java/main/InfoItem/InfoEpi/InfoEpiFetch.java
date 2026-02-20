@@ -1,8 +1,8 @@
-package Database.InfoItem.InfoEpi;
+package InfoItem.InfoEpi;
 
 import java.util.Date;
 
-import Database.InfoItem.UpdateItem;
+import Database.Item.UpdateItem;
 
 import static util.Util.getDateString;
 

@@ -5,9 +5,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import Database.InfoItem.DatabaseItem;
-import Database.InfoItem.UpdateItem;
-import Database.InfoItem.UpsertItem;
+import Database.Item.DatabaseItem;
+import Database.Item.UpdateItem;
+import Database.Item.UpsertItem;
 import Excel.BlockData;
 import FetchTask.*;
 import MetaData.TestMetaData;

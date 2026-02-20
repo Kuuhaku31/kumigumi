@@ -1,6 +1,6 @@
-package Database.InfoItem.InfoAni;
+package InfoItem.InfoAni;
 
-import Database.InfoItem.UpdateItem;
+import Database.Item.UpdateItem;
 
 public class InfoAniStore extends InfoAni implements UpdateItem {
 

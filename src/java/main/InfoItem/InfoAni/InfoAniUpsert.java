@@ -1,6 +1,6 @@
-package Database.InfoItem.InfoAni;
+package InfoItem.InfoAni;
 
-import Database.InfoItem.UpsertItem;
+import Database.Item.UpsertItem;
 
 public class InfoAniUpsert extends InfoAni implements UpsertItem {
 

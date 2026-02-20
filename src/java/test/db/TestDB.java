@@ -2,8 +2,8 @@ package db;
 
 import java.sql.SQLException;
 
-import Database.InfoItem.InfoAni.InfoAni;
 import Def.TestInfo;
+import InfoItem.InfoAni.InfoAni;
 
 public class TestDB {
 

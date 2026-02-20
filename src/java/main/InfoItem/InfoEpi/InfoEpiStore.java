@@ -1,8 +1,8 @@
-package Database.InfoItem.InfoEpi;
+package InfoItem.InfoEpi;
 
 import java.time.OffsetDateTime;
 
-import Database.InfoItem.UpdateItem;
+import Database.Item.UpdateItem;
 
 public class InfoEpiStore extends InfoEpi implements UpdateItem {
 

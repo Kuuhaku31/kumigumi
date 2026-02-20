@@ -1,6 +1,6 @@
-package Database.InfoItem.InfoAni;
+package InfoItem.InfoAni;
 
-import Database.InfoItem.InfoItem;
+import InfoItem.InfoItem;
 
 public class InfoAni extends InfoItem {
     public final Integer ANI_ID;

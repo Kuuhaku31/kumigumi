@@ -1,11 +1,11 @@
 package FetchTask;
 
+import Database.Item.UpdateItem;
+import Database.Item.UpsertItem;
 import java.util.List;
 
-import Database.InfoItem.UpdateItem;
-import Database.InfoItem.UpsertItem;
 
-abstract class FetchTask implements Runnable {
+public abstract class FetchTask implements Runnable {
     final List<UpsertItem> bufferUpsert;
     final List<UpdateItem> bufferUpdate;
 
