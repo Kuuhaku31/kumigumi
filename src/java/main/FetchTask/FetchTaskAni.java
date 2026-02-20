@@ -10,7 +10,7 @@ import java.util.List;
 
 import NetAccess.NetAccess;
 
-public class FetchTaskAni extends FetchTask {
+class FetchTaskAni extends FetchTask {
 
     final Integer ani_id;
 
