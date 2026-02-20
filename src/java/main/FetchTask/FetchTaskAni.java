@@ -14,7 +14,7 @@ class FetchTaskAni extends FetchTask {
 
     final Integer ani_id;
 
-    public FetchTaskAni(List<UpsertItem> bufferUpsert, List<UpdateItem> bufferUpdate, Integer ani_id) {
+    FetchTaskAni(List<UpsertItem> bufferUpsert, List<UpdateItem> bufferUpdate, Integer ani_id) {
         super(bufferUpsert, bufferUpdate);
         this.ani_id = ani_id;
     }

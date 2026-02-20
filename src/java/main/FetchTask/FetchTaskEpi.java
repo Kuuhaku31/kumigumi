@@ -10,11 +10,11 @@ import java.util.List;
 
 import NetAccess.NetAccess;
 
-public class FetchTaskEpi extends FetchTask {
+class FetchTaskEpi extends FetchTask {
 
     final Integer ani_id;
 
-    public FetchTaskEpi(List<UpsertItem> bufferUpsert, List<UpdateItem> bufferUpdate, Integer ani_id) {
+    FetchTaskEpi(List<UpsertItem> bufferUpsert, List<UpdateItem> bufferUpdate, Integer ani_id) {
         super(bufferUpsert, bufferUpdate);
         this.ani_id = ani_id;
     }

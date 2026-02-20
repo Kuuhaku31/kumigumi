@@ -16,7 +16,7 @@ class FetchTaskTor extends FetchTask {
     final List<String> checkTorHashList;
 
     /** 构造函数 */
-    public FetchTaskTor(
+    FetchTaskTor(
             List<UpsertItem> bufferUpsert,
             List<UpdateItem> bufferUpdate,
             List<String> checkTorHashList,
