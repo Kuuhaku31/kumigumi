@@ -4,6 +4,14 @@
   "configurations": [
     {
       "type": "java",
+      "name": "TestDatabase.Update",
+      "request": "launch",
+      "mainClass": "TestDatabase.Update",
+      "projectName": "kumigumi",
+      "vmArgs": ["--enable-native-access=ALL-UNNAMED"]
+    },
+    {
+      "type": "java",
       "name": "TestDatabase.Upsert",
       "request": "launch",
       "mainClass": "TestDatabase.Upsert",

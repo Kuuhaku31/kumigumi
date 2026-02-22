@@ -24,7 +24,7 @@ import java.util.List;
 public class SQLiteAccess implements Closeable {
 
     private final Connection           conn;                     // SQLite 数据库连接
-    private final SQLiteStatementCache stmtCache;                // 语句缓存持有者
+    private final SQLiteStatementCache statementCache;           // 语句缓存持有者
     private static final int           DEFAULT_BATCH_SIZE = 500; // 默认批处理大小
 
     public SQLiteAccess(String dbPath) throws SQLException {
@@ -49,7 +49,7 @@ public class SQLiteAccess implements Closeable {
         }
 
         // 初始化语句缓存
-        stmtCache = new SQLiteStatementCache(conn);
+        statementCache = new SQLiteStatementCache(conn);
     }
 
     /**
@@ -74,47 +74,47 @@ public class SQLiteAccess implements Closeable {
             // InfoAniUpsert
             if(it instanceof InfoAniUpsert) {
                 var itemInfoAniUpsert = (InfoAniUpsert)it;
-                safeSetInt(stmtCache.psAniUpsert, 1, itemInfoAniUpsert.ANI_ID); // 设置 ANI_ID 以满足主键约束，但不作为更新的字段
-                stmtCache.psAniUpsert.addBatch();
+                safeSetInt(statementCache.psAniUpsert, 1, itemInfoAniUpsert.ANI_ID); // 设置 ANI_ID 以满足主键约束，但不作为更新的字段
+                statementCache.psAniUpsert.addBatch();
                 aniCount++;
 
                 // 如果达到批处理大小则执行批处理
-                if(aniCount % DEFAULT_BATCH_SIZE == 0) stmtCache.psAniUpsert.executeBatch();
+                if(aniCount % DEFAULT_BATCH_SIZE == 0) statementCache.psAniUpsert.executeBatch();
             }
 
             // InfoEpiUpsert
             else if(it instanceof InfoEpiUpsert) {
                 var itemInfoEpiUpsert = (InfoEpiUpsert)it;
-                safeSetInt(stmtCache.psEpiUpsert, 1, itemInfoEpiUpsert.EPI_ID); // 仅使用 EPI_ID 作为主键进行插入或更新
-                safeSetInt(stmtCache.psEpiUpsert, 2, itemInfoEpiUpsert.ANI_ID); // 设置 ANI_ID 以满足外键约束，但不作为主键更新的字段
-                stmtCache.psEpiUpsert.addBatch();
+                safeSetInt(statementCache.psEpiUpsert, 1, itemInfoEpiUpsert.EPI_ID); // 仅使用 EPI_ID 作为主键进行插入或更新
+                safeSetInt(statementCache.psEpiUpsert, 2, itemInfoEpiUpsert.ANI_ID); // 设置 ANI_ID 以满足外键约束，但不作为主键更新的字段
+                statementCache.psEpiUpsert.addBatch();
                 epiCount++;
 
                 // 如果达到批处理大小则执行批处理
-                if(epiCount % DEFAULT_BATCH_SIZE == 0) stmtCache.psEpiUpsert.executeBatch();
+                if(epiCount % DEFAULT_BATCH_SIZE == 0) statementCache.psEpiUpsert.executeBatch();
             }
 
             // InfoTorUpsert
             else if(it instanceof InfoTorUpsert) {
                 var itemInfoTorUpsert = (InfoTorUpsert)it;
-                safeSetString(stmtCache.psTorUpsert, 1, itemInfoTorUpsert.TOR_HASH); // 设置 TOR_HASH 以满足主键约束
-                stmtCache.psTorUpsert.addBatch();
+                safeSetString(statementCache.psTorUpsert, 1, itemInfoTorUpsert.TOR_HASH); // 设置 TOR_HASH 以满足主键约束
+                statementCache.psTorUpsert.addBatch();
                 torCount++;
 
                 // 如果达到批处理大小则执行批处理
-                if(torCount % DEFAULT_BATCH_SIZE == 0) stmtCache.psTorUpsert.executeBatch();
+                if(torCount % DEFAULT_BATCH_SIZE == 0) statementCache.psTorUpsert.executeBatch();
             }
 
             // InfoAniTorUpsert
             else if(it instanceof InfoAniTorUpsert) {
                 var itemInfoAniTorUpsert = (InfoAniTorUpsert)it;
-                safeSetInt(stmtCache.psAniTorUpsert, 1, itemInfoAniTorUpsert.ANI_ID);      // 设置 ANI_ID 以满足外键约束，但不作为主键更新的字段
-                safeSetString(stmtCache.psAniTorUpsert, 2, itemInfoAniTorUpsert.TOR_HASH); // 设置 TOR_HASH 以满足外键约束，但不作为主键更新的字段
-                stmtCache.psAniTorUpsert.addBatch();
+                safeSetInt(statementCache.psAniTorUpsert, 1, itemInfoAniTorUpsert.ANI_ID);      // 设置 ANI_ID 以满足外键约束，但不作为主键更新的字段
+                safeSetString(statementCache.psAniTorUpsert, 2, itemInfoAniTorUpsert.TOR_HASH); // 设置 TOR_HASH 以满足外键约束，但不作为主键更新的字段
+                statementCache.psAniTorUpsert.addBatch();
                 aniTorCount++;
 
                 // 如果达到批处理大小则执行批处理
-                if(aniTorCount % DEFAULT_BATCH_SIZE == 0) stmtCache.psAniTorUpsert.executeBatch();
+                if(aniTorCount % DEFAULT_BATCH_SIZE == 0) statementCache.psAniTorUpsert.executeBatch();
             }
 
             // 未知类型
@@ -124,10 +124,10 @@ public class SQLiteAccess implements Closeable {
         }
 
         // 执行剩余的批处理
-        if(aniCount > 0) stmtCache.psAniUpsert.executeBatch();
-        if(epiCount > 0) stmtCache.psEpiUpsert.executeBatch();
-        if(torCount > 0) stmtCache.psTorUpsert.executeBatch();
-        if(aniTorCount > 0) stmtCache.psAniTorUpsert.executeBatch();
+        if(aniCount > 0) statementCache.psAniUpsert.executeBatch();
+        if(epiCount > 0) statementCache.psEpiUpsert.executeBatch();
+        if(torCount > 0) statementCache.psTorUpsert.executeBatch();
+        if(aniTorCount > 0) statementCache.psAniTorUpsert.executeBatch();
 
         // 提交事务并恢复之前的自动提交状态
         conn.commit();
@@ -153,9 +153,9 @@ public class SQLiteAccess implements Closeable {
         conn.setAutoCommit(false);
 
         // 依次处理每个项目，根据其类型添加到相应的批处理中
-        int aniFetchCount = 0, aniStoreCount = 0;
-        int epiFetchCount = 0, epiStoreCount = 0;
-        int torFetchCount = 0, torStoreCount = 0;
+        int aniFetchCount    = 0, aniStoreCount    = 0;
+        int epiFetchCount    = 0, epiStoreCount    = 0;
+        int torFetchCount    = 0, torStoreCount    = 0;
         int aniTorFetchCount = 0, aniTorStoreCount = 0;
         for(var it : items) {
 
@@ -164,39 +164,39 @@ public class SQLiteAccess implements Closeable {
                 var itemInfoAniFetch = (InfoAniFetch)it;
 
                 // 使用安全的设置方法处理可能为 null 的值
-                safeSetDate(stmtCache.psAniFetch, 1, itemInfoAniFetch.air_date);
-                safeSetString(stmtCache.psAniFetch, 2, itemInfoAniFetch.title);
-                safeSetString(stmtCache.psAniFetch, 3, itemInfoAniFetch.title_cn);
-                safeSetString(stmtCache.psAniFetch, 4, itemInfoAniFetch.aliases);
-                safeSetString(stmtCache.psAniFetch, 5, itemInfoAniFetch.description);
-                safeSetInt(stmtCache.psAniFetch, 6, itemInfoAniFetch.episode_count);
-                safeSetString(stmtCache.psAniFetch, 7, itemInfoAniFetch.url_official_site);
-                safeSetString(stmtCache.psAniFetch, 8, itemInfoAniFetch.url_cover);
-                safeSetInt(stmtCache.psAniFetch, 9, itemInfoAniFetch.ANI_ID);
+                safeSetDate(    statementCache.psAniFetch, 1, itemInfoAniFetch.air_date         );
+                safeSetString(  statementCache.psAniFetch, 2, itemInfoAniFetch.title            );
+                safeSetString(  statementCache.psAniFetch, 3, itemInfoAniFetch.title_cn         );
+                safeSetString(  statementCache.psAniFetch, 4, itemInfoAniFetch.aliases          );
+                safeSetString(  statementCache.psAniFetch, 5, itemInfoAniFetch.description      );
+                safeSetInt(     statementCache.psAniFetch, 6, itemInfoAniFetch.episode_count    );
+                safeSetString(  statementCache.psAniFetch, 7, itemInfoAniFetch.url_official_site);
+                safeSetString(  statementCache.psAniFetch, 8, itemInfoAniFetch.url_cover        );
+                safeSetInt(     statementCache.psAniFetch, 9, itemInfoAniFetch.ANI_ID           );
 
                 // 将更新添加到批处理中
-                stmtCache.psAniFetch.addBatch();
+                statementCache.psAniFetch.addBatch();
                 aniFetchCount++;
 
                 // 如果达到批处理大小则执行批处理
-                if(aniFetchCount % DEFAULT_BATCH_SIZE == 0) stmtCache.psAniFetch.executeBatch();
-
-            } else if(it instanceof InfoAniStore) {
+                if(aniFetchCount % DEFAULT_BATCH_SIZE == 0) statementCache.psAniFetch.executeBatch();
+            }
+            else if(it instanceof InfoAniStore) {
                 var itemInfoAniStore = (InfoAniStore)it;
 
                 // 使用安全的设置方法处理可能为 null 的值
-                safeSetString(stmtCache.psAniStore, 1, itemInfoAniStore.url_rss);
-                safeSetInt(stmtCache.psAniStore, 2, itemInfoAniStore.rating_before);
-                safeSetInt(stmtCache.psAniStore, 3, itemInfoAniStore.rating_after);
-                safeSetString(stmtCache.psAniStore, 4, itemInfoAniStore.remark);
-                safeSetInt(stmtCache.psAniStore, 5, itemInfoAniStore.ANI_ID);
+                safeSetString(  statementCache.psAniStore, 1, itemInfoAniStore.url_rss          );
+                safeSetInt(     statementCache.psAniStore, 2, itemInfoAniStore.rating_before    );
+                safeSetInt(     statementCache.psAniStore, 3, itemInfoAniStore.rating_after     );
+                safeSetString(  statementCache.psAniStore, 4, itemInfoAniStore.remark           );
+                safeSetInt(     statementCache.psAniStore, 5, itemInfoAniStore.ANI_ID           );
 
                 // 将更新添加到批处理中
-                stmtCache.psAniStore.addBatch();
+                statementCache.psAniStore.addBatch();
                 aniStoreCount++;
 
                 // 如果达到批处理大小则执行批处理
-                if(aniStoreCount % DEFAULT_BATCH_SIZE == 0) stmtCache.psAniStore.executeBatch();
+                if(aniStoreCount % DEFAULT_BATCH_SIZE == 0) statementCache.psAniStore.executeBatch();
             }
 
             // episode
@@ -204,39 +204,39 @@ public class SQLiteAccess implements Closeable {
                 var itemInfoEpiFetch = (InfoEpiFetch)it;
 
                 // 使用安全的设置方法处理可能为 null 的值
-                safeSetInt(stmtCache.psEpiFetch, 1, itemInfoEpiFetch.ep);
-                safeSetDouble(stmtCache.psEpiFetch, 2, itemInfoEpiFetch.sort);
-                safeSetDate(stmtCache.psEpiFetch, 3, itemInfoEpiFetch.air_date);
-                safeSetInt(stmtCache.psEpiFetch, 4, itemInfoEpiFetch.duration);
-                safeSetString(stmtCache.psEpiFetch, 5, itemInfoEpiFetch.title);
-                safeSetString(stmtCache.psEpiFetch, 6, itemInfoEpiFetch.title_cn);
-                safeSetString(stmtCache.psEpiFetch, 7, itemInfoEpiFetch.description);
-                safeSetInt(stmtCache.psEpiFetch, 8, itemInfoEpiFetch.EPI_ID);
+                safeSetInt(statementCache.psEpiFetch, 1, itemInfoEpiFetch.ep);
+                safeSetDouble(statementCache.psEpiFetch, 2, itemInfoEpiFetch.sort);
+                safeSetDate(statementCache.psEpiFetch, 3, itemInfoEpiFetch.air_date);
+                safeSetInt(statementCache.psEpiFetch, 4, itemInfoEpiFetch.duration);
+                safeSetString(statementCache.psEpiFetch, 5, itemInfoEpiFetch.title);
+                safeSetString(statementCache.psEpiFetch, 6, itemInfoEpiFetch.title_cn);
+                safeSetString(statementCache.psEpiFetch, 7, itemInfoEpiFetch.description);
+                safeSetInt(statementCache.psEpiFetch, 8, itemInfoEpiFetch.EPI_ID);
 
                 // 将更新添加到批处理中
-                stmtCache.psEpiFetch.addBatch();
+                statementCache.psEpiFetch.addBatch();
                 epiFetchCount++;
 
                 // 如果达到批处理大小则执行批处理
-                if(epiFetchCount % DEFAULT_BATCH_SIZE == 0) stmtCache.psEpiFetch.executeBatch();
-
-            } else if(it instanceof InfoEpiStore) {
+                if(epiFetchCount % DEFAULT_BATCH_SIZE == 0) statementCache.psEpiFetch.executeBatch();
+            }
+            else if(it instanceof InfoEpiStore) {
                 var itemInfoEpiStore = (InfoEpiStore)it;
 
                 // 使用安全的设置方法处理可能为 null 的值
-                safeSetInt(stmtCache.psEpiStore, 1, itemInfoEpiStore.rating);
-                safeSetOffsetDateTime(stmtCache.psEpiStore, 2, itemInfoEpiStore.view_datetime);
-                safeSetString(stmtCache.psEpiStore, 3, itemInfoEpiStore.status_download);
-                safeSetString(stmtCache.psEpiStore, 4, itemInfoEpiStore.status_view);
-                safeSetString(stmtCache.psEpiStore, 5, itemInfoEpiStore.remark);
-                safeSetInt(stmtCache.psEpiStore, 6, itemInfoEpiStore.EPI_ID);
+                safeSetInt(statementCache.psEpiStore, 1, itemInfoEpiStore.rating);
+                safeSetOffsetDateTime(statementCache.psEpiStore, 2, itemInfoEpiStore.view_datetime);
+                safeSetString(statementCache.psEpiStore, 3, itemInfoEpiStore.status_download);
+                safeSetString(statementCache.psEpiStore, 4, itemInfoEpiStore.status_view);
+                safeSetString(statementCache.psEpiStore, 5, itemInfoEpiStore.remark);
+                safeSetInt(statementCache.psEpiStore, 6, itemInfoEpiStore.EPI_ID);
 
                 // 将更新添加到批处理中
-                stmtCache.psEpiStore.addBatch();
+                statementCache.psEpiStore.addBatch();
                 epiStoreCount++;
 
                 // 如果达到批处理大小则执行批处理
-                if(epiStoreCount % DEFAULT_BATCH_SIZE == 0) stmtCache.psEpiStore.executeBatch();
+                if(epiStoreCount % DEFAULT_BATCH_SIZE == 0) statementCache.psEpiStore.executeBatch();
             }
 
             // torrent
@@ -244,31 +244,31 @@ public class SQLiteAccess implements Closeable {
                 var itemInfoTorFetch = (InfoTorFetch)it;
 
                 // 使用安全的设置方法处理可能为 null 的值
-                safeSetString(stmtCache.psTorFetch, 1, itemInfoTorFetch.file_name);
-                safeSetInt(stmtCache.psTorFetch, 2, itemInfoTorFetch.file_size);
-                safeSetBytes(stmtCache.psTorFetch, 3, itemInfoTorFetch.file);
-                safeSetString(stmtCache.psTorFetch, 4, itemInfoTorFetch.TOR_HASH);
+                safeSetString(statementCache.psTorFetch, 1, itemInfoTorFetch.file_name);
+                safeSetInt(statementCache.psTorFetch, 2, itemInfoTorFetch.file_size);
+                safeSetBytes(statementCache.psTorFetch, 3, itemInfoTorFetch.file);
+                safeSetString(statementCache.psTorFetch, 4, itemInfoTorFetch.TOR_HASH);
 
                 // 将更新添加到批处理中
-                stmtCache.psTorFetch.addBatch();
+                statementCache.psTorFetch.addBatch();
                 torFetchCount++;
 
                 // 如果达到批处理大小则执行批处理
-                if(torFetchCount % DEFAULT_BATCH_SIZE == 0) stmtCache.psTorFetch.executeBatch();
+                if(torFetchCount % DEFAULT_BATCH_SIZE == 0) statementCache.psTorFetch.executeBatch();
 
             } else if(it instanceof InfoTorStore) {
                 var itemInfoTorStore = (InfoTorStore)it;
 
                 // 使用安全的设置方法处理可能为 null 的值
-                safeSetString(stmtCache.psTorStore, 1, itemInfoTorStore.remark);
-                safeSetString(stmtCache.psTorStore, 2, itemInfoTorStore.TOR_HASH);
+                safeSetString(statementCache.psTorStore, 1, itemInfoTorStore.remark);
+                safeSetString(statementCache.psTorStore, 2, itemInfoTorStore.TOR_HASH);
 
                 // 将更新添加到批处理中
-                stmtCache.psTorStore.addBatch();
+                statementCache.psTorStore.addBatch();
                 torStoreCount++;
 
                 // 如果达到批处理大小则执行批处理
-                if(torStoreCount % DEFAULT_BATCH_SIZE == 0) stmtCache.psTorStore.executeBatch();
+                if(torStoreCount % DEFAULT_BATCH_SIZE == 0) statementCache.psTorStore.executeBatch();
             }
 
             // anime-torrent 关联项
@@ -276,33 +276,33 @@ public class SQLiteAccess implements Closeable {
                 var itemInfoAniTorFetch = (InfoAniTorFetch)it;
 
                 // 使用安全的设置方法处理可能为 null 的值
-                safeSetOffsetDateTime(stmtCache.psAniTorFetch, 1, itemInfoAniTorFetch.air_datetime);
-                safeSetString(stmtCache.psAniTorFetch, 2, itemInfoAniTorFetch.url_page);
-                safeSetString(stmtCache.psAniTorFetch, 3, itemInfoAniTorFetch.title);
-                safeSetString(stmtCache.psAniTorFetch, 4, itemInfoAniTorFetch.subtitle_group);
-                safeSetString(stmtCache.psAniTorFetch, 5, itemInfoAniTorFetch.description);
-                safeSetString(stmtCache.psAniTorFetch, 6, itemInfoAniTorFetch.TOR_HASH);
+                safeSetOffsetDateTime(statementCache.psAniTorFetch, 1, itemInfoAniTorFetch.air_datetime);
+                safeSetString(statementCache.psAniTorFetch, 2, itemInfoAniTorFetch.url_page);
+                safeSetString(statementCache.psAniTorFetch, 3, itemInfoAniTorFetch.title);
+                safeSetString(statementCache.psAniTorFetch, 4, itemInfoAniTorFetch.subtitle_group);
+                safeSetString(statementCache.psAniTorFetch, 5, itemInfoAniTorFetch.description);
+                safeSetString(statementCache.psAniTorFetch, 6, itemInfoAniTorFetch.TOR_HASH);
 
                 // 将更新添加到批处理中
-                stmtCache.psAniTorFetch.addBatch();
+                statementCache.psAniTorFetch.addBatch();
                 aniTorFetchCount++;
 
                 // 如果达到批处理大小则执行批处理
-                if(aniTorFetchCount % DEFAULT_BATCH_SIZE == 0) stmtCache.psAniTorFetch.executeBatch();
+                if(aniTorFetchCount % DEFAULT_BATCH_SIZE == 0) statementCache.psAniTorFetch.executeBatch();
             } else if(it instanceof InfoAniTorStore) {
                 var itemInfoAniTorStore = (InfoAniTorStore)it;
 
                 // 使用安全的设置方法处理可能为 null 的值
-                safeSetString(stmtCache.psAniTorStore, 1, itemInfoAniTorStore.status_download);
-                safeSetString(stmtCache.psAniTorStore, 2, itemInfoAniTorStore.remark);
-                safeSetString(stmtCache.psAniTorStore, 3, itemInfoAniTorStore.TOR_HASH);
+                safeSetString(statementCache.psAniTorStore, 1, itemInfoAniTorStore.status_download);
+                safeSetString(statementCache.psAniTorStore, 2, itemInfoAniTorStore.remark);
+                safeSetString(statementCache.psAniTorStore, 3, itemInfoAniTorStore.TOR_HASH);
 
                 // 将更新添加到批处理中
-                stmtCache.psAniTorStore.addBatch();
+                statementCache.psAniTorStore.addBatch();
                 aniTorStoreCount++;
 
                 // 如果达到批处理大小则执行批处理
-                if(aniTorStoreCount % DEFAULT_BATCH_SIZE == 0) stmtCache.psAniTorStore.executeBatch();
+                if(aniTorStoreCount % DEFAULT_BATCH_SIZE == 0) statementCache.psAniTorStore.executeBatch();
             }
 
             // 未知类型
@@ -312,14 +312,14 @@ public class SQLiteAccess implements Closeable {
         }
 
         // 执行剩余的批处理
-        if(aniFetchCount > 0) stmtCache.psAniFetch.executeBatch();
-        if(aniStoreCount > 0) stmtCache.psAniStore.executeBatch();
-        if(epiFetchCount > 0) stmtCache.psEpiFetch.executeBatch();
-        if(epiStoreCount > 0) stmtCache.psEpiStore.executeBatch();
-        if(torFetchCount > 0) stmtCache.psTorFetch.executeBatch();
-        if(torStoreCount > 0) stmtCache.psTorStore.executeBatch();
-        if(aniTorFetchCount > 0) stmtCache.psAniTorFetch.executeBatch();
-        if(aniTorStoreCount > 0) stmtCache.psAniTorStore.executeBatch();
+        if(aniFetchCount > 0) statementCache.psAniFetch.executeBatch();
+        if(aniStoreCount > 0) statementCache.psAniStore.executeBatch();
+        if(epiFetchCount > 0) statementCache.psEpiFetch.executeBatch();
+        if(epiStoreCount > 0) statementCache.psEpiStore.executeBatch();
+        if(torFetchCount > 0) statementCache.psTorFetch.executeBatch();
+        if(torStoreCount > 0) statementCache.psTorStore.executeBatch();
+        if(aniTorFetchCount > 0) statementCache.psAniTorFetch.executeBatch();
+        if(aniTorStoreCount > 0) statementCache.psAniTorStore.executeBatch();
 
         // 提交事务并恢复之前的自动提交状态
         conn.commit();
@@ -345,38 +345,38 @@ public class SQLiteAccess implements Closeable {
             // anime
             if(it instanceof InfoAni) {
                 var infoAni = (InfoAni)it;
-                safeSetInt(stmtCache.psAniDelete, 1, infoAni.ANI_ID);
-                stmtCache.psAniDelete.addBatch();
+                safeSetInt(statementCache.psAniDelete, 1, infoAni.ANI_ID);
+                statementCache.psAniDelete.addBatch();
                 aniCount++;
-                if(aniCount % DEFAULT_BATCH_SIZE == 0) stmtCache.psAniDelete.executeBatch();
+                if(aniCount % DEFAULT_BATCH_SIZE == 0) statementCache.psAniDelete.executeBatch();
             }
 
             // episode
             else if(it instanceof InfoEpi) {
                 var infoEpi = (InfoEpi)it;
-                safeSetInt(stmtCache.psEpiDelete, 1, infoEpi.EPI_ID);
-                stmtCache.psEpiDelete.addBatch();
+                safeSetInt(statementCache.psEpiDelete, 1, infoEpi.EPI_ID);
+                statementCache.psEpiDelete.addBatch();
                 epiCount++;
-                if(epiCount % DEFAULT_BATCH_SIZE == 0) stmtCache.psEpiDelete.executeBatch();
+                if(epiCount % DEFAULT_BATCH_SIZE == 0) statementCache.psEpiDelete.executeBatch();
             }
 
             // torrent
             else if(it instanceof InfoTor) {
                 var infoTor = (InfoTor)it;
-                safeSetString(stmtCache.psTorDelete, 1, infoTor.TOR_HASH);
-                stmtCache.psTorDelete.addBatch();
+                safeSetString(statementCache.psTorDelete, 1, infoTor.TOR_HASH);
+                statementCache.psTorDelete.addBatch();
                 torCount++;
-                if(torCount % DEFAULT_BATCH_SIZE == 0) stmtCache.psTorDelete.executeBatch();
+                if(torCount % DEFAULT_BATCH_SIZE == 0) statementCache.psTorDelete.executeBatch();
             }
 
             // anime-torrent 关联项
             else if(it instanceof InfoAniTor) {
                 var infoAniTor = (InfoAniTor)it;
-                safeSetInt(stmtCache.psAniTorDelete, 1, infoAniTor.ANI_ID);
-                safeSetString(stmtCache.psAniTorDelete, 2, infoAniTor.TOR_HASH);
-                stmtCache.psAniTorDelete.addBatch();
+                safeSetInt(statementCache.psAniTorDelete, 1, infoAniTor.ANI_ID);
+                safeSetString(statementCache.psAniTorDelete, 2, infoAniTor.TOR_HASH);
+                statementCache.psAniTorDelete.addBatch();
                 aniTorCount++;
-                if(aniTorCount % DEFAULT_BATCH_SIZE == 0) stmtCache.psAniTorDelete.executeBatch();
+                if(aniTorCount % DEFAULT_BATCH_SIZE == 0) statementCache.psAniTorDelete.executeBatch();
             }
 
             // 未知类型
@@ -386,10 +386,10 @@ public class SQLiteAccess implements Closeable {
         }
 
         // 执行剩余的批处理
-        if(aniCount > 0) stmtCache.psAniDelete.executeBatch();
-        if(epiCount > 0) stmtCache.psEpiDelete.executeBatch();
-        if(torCount > 0) stmtCache.psTorDelete.executeBatch();
-        if(aniTorCount > 0) stmtCache.psAniTorDelete.executeBatch();
+        if(aniCount > 0) statementCache.psAniDelete.executeBatch();
+        if(epiCount > 0) statementCache.psEpiDelete.executeBatch();
+        if(torCount > 0) statementCache.psTorDelete.executeBatch();
+        if(aniTorCount > 0) statementCache.psAniTorDelete.executeBatch();
 
         // 提交事务并恢复之前的自动提交状态
         conn.commit();
@@ -402,9 +402,9 @@ public class SQLiteAccess implements Closeable {
      */
     @Override
     public void close() {
-        if(stmtCache != null) {
+        if(statementCache != null) {
             try {
-                stmtCache.close();
+                statementCache.close();
             } catch(Exception e) {
                 System.err.println("Failed to close statement cache: " + e.getMessage());
             }
