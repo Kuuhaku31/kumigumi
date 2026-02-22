@@ -72,8 +72,8 @@ public class SQLiteAccess implements Closeable {
         for(var it : items) {
 
             // InfoAniUpsert
-            if(it instanceof InfoAniUpsert) {
-                var itemInfoAniUpsert = (InfoAniUpsert)it;
+            if(it instanceof InfoAni) {
+                var itemInfoAniUpsert = (InfoAni)it;
                 safeSetInt(statementCache.psAniUpsert, 1, itemInfoAniUpsert.ANI_ID); // 设置 ANI_ID 以满足主键约束，但不作为更新的字段
                 statementCache.psAniUpsert.addBatch();
                 aniCount++;
@@ -83,8 +83,8 @@ public class SQLiteAccess implements Closeable {
             }
 
             // InfoEpiUpsert
-            else if(it instanceof InfoEpiUpsert) {
-                var itemInfoEpiUpsert = (InfoEpiUpsert)it;
+            else if(it instanceof InfoEpi) {
+                var itemInfoEpiUpsert = (InfoEpi)it;
                 safeSetInt(statementCache.psEpiUpsert, 1, itemInfoEpiUpsert.EPI_ID); // 仅使用 EPI_ID 作为主键进行插入或更新
                 safeSetInt(statementCache.psEpiUpsert, 2, itemInfoEpiUpsert.ANI_ID); // 设置 ANI_ID 以满足外键约束，但不作为主键更新的字段
                 statementCache.psEpiUpsert.addBatch();
@@ -95,8 +95,8 @@ public class SQLiteAccess implements Closeable {
             }
 
             // InfoTorUpsert
-            else if(it instanceof InfoTorUpsert) {
-                var itemInfoTorUpsert = (InfoTorUpsert)it;
+            else if(it instanceof InfoTor) {
+                var itemInfoTorUpsert = (InfoTor)it;
                 safeSetString(statementCache.psTorUpsert, 1, itemInfoTorUpsert.TOR_HASH); // 设置 TOR_HASH 以满足主键约束
                 statementCache.psTorUpsert.addBatch();
                 torCount++;
@@ -106,8 +106,8 @@ public class SQLiteAccess implements Closeable {
             }
 
             // InfoAniTorUpsert
-            else if(it instanceof InfoAniTorUpsert) {
-                var itemInfoAniTorUpsert = (InfoAniTorUpsert)it;
+            else if(it instanceof InfoAniTor) {
+                var itemInfoAniTorUpsert = (InfoAniTor)it;
                 safeSetInt(statementCache.psAniTorUpsert, 1, itemInfoAniTorUpsert.ANI_ID);      // 设置 ANI_ID 以满足外键约束，但不作为主键更新的字段
                 safeSetString(statementCache.psAniTorUpsert, 2, itemInfoAniTorUpsert.TOR_HASH); // 设置 TOR_HASH 以满足外键约束，但不作为主键更新的字段
                 statementCache.psAniTorUpsert.addBatch();

@@ -18,7 +18,7 @@ public class InfoAniTorStore extends InfoAniTor implements UpdateItem {
     /**
      * TableData -> List<InfoAniTorStore>
      */
-    public static List<InfoAniTorStore> convertInfoTorAniStore(TableData tableData) {
+    public static List<InfoAniTorStore> convertInfoAniTorStore(TableData tableData) {
 
         // 获取列索引
         var aniIdIndex          = tableData.GetHeaderIndex("ANI_ID");

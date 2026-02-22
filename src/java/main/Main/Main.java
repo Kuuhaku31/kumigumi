@@ -1,22 +1,46 @@
 package Main;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import Database.Item.DatabaseItem;
 import Database.Item.UpdateItem;
 import Database.Item.UpsertItem;
 import Excel.BlockData;
 import Excel.ExcelReader;
 import FetchTask.FetchTask;
+import FetchTask.FetchTaskManager;
+import InfoItem.InfoAni.InfoAniStore;
+import InfoItem.InfoAniTor.InfoAniTorStore;
+import InfoItem.InfoEpi.InfoEpiStore;
 import MetaData.TestMetaData;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import util.TableData;
 
 
 public class Main {
+
+    // 保存结果
+    private final static Map<String, List<? extends DatabaseItem>> dbItemMap    = new HashMap<>();
+    private final static Map<String, FetchTaskItem>                fetchTaskMap = new HashMap<>();
+
+    private final static ExcelReader            excelReader;
+    private final static List<BlockData>        blockDataList;
+    private final static Map<String, BlockData> blockLookup;
+
+    static {
+        try {
+            excelReader   = new ExcelReader(TestMetaData.EXCEL_FILE_KG_PATH);
+            blockDataList = excelReader.getBlockDataList();
+
+            blockLookup = new HashMap<String, BlockData>();
+            for(var block : blockDataList) blockLookup.putIfAbsent(block.block_name, block);
+
+        } catch(IOException e) {
+            throw new RuntimeException("Failed to initialize ExcelReader", e);
+        }
+    }
 
     // 任务容器
     private static class FetchTaskItem {
@@ -24,80 +48,6 @@ public class Main {
         List<UpsertItem> bufferUpsert = new ArrayList<>();
         List<UpdateItem> bufferUpdate = new ArrayList<>();
     }
-
-    @FunctionalInterface
-    private interface FetchTaskFactory {
-        List<? extends FetchTask> create(
-            List<UpsertItem> upsertBuffer,
-            List<UpdateItem> updateBuffer,
-            BlockData        blockData);
-    }
-
-    private static Map<String, BlockData> indexBlocks(List<BlockData> blockDataList) {
-        var map = new HashMap<String, BlockData>();
-        for(var block : blockDataList) {
-            map.putIfAbsent(block.block_name, block);
-        }
-        return map;
-    }
-
-    private static <T extends DatabaseItem> void handleItemStore(
-        String                                    varName,
-        List<String>                              blockNames,
-        Map<String, BlockData>                    blockLookup,
-        Map<String, List<? extends DatabaseItem>> dbItemMap,
-        Function<TableData, List<T>>              converter) {
-
-        var items = new ArrayList<T>();
-        for(var blockName : blockNames) {
-            var blockData = blockLookup.get(blockName);
-            if(blockData == null)
-                continue;
-            var converted = converter.apply(blockData);
-            if(converted != null && !converted.isEmpty())
-                items.addAll(converted);
-        }
-        if(!items.isEmpty())
-            dbItemMap.put(varName, items);
-    }
-
-    private static void handleFetchTask(
-        String                     varName,
-        List<String>               blockNames,
-        Map<String, BlockData>     blockLookup,
-        Map<String, FetchTaskItem> fetchTaskMap,
-        FetchTaskFactory           factory) {
-
-        var fetchTaskItem = new FetchTaskItem();
-        for(var blockName : blockNames) {
-            var blockData = blockLookup.get(blockName);
-            if(blockData == null)
-                continue;
-            var tasks = factory.create(fetchTaskItem.bufferUpsert, fetchTaskItem.bufferUpdate, blockData);
-            if(tasks != null && !tasks.isEmpty())
-                fetchTaskItem.fetchTasks.addAll(tasks);
-        }
-        if(!fetchTaskItem.fetchTasks.isEmpty())
-            fetchTaskMap.put(varName, fetchTaskItem);
-    }
-
-    private static ExcelReader            excelReader;
-    private static List<BlockData>        blockDataList;
-    private static Map<String, BlockData> blockLookup;
-
-    static {
-        try {
-            excelReader   = new ExcelReader(TestMetaData.EXCEL_FILE_KG_PATH);
-            blockDataList = excelReader.getBlockDataList();
-            blockLookup   = indexBlocks(blockDataList);
-        } catch(IOException e) {
-            throw new RuntimeException("Failed to initialize ExcelReader", e);
-        }
-    }
-
-    // 保存结果
-    private static Map<String, List<? extends DatabaseItem>> dbItemMap    = new HashMap<>();
-    private static Map<String, FetchTaskItem>                fetchTaskMap = new HashMap<>();
 
     public static void main(String[] args) throws IOException {
         System.out.println("Main");
@@ -144,63 +94,99 @@ public class Main {
 
 
     private static void item_ani_store(List<String> cmd) {
-        var varName = cmd.get(1);
-        handleItemStore(
-            varName,
-            cmd.subList(2, cmd.size()),
-            blockLookup,
-            dbItemMap,
-            ItemTranslation::convertInfoAniStore);
+        var varName    = cmd.get(1);
+        var blockNames = cmd.subList(2, cmd.size());
+        var items      = new ArrayList<InfoAniStore>();
+        for(var blockName : blockNames) {
+            var blockData = blockLookup.get(blockName);
+            if(blockData == null)
+                continue;
+            var converted = InfoAniStore.convertInfoAniStore(blockData);
+            if(converted != null && !converted.isEmpty())
+                items.addAll(converted);
+        }
+        if(!items.isEmpty())
+            dbItemMap.put(varName, items);
     }
 
     private static void item_epi_store(List<String> cmd) {
-        var varName = cmd.get(1);
-        handleItemStore(
-            varName,
-            cmd.subList(2, cmd.size()),
-            blockLookup,
-            dbItemMap,
-            ItemTranslation::convertInfoEpiStore);
+        var varName    = cmd.get(1);
+        var blockNames = cmd.subList(2, cmd.size());
+        var items      = new ArrayList<InfoEpiStore>();
+        for(var blockName : blockNames) {
+            var blockData = blockLookup.get(blockName);
+            if(blockData == null)
+                continue;
+            var converted = InfoEpiStore.convertInfoEpiStore(blockData);
+            if(converted != null && !converted.isEmpty())
+                items.addAll(converted);
+        }
+        if(!items.isEmpty())
+            dbItemMap.put(varName, items);
     }
 
     private static void item_tor_store(List<String> cmd) {
-        var varName = cmd.get(1);
-        handleItemStore(
-            varName,
-            cmd.subList(2, cmd.size()),
-            blockLookup,
-            dbItemMap,
-            ItemTranslation::convertInfoTorStore);
+        var varName    = cmd.get(1);
+        var blockNames = cmd.subList(2, cmd.size());
+        var items      = new ArrayList<InfoAniTorStore>();
+        for(var blockName : blockNames) {
+            var blockData = blockLookup.get(blockName);
+            if(blockData == null)
+                continue;
+            var converted = InfoAniTorStore.convertInfoAniTorStore(blockData);
+            if(converted != null && !converted.isEmpty())
+                items.addAll(converted);
+        }
+        if(!items.isEmpty())
+            dbItemMap.put(varName, items);
     }
 
     private static void fetch_task_ani(List<String> cmd) {
-        var varName = cmd.get(1);
-        handleFetchTask(
-            varName,
-            cmd.subList(2, cmd.size()),
-            blockLookup,
-            fetchTaskMap,
-            ItemTranslation::createFetchTaskAni);
+        var varName       = cmd.get(1);
+        var blockNames    = cmd.subList(2, cmd.size());
+        var fetchTaskItem = new FetchTaskItem();
+        for(var blockName : blockNames) {
+            var blockData = blockLookup.get(blockName);
+            if(blockData == null)
+                continue;
+            var tasks = FetchTaskManager.createFetchTaskAni(fetchTaskItem.bufferUpsert, fetchTaskItem.bufferUpdate, blockData);
+            if(tasks != null && !tasks.isEmpty())
+                fetchTaskItem.fetchTasks.addAll(tasks);
+        }
+        if(!fetchTaskItem.fetchTasks.isEmpty())
+            fetchTaskMap.put(varName, fetchTaskItem);
     }
 
     private static void fetch_task_epi(List<String> cmd) {
-        var varName = cmd.get(1);
-        handleFetchTask(
-            varName,
-            cmd.subList(2, cmd.size()),
-            blockLookup,
-            fetchTaskMap,
-            ItemTranslation::createFetchTaskEpi);
+        var varName       = cmd.get(1);
+        var blockNames    = cmd.subList(2, cmd.size());
+        var fetchTaskItem = new FetchTaskItem();
+        for(var blockName : blockNames) {
+            var blockData = blockLookup.get(blockName);
+            if(blockData == null)
+                continue;
+            var tasks = FetchTaskManager.createFetchTaskEpi(fetchTaskItem.bufferUpsert, fetchTaskItem.bufferUpdate, blockData);
+            if(tasks != null && !tasks.isEmpty())
+                fetchTaskItem.fetchTasks.addAll(tasks);
+        }
+        if(!fetchTaskItem.fetchTasks.isEmpty())
+            fetchTaskMap.put(varName, fetchTaskItem);
     }
 
     private static void fetch_task_tor(List<String> cmd) {
-        var varName = cmd.get(1);
-        handleFetchTask(
-            varName,
-            cmd.subList(2, cmd.size()),
-            blockLookup,
-            fetchTaskMap,
-            ItemTranslation::createFetchTaskTor);
+        var varName       = cmd.get(1);
+        var blockNames    = cmd.subList(2, cmd.size());
+        var fetchTaskItem = new FetchTaskItem();
+        for(var blockName : blockNames) {
+            var blockData = blockLookup.get(blockName);
+            if(blockData == null)
+                continue;
+            var tasks = FetchTaskManager.createFetchTaskTor(fetchTaskItem.bufferUpsert, fetchTaskItem.bufferUpdate, blockData);
+            if(tasks != null && !tasks.isEmpty())
+                fetchTaskItem.fetchTasks.addAll(tasks);
+        }
+        if(!fetchTaskItem.fetchTasks.isEmpty())
+            fetchTaskMap.put(varName, fetchTaskItem);
     }
 
     private static void run_fetch_task(List<String> cmd) {
