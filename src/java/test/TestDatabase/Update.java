@@ -15,6 +15,7 @@ public class Update {
 
             List<UpdateItem> items = new ArrayList<>();
             items.add(ARGS.INFO_ANI_FETCH_1);
+            items.add(ARGS.INFO_TOR_FETCH_1);
 
             // 尝试更新测试数据
             db.Update(items);

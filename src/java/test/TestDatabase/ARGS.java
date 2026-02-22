@@ -1,6 +1,9 @@
 package TestDatabase;
 
+import java.io.IOException;
+
 import InfoItem.InfoAni.InfoAniFetch;
+import InfoItem.InfoTor.InfoTorFetch;
 
 public class ARGS {
     public static final String DB_NAME = "test.db";
@@ -8,6 +11,11 @@ public class ARGS {
 
     public static final String TOR_HASH_1 = "5e79512a40a38b3bd785cfaa9447fcefc5d595b6";
     public static final String TOR_PATH_1 = "ignore/a.torrent";
+    public static final byte[] TOR_FILE_BIN_1;
+    static {
+        try { TOR_FILE_BIN_1 = readFile(TOR_PATH_1); }
+        catch(IOException _) { throw new RuntimeException("Failed to read file for TOR_FILE_BIN_1"); }
+    }
 
     public static byte[] readFile(String path) throws java.io.IOException {
         return java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(path));
@@ -26,5 +34,11 @@ public class ARGS {
         INFO_ANI_FETCH_1.episode_count     = 12;
         INFO_ANI_FETCH_1.url_official_site = "http://example.com/official";
         INFO_ANI_FETCH_1.url_cover         = "http://example.com/cover.jpg";
+    }
+
+    public static final InfoTorFetch INFO_TOR_FETCH_1;
+    static {
+        try { INFO_TOR_FETCH_1 = new InfoTorFetch(TOR_HASH_1, readFile(TOR_PATH_1)); }
+        catch(IOException _) { throw new RuntimeException("Failed to read file for INFO_TOR_FETCH_1"); }
     }
 }
