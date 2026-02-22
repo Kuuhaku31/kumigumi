@@ -83,7 +83,7 @@ class SQLiteInit {
         "TOR_HASH"        text    NOT NULL,
 
         "air_datetime"    text,
-        "size"            integer,
+        "url_download"    text,
         "url_page"        text,
         "title"           text,
         "subtitle_group"  text,

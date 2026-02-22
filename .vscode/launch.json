@@ -4,6 +4,29 @@
   "configurations": [
     {
       "type": "java",
+      "name": "TestDatabase.Upsert",
+      "request": "launch",
+      "mainClass": "TestDatabase.Upsert",
+      "projectName": "kumigumi",
+      "vmArgs": ["--enable-native-access=ALL-UNNAMED"]
+    },
+    {
+      "type": "java",
+      "name": "TestDatabase.CreateDB",
+      "request": "launch",
+      "mainClass": "TestDatabase.CreateDB",
+      "projectName": "kumigumi",
+      "vmArgs": ["--enable-native-access=ALL-UNNAMED"]
+    },
+    {
+      "type": "java",
+      "name": "TestDatabase.Main",
+      "request": "launch",
+      "mainClass": "TestDatabase.Main",
+      "projectName": "kumigumi"
+    },
+    {
+      "type": "java",
       "name": "Test Main",
       "request": "launch",
       "mainClass": "TestMain.TestMain",

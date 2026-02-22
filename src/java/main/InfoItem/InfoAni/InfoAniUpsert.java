@@ -10,7 +10,7 @@ public class InfoAniUpsert extends InfoAni implements UpsertItem {
 
     @Override
     public String toString() {
-        return "InfoAniUpsert{" + "ANI_ID=" + ANI_ID + '}';
+        return "InfoAniUpsert{"
+            + "ANI_ID=" + ANI_ID + '}';
     }
-
 }

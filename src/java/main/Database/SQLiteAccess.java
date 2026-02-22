@@ -94,6 +94,17 @@ public class SQLiteAccess implements Closeable {
                 if(epiCount % DEFAULT_BATCH_SIZE == 0) stmtCache.psEpiUpsert.executeBatch();
             }
 
+            // InfoTorUpsert
+            else if(it instanceof InfoTorUpsert) {
+                var itemInfoTorUpsert = (InfoTorUpsert)it;
+                safeSetString(stmtCache.psTorUpsert, 1, itemInfoTorUpsert.TOR_HASH); // 设置 TOR_HASH 以满足主键约束
+                stmtCache.psTorUpsert.addBatch();
+                torCount++;
+
+                // 如果达到批处理大小则执行批处理
+                if(torCount % DEFAULT_BATCH_SIZE == 0) stmtCache.psTorUpsert.executeBatch();
+            }
+
             // InfoAniTorUpsert
             else if(it instanceof InfoAniTorUpsert) {
                 var itemInfoAniTorUpsert = (InfoAniTorUpsert)it;

@@ -11,6 +11,7 @@ public class InfoAni extends InfoItem {
 
     @Override
     public String toString() {
-        return "InfoAni{" + "ANI_ID=" + ANI_ID + '}';
+        return "InfoAni{"
+            + "ANI_ID=" + ANI_ID + '}';
     }
 }
