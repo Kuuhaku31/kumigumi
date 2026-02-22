@@ -1,4 +1,14 @@
-package Main;
+package util;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import Database.Item.DatabaseItem;
 import Database.Item.UpdateItem;
@@ -11,19 +21,10 @@ import FetchTask.FetchTaskAni;
 import FetchTask.FetchTaskEpi;
 import FetchTask.FetchTaskTor;
 import MetaData.TestMetaData;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class MainUtils {
-    static void WriteItemListToFile(List<?> itemList, String filePath) throws IOException {
+    public static void WriteItemListToFile(List<?> itemList, String filePath) throws IOException {
         // 保证目录存在
         Files.createDirectories(Path.of(filePath).getParent());
 
@@ -37,7 +38,7 @@ public class MainUtils {
     }
 
     // 读取表格
-    static List<BlockData> ReadExcel(String excelFilePath) throws IOException {
+    public static List<BlockData> ReadExcel(String excelFilePath) throws IOException {
         System.out.println("Reading excel file...");
         var excelReader = new ExcelReader(excelFilePath);
 
@@ -57,7 +58,7 @@ public class MainUtils {
     }
 
     // 保存到数据库
-    static void ToDatabase(List<? extends DatabaseItem> items, String databasePath) {
+    public static void ToDatabase(List<? extends DatabaseItem> items, String databasePath) {
 
         List<UpsertItem> upsertList = new ArrayList<>();
         List<UpdateItem> updateList = new ArrayList<>();
@@ -83,7 +84,7 @@ public class MainUtils {
     }
 
     // 构建 FetchTask 列表
-    static List<FetchTask> BuildFetchTasks(
+    public static List<FetchTask> BuildFetchTasks(
         List<UpsertItem> upsertBuffer,
         List<UpdateItem> fetchBuffer,
         BlockData        blockData) {

@@ -3,9 +3,10 @@ package net;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import Main.ItemTranslation;
 import MetaData.TestMetaData;
 import NetAccess.NetAccess;
+import InfoItem.InfoEpi.InfoEpi;
+import InfoItem.InfoEpi.InfoEpiFetch;
 
 public class TestNet {
     public static void main(String[] args) throws URISyntaxException, IOException {
@@ -25,10 +26,10 @@ public class TestNet {
         }
 
         for (var epi : epi_info_list) {
-            var infoItem = ItemTranslation.transEpiUpsert(epi);
+            var infoItem = new InfoEpi(epi);
             System.out.println(infoItem);
 
-            var infoItem2 = ItemTranslation.convertInfoEpiFetch(epi);
+            var infoItem2 = new InfoEpiFetch(epi);
             System.out.println(infoItem2);
         }
     }

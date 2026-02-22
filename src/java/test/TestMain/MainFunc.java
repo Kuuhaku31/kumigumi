@@ -1,4 +1,4 @@
-package Main;
+package TestMain;
 
 import Database.Item.UpdateItem;
 import Database.Item.UpsertItem;
@@ -7,12 +7,15 @@ import FetchTask.FetchTask;
 import FetchTask.FetchTaskAni;
 import FetchTask.FetchTaskEpi;
 import FetchTask.FetchTaskTor;
+import InfoItem.InfoAniTor.InfoAniTorStore;
+import InfoItem.InfoEpi.InfoEpiStore;
+
 import java.util.ArrayList;
 import java.util.List;
 
 
-class MainFunc {
-    static void fetch2510ani(
+public class MainFunc {
+    public static void fetch2510ani(
         List<UpsertItem> upsertBuffer,
         List<UpdateItem> fetchBuffer,
         List<FetchTask>  fetchTaskList,
@@ -34,17 +37,17 @@ class MainFunc {
         }
     }
 
-    static void store2510epi(
+    public static void store2510epi(
         List<UpdateItem> updateList,
         BlockData        blockData) {
         System.out.println("store2510epi");
-        updateList.addAll(ItemTranslation.convertInfoEpiStore(blockData));
+        updateList.addAll(InfoEpiStore.convertInfoEpiStore(blockData));
     }
 
-    static void storeTor(
+    public static void storeTor(
         List<UpdateItem> updateList,
         BlockData        blockData) {
         System.out.println("storeTor");
-        updateList.addAll(ItemTranslation.convertInfoTorStore(blockData));
+        updateList.addAll(InfoAniTorStore.convertInfoAniTorStore(blockData));
     }
 }

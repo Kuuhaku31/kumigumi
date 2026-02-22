@@ -42,7 +42,7 @@ public class InfoEpi extends InfoItem implements UpsertItem {
     /**
      * TableData -> List<InfoEpi>
      */
-    public static List<InfoEpi> convertInfoEpiUpsert(TableData tableData) {
+    public static List<InfoEpi> convertInfoEpi(TableData tableData) {
 
         var epiIdIndex = tableData.GetHeaderIndex("EPI_ID");
         var aniIdIndex = tableData.GetHeaderIndex("ANI_ID");

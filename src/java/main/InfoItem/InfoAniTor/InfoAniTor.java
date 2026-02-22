@@ -41,7 +41,7 @@ public class InfoAniTor extends InfoItem implements UpsertItem {
     /**
      * TableData -> List<InfoAniTor>
      */
-    public static List<InfoAniTor> convertInfoTorUpsert(TableData tableData) {
+    public static List<InfoAniTor> convertInfoAniTor(TableData tableData) {
 
         var aniIdIndex  = tableData.GetHeaderIndex("ANI_ID");
         var torHashIndex = tableData.GetHeaderIndex("TOR_HASH");
