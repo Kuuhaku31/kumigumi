@@ -12,16 +12,23 @@ import NetAccess.NetAccess;
 
 public class TestNet {
     public static void main(String[] args) throws URISyntaxException, IOException {
-        System.out.println("Starting TestNetAccess...");
-        String url = "https://mikan.tangbai.cc/Download/20260223/fdffa65ed576c6f41c9fd581beb6147a9b0be0f5.torrent";
-        var res = NetAccess.DownloadFile(url);
-        System.out.println("Download result: " + res);
-        OutputStream os = java.nio.file.Files.newOutputStream(java.nio.file.Paths.get("test_download.torrent"));
-        os.write(res);
-        os.close();
+        fun0();
     }
 
-    void fun1() throws URISyntaxException, IOException {
+    static void fun0() throws URISyntaxException, IOException {
+        var meta = TestMetaData.meta_公主管弦乐;
+        var tor_info_list = NetAccess.FetchAnimeTorrentInfo(meta.url_rss);
+        
+        // 保存到文件
+        try(OutputStream os = java.nio.file.Files.newOutputStream(java.nio.file.Paths.get("test_torrent_info.tmp"))) {
+            for(var tor_info : tor_info_list) {
+                os.write(tor_info.toString().getBytes());
+                os.write("\n".getBytes());
+            }
+        }
+    }
+
+    static void fun1() throws URISyntaxException, IOException {
         var meta          = TestMetaData.meta_公主管弦乐;
         var epi_info_list = NetAccess.FetchEpisodeInfo(meta.ANI_ID);
         for(var map : epi_info_list) {
@@ -42,5 +49,15 @@ public class TestNet {
             var infoItem2 = new InfoEpiFetch(epi);
             System.out.println(infoItem2);
         }
+    }
+
+    void fun2() throws IOException, URISyntaxException {
+        System.out.println("Starting TestNetAccess...");
+        String url = "https://mikan.tangbai.cc/Download/20260223/fdffa65ed576c6f41c9fd581beb6147a9b0be0f5.torrent";
+        var    res = NetAccess.DownloadFile(url);
+        System.out.println("Download result: " + res);
+        OutputStream os = java.nio.file.Files.newOutputStream(java.nio.file.Paths.get("test_download.torrent"));
+        os.write(res);
+        os.close();
     }
 }

@@ -30,9 +30,11 @@ class RSSParser {
             Map<String, String> recode = new HashMap<>();
             res.add(recode);
 
-            recode.put("TOR_URL", enclosure.getUrl());
+            var tor_hash = enclosure.getUrl().substring(enclosure.getUrl().lastIndexOf("/") + 1).replace(".torrent", "");
+
+            recode.put("TOR_HASH", tor_hash);
             recode.put("air_datetime", item.getPubDate().orElse(null));
-            recode.put("size", String.valueOf(enclosure.getLength().orElse(null)));
+            recode.put("url_download", enclosure.getUrl());
             recode.put("url_page", item.getLink().orElse(null));
 
             var title = item.getTitle().orElse(null);
