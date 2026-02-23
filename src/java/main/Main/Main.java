@@ -16,6 +16,7 @@ import Database.SQLiteAccess;
 import Excel.ExcelReader;
 import FetchTask.FetchTaskManager;
 import InfoItem.InfoAni.InfoAniStore;
+import InfoItem.InfoAniTor.InfoAniTorFetch;
 import InfoItem.InfoAniTor.InfoAniTorStore;
 import InfoItem.InfoEpi.InfoEpiStore;
 import MetaData.TestMetaData;
@@ -25,9 +26,8 @@ import Excel.ExcelResult;
 public class Main {
 
     // 保存结果
-    private final static Map<String, List<? extends DatabaseItem>> dbItemMap        = new HashMap<>();
-    private final static Map<String, FetchTaskManager>             fetchTaskMap     = new HashMap<>(); // 任务列表
-    private final static Map<String, List<String>>                 checkTorHashList = new HashMap<>(); // 需要确认的 TOR_HASH 列表
+    private final static Map<String, List<? extends DatabaseItem>> dbItemMap    = new HashMap<>();
+    private final static Map<String, FetchTaskManager>             fetchTaskMap = new HashMap<>(); // 任务列表
 
     private static ExcelResult excelResult;
 
@@ -53,8 +53,8 @@ public class Main {
             case "_fetch_task_epi" -> fetch_task_epi(cmd);
             case "_fetch_task_tor" -> fetch_task_ani_tor(cmd);
             case "_run_fetch_task" -> run_fetch_task(cmd);
-            case "_to_db" -> to_db(cmd);
-            default -> unknown_command(cmd);
+            case "_to_db"          -> to_db(cmd);
+            default                -> unknown_command(cmd);
             }
         }
 
@@ -166,7 +166,6 @@ public class Main {
     private static void run_fetch_task(List<String> cmd) {
         var varUpsertName   = cmd.get(1);
         var varUpdateName   = cmd.get(2);
-        var varCheckTorHash = cmd.get(3);
 
         // 运行任务
         List<FetchTaskManager> runTaskManagerList = new ArrayList<>();
@@ -184,17 +183,51 @@ public class Main {
         // 合并结果
         List<UpsertItem> combinedUpsert    = new ArrayList<>();
         List<UpdateItem> combinedUpdate    = new ArrayList<>();
-        List<String>     combinedCheckHash = new ArrayList<>();
         for(var fetchTaskItem : runTaskManagerList) {
             combinedUpsert.addAll(fetchTaskItem.getUpsertItemList());
             combinedUpdate.addAll(fetchTaskItem.getUpdateItemList());
-            combinedCheckHash.addAll(fetchTaskItem.getCheckTorHashList());
         }
 
         // 保存结果
-        if(!combinedUpsert   .isEmpty()) dbItemMap       .put(varUpsertName,   combinedUpsert   );
-        if(!combinedUpdate   .isEmpty()) dbItemMap       .put(varUpdateName,   combinedUpdate   );
-        if(!combinedCheckHash.isEmpty()) checkTorHashList.put(varCheckTorHash, combinedCheckHash);
+        if(!combinedUpsert.isEmpty()) dbItemMap.put(varUpsertName, combinedUpsert);
+        if(!combinedUpdate.isEmpty()) dbItemMap.put(varUpdateName, combinedUpdate);
+
+        // 获取所有 InfoAniTorFetch 项
+        List<InfoAniTorFetch> infoAniTorFetchList = new ArrayList<>();
+        for(var item : combinedUpdate) {
+            if(item instanceof InfoAniTorFetch) {
+                infoAniTorFetchList.add((InfoAniTorFetch)item);
+            }
+        }
+
+        // 检查数据库中不存在的 TOR_HASH 列表
+        List<InfoAniTorFetch> notExistInfoAniTorFetchList = new ArrayList<>();
+        if(!infoAniTorFetchList.isEmpty()) {
+            try(var db = new SQLiteAccess(TestMetaData.DATABASE_PATH)) {
+                notExistInfoAniTorFetchList = db.getTorrentHashNotExist(infoAniTorFetchList);
+            } catch(SQLException e) {
+                System.err.println("数据库操作失败: " + e.getMessage());
+            }
+        }
+
+        // 下载不存在的 TOR_HASH 对应的种子文件，并保存到 dbItemMap 中
+        if(!notExistInfoAniTorFetchList.isEmpty()) {
+            var downloadFetchTask = new FetchTaskManager();
+            downloadFetchTask.addFetchTaskTor(notExistInfoAniTorFetchList);
+            try {
+                System.out.println("开始下载种子文件: " + notExistInfoAniTorFetchList.size() + " 个");
+                downloadFetchTask.runAllTasks();
+            } catch(Exception e) {
+                System.err.println("下载种子文件时发生错误: " + e.getMessage());
+            }
+
+            var downloadedUpsert = downloadFetchTask.getUpsertItemList();
+            var downloadedUpdate = downloadFetchTask.getUpdateItemList();
+
+            // 保存到 dbItemMap 中
+            if(!downloadedUpsert.isEmpty()) dbItemMap.put("tor_upsert", downloadedUpsert);
+            if(!downloadedUpdate.isEmpty()) dbItemMap.put("tor_update", downloadedUpdate);
+        }
     }
 
     private static void to_db(List<String> cmd) {

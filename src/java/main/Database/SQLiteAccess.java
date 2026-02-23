@@ -402,16 +402,17 @@ public class SQLiteAccess implements Closeable {
     }
 
     /**
-     * 获取数据库中不存在的 torrent hash 列表
-     * @param torHashList
+     * 获取数据库中不存在的 infoAniTorFetchList 列表
+     * @param infoAniTorFetchList
      * @return
      * @throws SQLException
      */
-    public List<String> getTorrentHashNotExist(List<String> torHashList) throws SQLException {
-        if(torHashList == null || torHashList.isEmpty()) return List.of();
+    public List<InfoAniTorFetch> getTorrentHashNotExist(List<InfoAniTorFetch> infoAniTorFetchList) throws SQLException {
+        if(infoAniTorFetchList == null || infoAniTorFetchList.isEmpty()) return List.of();
 
         var uniqueHashes = new LinkedHashSet<String>();
-        for(var hash : torHashList) {
+        for(var info : infoAniTorFetchList) {
+            var hash = info.TOR_HASH;
             if(hash != null && !hash.isBlank()) uniqueHashes.add(hash);
         }
         if(uniqueHashes.isEmpty()) return List.of();
@@ -440,10 +441,11 @@ public class SQLiteAccess implements Closeable {
             }
         }
 
-        var notExistList = new ArrayList<String>();
-        for(var hash : inputList) {
-            if(!existsSet.contains(hash)) notExistList.add(hash);
+        List<InfoAniTorFetch> notExistList = new ArrayList<>();
+        for(var info : infoAniTorFetchList) {
+            if(!existsSet.contains(info.TOR_HASH)) notExistList.add(info);
         }
+
         return notExistList;
     }
 

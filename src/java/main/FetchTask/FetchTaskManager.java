@@ -10,13 +10,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import Database.Item.UpdateItem;
 import Database.Item.UpsertItem;
 import Excel.BlockData;
+import InfoItem.InfoAniTor.InfoAniTorFetch;
 
 
 public class FetchTaskManager {
 
     final List<UpsertItem> bufferUpsert = new ArrayList<>(); // 待插入或更新数据库的项
     final List<UpdateItem> bufferUpdate = new ArrayList<>(); // 待更新数据库的项
-    final List<String> checkTorHashList = new ArrayList<>(); // 需要确认的 TOR_HASH 列表
 
     final List<FetchTask> taskQueue     = new ArrayList<>(); // 任务队列
 
@@ -111,13 +111,23 @@ public class FetchTaskManager {
     /**
      * 添加 FetchTaskTor 到任务队列
      */
+    public void addFetchTaskTor(List<InfoAniTorFetch> infoAniTorFetchList) {
+        for(var info : infoAniTorFetchList) {
+            var newTorTask = new FetchTaskTor(this, info.TOR_HASH, info.url_download);
+            taskQueue.add(newTorTask);
+        }
+    }
+
+    /**
+     * 添加 FetchTaskAniTor 到任务队列
+     */
     public void addFetchTaskAniTor(String url_rss, Integer ani_id) {
         var newTorTask = new FetchTaskAniTor(this, url_rss, ani_id);
         taskQueue.add(newTorTask);
     }
 
     /**
-     * 通过 BlockData 添加任务s
+     * 通过 BlockData 添加任务
      * @param blockData
      */
     public void createFetchTaskAniTor(BlockData blockData) {
@@ -165,11 +175,6 @@ public class FetchTaskManager {
      * 获取 UpdateItemList
      */
     public List<UpdateItem> getUpdateItemList() { return bufferUpdate; }
-
-    /**
-     * 获取需要确认的 TOR_HASH 列表
-     */
-    public List<String> getCheckTorHashList() { return checkTorHashList; }
 
     /**
      * 运行所有任务
