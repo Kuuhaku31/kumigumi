@@ -56,7 +56,7 @@ public class InfoAniFetch extends InfoAni implements UpdateItem {
     public String toString() {
         return "InfoAniFetch{"
             + "ANI_ID=" + ANI_ID
-            + ", air_date=" + util.Util.getDateString(air_date)
+            + ", air_date=" + Util.Util.getDateString(air_date)
             + ", title='" + title + '\''
             + ", title_cn='" + title_cn + '\''
             + ", aliases='" + aliases + '\''

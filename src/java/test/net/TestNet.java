@@ -3,10 +3,10 @@ package net;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import MetaData.TestMetaData;
 import NetAccess.NetAccess;
 import InfoItem.InfoEpi.InfoEpi;
 import InfoItem.InfoEpi.InfoEpiFetch;
+import MetaData.TestMetaData;
 
 public class TestNet {
     public static void main(String[] args) throws URISyntaxException, IOException {

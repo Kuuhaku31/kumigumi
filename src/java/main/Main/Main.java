@@ -17,7 +17,7 @@ import InfoItem.InfoAni.InfoAniStore;
 import InfoItem.InfoAniTor.InfoAniTorStore;
 import InfoItem.InfoEpi.InfoEpiStore;
 import MetaData.TestMetaData;
-import util.MainUtils;
+import Util.MainUtils;
 
 
 public class Main {

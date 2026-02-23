@@ -6,7 +6,7 @@ import java.util.Map;
 
 import Database.Item.UpsertItem;
 import InfoItem.InfoItem;
-import util.TableData;
+import Util.TableData;
 
 
 public class InfoAniTor extends InfoItem implements UpsertItem {

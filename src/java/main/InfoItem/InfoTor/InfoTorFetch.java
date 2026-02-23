@@ -1,7 +1,7 @@
 package InfoItem.InfoTor;
 
 import Database.Item.UpdateItem;
-import util.TorrentMetaUtil;
+import Util.TorrentMetaUtil;
 
 public class InfoTorFetch extends InfoTor implements UpdateItem {
 

@@ -31,7 +31,7 @@ public class TestNetAccess {
         }
 
         // printMap(ani_info);
-        util.Util.printMapList(epi_info);
+        Util.Util.printMapList(epi_info);
         // printMapList(tor_info);
 
         // var aniFetch = convertInfoAniFetch(ani_info);

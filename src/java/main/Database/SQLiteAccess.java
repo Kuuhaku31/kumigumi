@@ -2,8 +2,6 @@
 
 package Database;
 
-import static util.Util.getDateString;
-
 import Database.Item.UpdateItem;
 import Database.Item.UpsertItem;
 import InfoItem.InfoAni.*;
@@ -11,6 +9,9 @@ import InfoItem.InfoAniTor.*;
 import InfoItem.InfoEpi.*;
 import InfoItem.InfoItem;
 import InfoItem.InfoTor.*;
+
+import static Util.Util.getDateString;
+
 import java.io.Closeable;
 import java.io.File;
 import java.sql.Connection;

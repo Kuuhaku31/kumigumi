@@ -1,9 +1,10 @@
 package InfoItem.InfoAniTor;
 
 import Database.Item.UpdateItem;
+import Util.TableData;
+
 import java.util.ArrayList;
 import java.util.List;
-import util.TableData;
 
 
 public class InfoAniTorStore extends InfoAniTor implements UpdateItem {
