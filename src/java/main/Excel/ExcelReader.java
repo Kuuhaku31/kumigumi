@@ -69,33 +69,7 @@ public class ExcelReader {
             if(row_data.size() != 0) commands.add(row_data); // 保存该行数据
         }
 
-        // 解析命令
-        var it = commands.iterator();
-        while(it.hasNext()) {
-            var row = it.next();
-            if(row.get(0).equals("_block")) {
-                var blockMeta = new BlockMetaData(row.get(1));
-
-                // 读取列信息
-                while(it.hasNext()) {
-                    row      = it.next();
-                    var fist = row.get(0);
-                    if     (fist.equals("_block_end")) break;
-                    else if(fist.equals("_from"     )) blockMeta.startRow  = (int)Double.parseDouble(row.get(1)) - 1;
-                    else if(fist.equals("_to"       )) blockMeta.endRow    = (int)Double.parseDouble(row.get(1)) - 1;
-                    else if(fist.equals("_sheet"    )) blockMeta.sheetName = row.get(1);
-                    else {
-                        // 添加列
-                        var header = row.get(0);
-                        var colIdx = (int)Double.parseDouble(row.get(1)) - 1;
-                        var type   = row.size() >= 3 ? row.get(2) : null;
-                        blockMeta.addColumn(header, type, colIdx);
-                    }
-                }
-                createBlocks(blockMeta); // 创建块数据
-                System.out.println("Parsed Block: " + blockMeta);
-            }
-        }
+        // 返回结果
         return new ExcelResult(variables, commands, blockDataList);
     }
 
@@ -162,6 +136,33 @@ public class ExcelReader {
                 System.out.println("#Define Variable: " + var_name + " = " + var_value);
             }
             cursor.gotoNextRow();
+        }
+
+        // 创建 TableData
+        else if(cellData.equalsIgnoreCase("#block")) {
+            var blockMeta = new BlockMetaData(GetCellValue(getCell(1))); // 读取块名称
+
+                // 读取列信息
+                while(true) {
+                    cursor.gotoNextRow();
+
+                    if(getCell(0) == null || getCell(0).getCellType() == CellType.BLANK) continue; // 跳过空行
+
+                    var fist = GetCellValue(getCell(0));
+                    if     (fist.equals("#block_end")) break;
+                    else if(fist.equals("#from"     )) blockMeta.startRow  = (int)Double.parseDouble(GetCellValue(getCell(1))) - 1;
+                    else if(fist.equals("#to"       )) blockMeta.endRow    = (int)Double.parseDouble(GetCellValue(getCell(1))) - 1;
+                    else if(fist.equals("#sheet"    )) blockMeta.sheetName = GetCellValue(getCell(1));
+                    else {
+                        // 添加列
+                        var header = GetCellValue(getCell(0));
+                        var colIdx = (int)Double.parseDouble(GetCellValue(getCell(1))) - 1;
+                        var type   = GetCellValue(getCell(2));
+                        blockMeta.addColumn(header, type, colIdx);
+                    }
+                }
+                createBlocks(blockMeta); // 创建块数据
+                System.out.println("Parsed Block: " + blockMeta);
         }
 
         // 条件跳转

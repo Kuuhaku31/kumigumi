@@ -35,8 +35,9 @@ public class Main {
         System.out.println("Main");
 
         // 读取 Excel 文件并解析数据
-        excelResult = ReadExcel(TestMetaData.EXCEL_FILE_PATH);
-
+        excelResult = ReadExcel(TestMetaData.EXCEL_FILE_KG_PATH);
+        WriteStringToFile(excelResult.toString(), TestMetaData.LOG_PATH + "01.excel_result.txt");
+        System.out.println(excelResult.getVariables());
         System.out.println(excelResult.getCommandsInfo());
 
         // 依次执行命令
@@ -62,18 +63,20 @@ public class Main {
         for(var entry : dbItemMap.entrySet()) {
             var varName    = entry.getKey();
             var dbItems    = entry.getValue();
-            var outputPath = "ignore/" + varName + "_output.txt";
-            System.out.println("Writing " + varName + " to " + outputPath);
+            var outputPath = TestMetaData.LOG_PATH + varName + "_output.txt";
+            System.out.print("Writing " + varName + " to " + outputPath);
             WriteItemListToFile(dbItems, outputPath);
+            System.out.println(" - Done");
         }
 
         // 输出 FetchTask 结果
         for(var entry : fetchTaskMap.entrySet()) {
             var varName       = entry.getKey();
             var fetchTaskItem = entry.getValue();
-            var outputPath    = "ignore/" + varName + "_fetch_tasks_output.txt";
-            System.out.println("Writing FetchTasks " + varName + " to " + outputPath);
+            var outputPath    = TestMetaData.LOG_PATH + varName + "_fetch_tasks_output.txt";
+            System.out.print("Writing FetchTasks " + varName + " to " + outputPath);
             WriteStringToFile(fetchTaskItem.getTaskQueueInfo(), outputPath);
+            System.out.println(" - Done");
         }
     }
 
@@ -174,8 +177,12 @@ public class Main {
             var fetchTaskItem = fetchTaskMap.get(taskName);
             if(fetchTaskItem != null) try {
                 runTaskManagerList.add(fetchTaskItem);
+
+                System.out.println("Running FetchTask: " + taskName);
+
                 fetchTaskItem.runAllTasks();
-            } catch(Exception e) {
+            }
+            catch(Exception e) {
                 System.err.println("Main: 运行任务 " + taskName + " 时发生错误: " + e.getMessage());
             }
         }

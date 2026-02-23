@@ -28,8 +28,20 @@ public class FetchTaskTor extends FetchTask {
             var newInfoTor = new InfoTorFetch(TOR_HASH, torInfoByte);
             manager.bufferUpsert.add(newInfoTor);
             manager.bufferUpdate.add(newInfoTor);
-        } catch(Exception e) {
-            System.err.println("Error fetching torrent info for URL=" + url_download + ": " + e.getMessage());
+
+            status = TaskStatus.SUCCESS; // 标记任务成功
         }
+        catch(Exception e) {
+            // System.err.println("Error fetching torrent info for URL=" + url_download + ": " + e.getMessage());
+            log += "Error fetching torrent info for URL=" + url_download + ": " + e.getMessage() + "\n";
+
+            status = TaskStatus.FAIL; // 标记任务失败
+        }
+        finally { taskFinally(); }
+    }
+
+    @Override
+    public String toString() {
+        return "FetchTaskTor{TOR_HASH=" + TOR_HASH + ", URL_DOWNLOAD=" + url_download + ", status=" + status + ", log=" + log.replace("\n", "\\n") + "}";
     }
 }

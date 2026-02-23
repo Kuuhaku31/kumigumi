@@ -18,7 +18,30 @@ public class FetchTaskManager {
     final List<UpsertItem> bufferUpsert = new ArrayList<>(); // 待插入或更新数据库的项
     final List<UpdateItem> bufferUpdate = new ArrayList<>(); // 待更新数据库的项
 
-    final List<FetchTask> taskQueue     = new ArrayList<>(); // 任务队列
+    final List<FetchTask> taskQueue        = new ArrayList<>(); // 任务队列
+
+    final List<FetchTask> notStartTaskList = new ArrayList<>(); // 未开始的任务列表
+    final List<FetchTask> successTaskList  = new ArrayList<>(); // 成功的任务列表
+    final List<FetchTask> failTaskList     = new ArrayList<>(); // 失败的任务列表
+
+    private int task_count; // 任务总数
+    private final AtomicInteger finished = new AtomicInteger(0); // 已完成的任务数
+
+    /**
+     * 增加已完成任务数
+     */
+    void incrementFinished() {
+        finished.incrementAndGet();
+        showProgress(finished.get(), task_count); // 更新进度条
+    }
+
+    /**
+     * 获取已完成任务数
+     * @return
+     */
+    int getFinishedCount() {
+        return finished.get();
+    }
 
     /**
      * 获取任务队列信息
@@ -26,10 +49,29 @@ public class FetchTaskManager {
      */
     public String getTaskQueueInfo() {
         var sb = new StringBuilder();
-        sb.append("FetchTaskManager: ").append(taskQueue.size()).append(" tasks\n");
+        sb.append("FetchTaskManager:\n");
+        // append(taskQueue.size()).append(" tasks\n");
+
+        sb.append("\nNot Start Tasks: ").append(notStartTaskList.size()).append(" tasks\n");
+        for(var task : notStartTaskList) {
+            sb.append("  - ").append(task.toString()).append("\n");
+        }
+
+        sb.append("\nFailed Tasks: ").append(failTaskList.size()).append(" tasks\n");
+        for(var task : failTaskList) {
+            sb.append("  - ").append(task.toString()).append("\n");
+        }
+
+        sb.append("\nSuccessful Tasks: ").append(successTaskList.size()).append(" tasks\n");
+        for(var task : successTaskList) {
+            sb.append("  - ").append(task.toString()).append("\n");
+        }
+
+        sb.append("\nAll Tasks: ").append(taskQueue.size()).append("\n");
         for(var task : taskQueue) {
             sb.append("  - ").append(task.toString()).append("\n");
         }
+
         return sb.toString();
     }
 
@@ -186,25 +228,17 @@ public class FetchTaskManager {
         if(taskQueue == null || taskQueue.size() == 0) {
             System.out.println("没有任务需要执行");
             return;
-        } else {
-            System.out.println("开始执行任务...");
         }
 
-        var MAX_THREADS = 32;                   // 最大线程数，避免过度并发导致系统资源耗尽
-        var task_count  = taskQueue.size();     // 总数
-        var finished    = new AtomicInteger(0); // 完成数
+        var MAX_THREADS = 32;               // 最大线程数，避免过度并发导致系统资源耗尽
+        task_count      = taskQueue.size(); // 总数
+        finished.set(0);                    // 已完成数重置
 
         showProgress(0, task_count); // 更新进度条
 
         // 并发执行任务
         var pool = Executors.newFixedThreadPool(MAX_THREADS);
-        for(var task : taskQueue) {
-            pool.submit(() -> {
-                task.run();
-                var done = finished.incrementAndGet(); // 完成数加一
-                showProgress(done, task_count);        // 更新进度条
-            });
-        }
+        for(var task : taskQueue) pool.submit(task);
         pool.shutdown();
 
         // 等待全部完成
@@ -212,15 +246,12 @@ public class FetchTaskManager {
         try {
             ok = pool.awaitTermination(1, TimeUnit.MINUTES);
         } catch(InterruptedException e) {
-            System.err.println(e.getMessage());
+            System.out.println("中断: " + e.getMessage());
         }
 
-        // 输出结果
-        if(ok) {
-            System.out.println("并发任务完成");
-        } else {
-            System.err.println("并发任务出现异常");
-        }
+        System.out.println("\n进度: " + finished.get() + "/" + task_count + " 失败数: " + failTaskList.size() + " 是否超时: " + !ok);
+
+        System.out.println();
     }
 
     // 控制台进度条显示函数

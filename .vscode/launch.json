@@ -90,7 +90,7 @@
     },
     {
         "type": "java",
-        "name": "Main",
+        "name": "Main.Main",
         "request": "launch",
         "mainClass": "Main.Main",
         "projectName": "kumigumi",

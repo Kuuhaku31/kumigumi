@@ -60,7 +60,7 @@ public class NetAccess {
 
         // 构建 client
         var client = HttpClient.newBuilder()
-                // .proxy(ProxySelector.of(new InetSocketAddress("127.0.0.1", 10809))) // 例：Clash 代理
+                .proxy(ProxySelector.of(new InetSocketAddress("127.0.0.1", 10808))) // 例：Clash 代理
                 .connectTimeout(Duration.ofSeconds(30))
                 .build();
         var reader = new RssReader(client);
@@ -116,8 +116,7 @@ public class NetAccess {
 
         // 逐行读取响应内容
         String input_line;
-        while ((input_line = in.readLine()) != null)
-            response.append(input_line);
+        while ((input_line = in.readLine()) != null) response.append(input_line);
 
         in.close();
 

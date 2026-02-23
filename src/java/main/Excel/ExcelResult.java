@@ -11,7 +11,7 @@ public record ExcelResult(
 ) {
     public String getCommandsInfo() {
         var sb = new StringBuilder();
-        sb.append("#Data List:\n");
+        sb.append("#Command List:\n");
         for(var row : commands) {
             sb.append("\tRow: [");
             for(var cell : row) {
@@ -32,8 +32,9 @@ public record ExcelResult(
 
     public String getBlocksInfo() {
         var sb = new StringBuilder();
+        sb.append("#Block Data List:\n");
         for(var blockData : blockDataList) {
-            sb.append(blockData).append("\n");
+            sb.append("\t").append(blockData.toString().replace("\n", "\n\t")).append("\n");
         }
         return sb.toString();
     }
@@ -42,5 +43,15 @@ public record ExcelResult(
         for(var blockData : blockDataList) if(blockData.block_name.equals(blockName))
         return blockData;
         return null;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("ExcelResult:\n");
+        sb.append(getVariables()).append("\n");
+        sb.append(getCommandsInfo()).append("\n");
+        sb.append(getBlocksInfo()).append("\n");
+        return sb.toString();
     }
 }

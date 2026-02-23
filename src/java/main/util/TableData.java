@@ -36,15 +36,20 @@ public class TableData {
     }
 
     protected String GetDataStr() {
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
 
-        for (var header : headers)
-            sb.append(header).append(" ");
+        for (var header : headers) sb.append(header).append(" ");
         sb.append("\n");
 
         for (var row : data) {
-            for (var value : row)
-                sb.append(value).append(" ");
+            for (var value : row) {
+                if(value == null) value = "null";
+                sb.append(" ").append(value
+                    .replace("\n", "\\n")
+                    .replace("\r", "\\r")
+                    .replace("\t", "\\t")
+                ).append(";");
+            }
             sb.append("\n");
         }
 

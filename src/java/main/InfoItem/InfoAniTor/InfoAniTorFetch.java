@@ -22,13 +22,13 @@ public class InfoAniTorFetch extends InfoAniTor implements UpdateItem {
      */
     public InfoAniTorFetch(Map<String, String> data) {
 
-        // 保证 TOR_URL 和 ANI_ID 存在
-        if(!data.containsKey("TOR_URL") || !data.containsKey("ANI_ID")) {
-            throw new IllegalArgumentException("InfoAniTorFetch构造函数: Map<String, String>缺少必需的键 'TOR_URL' 或 'ANI_ID'");
+        // 保证 ANI_ID 和 TOR_HASH 存在
+        if(!data.containsKey("ANI_ID") || !data.containsKey("TOR_HASH")) {
+            throw new IllegalArgumentException("InfoAniTorFetch构造函数: Map<String, String>缺少必需的键 'TOR_HASH' 或 'ANI_ID'");
         }
 
-        // 调用父类构造函数传递 ANI_ID 和 TOR_URL
-        super(Integer.parseInt(data.get("ANI_ID")), data.get("TOR_URL"));
+        // 调用父类构造函数传递 ANI_ID 和 TOR_HASH
+        super(Integer.parseInt(data.get("ANI_ID")), data.get("TOR_HASH"));
 
         // 解析其他字段
         if(data.containsKey("url_download")) this.url_download = data.get("url_download");

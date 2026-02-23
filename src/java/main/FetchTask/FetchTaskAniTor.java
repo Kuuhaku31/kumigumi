@@ -1,7 +1,5 @@
 package FetchTask;
 
-import java.io.IOException;
-
 import InfoItem.InfoAniTor.InfoAniTor;
 import InfoItem.InfoAniTor.InfoAniTorFetch;
 import NetAccess.NetAccess;
@@ -31,15 +29,22 @@ public class FetchTaskAniTor extends FetchTask {
                 tor.put("ANI_ID", ani_id.toString());
                 manager.bufferUpsert.add(new InfoAniTor(tor));
                 manager.bufferUpdate.add(new InfoAniTorFetch(tor));
-                // manager.checkTorHashList.add(tor.get("TOR_HASH"));
             }
-        } catch(IOException e) {
-            System.err.println("Error fetching torrent info for URL_RSS=" + url_rss + ": " + e.getMessage());
+
+            log += "Fetched " + torInfoList.size() + " torrent(s) for ANI_ID=" + ani_id + "\n";
+            status = TaskStatus.SUCCESS; // 标记任务成功
         }
+        catch(Exception e) {
+            // System.err.println("Error fetching torrent info for URL_RSS=" + url_rss + ": " + e.getMessage());
+            log += "Error fetching torrent info for URL_RSS=" + url_rss + ": " + e.getMessage() + "\n";
+
+            status = TaskStatus.FAIL; // 标记任务失败
+        }
+        finally { taskFinally(); }
     }
 
     @Override
     public String toString() {
-        return "FetchTaskTor{URL_RSS=" + url_rss + ", ANI_ID=" + ani_id + "}";
+        return "FetchTaskAniTor{URL_RSS=" + url_rss + ", ANI_ID=" + ani_id + ", status=" + status + ", log=" + log.replace("\n", "\\n") + "}";
     }
 }
