@@ -19,6 +19,26 @@ import static NetAccess.RSSParser.parseMikanRSS;
 import static NetAccess.RSSParser.parseNyaaRSS;
 
 public class NetAccess {
+
+    public static byte[] DownloadFile(String url_str) throws URISyntaxException, IOException {
+        var url = new URI(url_str).toURL(); // 创建URL对象
+        var conn = (HttpURLConnection) url.openConnection(); // 打开连接
+        conn.setRequestMethod("GET"); // 设置请求方法
+        conn.setRequestProperty("User-Agent", "Mozilla/5.0"); // 添加 User-Agent
+
+        // 读取响应
+        var in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        var response = new StringBuilder();
+
+        // 逐行读取响应内容
+        String input_line;
+        while ((input_line = in.readLine()) != null) response.append(input_line);
+
+        in.close();
+
+        return response.toString().getBytes();
+    }
+
     public static Map<String, String> FetchAnimeInfo(int anime_id) throws URISyntaxException, IOException {
         // 解析 anime 信息
         return ParseAnimeInfo(GetInfo(QueryType.anime_info, anime_id));

@@ -1,10 +1,10 @@
 package TestDatabase;
 
 import Database.Item.UpsertItem;
-import InfoItem.InfoAni.InfoAniUpsert;
-import InfoItem.InfoAniTor.InfoAniTorUpsert;
-import InfoItem.InfoEpi.InfoEpiUpsert;
-import InfoItem.InfoTor.InfoTorUpsert;
+import InfoItem.InfoAni.InfoAni;
+import InfoItem.InfoAniTor.InfoAniTor;
+import InfoItem.InfoEpi.InfoEpi;
+import InfoItem.InfoTor.InfoTor;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,10 +20,10 @@ public class Upsert {
 
 
             List<UpsertItem> items = new ArrayList<>();
-            items.add(new InfoAniUpsert(1));
-            items.add(new InfoEpiUpsert(1, 2));
-            items.add(new InfoTorUpsert(ARGS.TOR_HASH_1));
-            items.add(new InfoAniTorUpsert(1, ARGS.TOR_HASH_1));
+            items.add(new InfoAni(1));
+            items.add(new InfoEpi(1, 2));
+            items.add(new InfoTor(ARGS.TOR_HASH_1));
+            items.add(new InfoAniTor(1, ARGS.TOR_HASH_1));
 
             db.Upsert(items);
 

@@ -10,6 +10,8 @@ public class ARGS {
     public static final String DB_PATH = "ignore/db/" + DB_NAME;
 
     public static final String TOR_HASH_1 = "5e79512a40a38b3bd785cfaa9447fcefc5d595b6";
+    public static final String TOR_HASH_2 = "HASH222";
+    public static final String TOR_HASH_3 = "HASH333";
     public static final String TOR_PATH_1 = "ignore/a.torrent";
     public static final byte[] TOR_FILE_BIN_1;
     static {

@@ -17,8 +17,12 @@ import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 
@@ -395,6 +399,52 @@ public class SQLiteAccess implements Closeable {
         // 提交事务并恢复之前的自动提交状态
         conn.commit();
         conn.setAutoCommit(prevAuto);
+    }
+
+    /**
+     * 获取数据库中不存在的 torrent hash 列表
+     * @param torHashList
+     * @return
+     * @throws SQLException
+     */
+    public List<String> getTorrentHashNotExist(List<String> torHashList) throws SQLException {
+        if(torHashList == null || torHashList.isEmpty()) return List.of();
+
+        var uniqueHashes = new LinkedHashSet<String>();
+        for(var hash : torHashList) {
+            if(hash != null && !hash.isBlank()) uniqueHashes.add(hash);
+        }
+        if(uniqueHashes.isEmpty()) return List.of();
+
+        var inputList   = new ArrayList<>(uniqueHashes);
+        var existsSet   = new HashSet<String>();
+        var chunkSize   = 500; // 避免 SQLite 单条语句参数过多
+
+        for(int start = 0; start < inputList.size(); start += chunkSize) {
+            int end = Math.min(start + chunkSize, inputList.size());
+            var chunk = inputList.subList(start, end);
+
+            var placeholders = String.join(",", java.util.Collections.nCopies(chunk.size(), "?"));
+            var sql = "SELECT TOR_HASH FROM torrent WHERE TOR_HASH IN (" + placeholders + ")";
+
+            try(PreparedStatement ps = conn.prepareStatement(sql)) {
+                for(int i = 0; i < chunk.size(); i++) {
+                    ps.setString(i + 1, chunk.get(i));
+                }
+
+                try(ResultSet rs = ps.executeQuery()) {
+                    while(rs.next()) {
+                        existsSet.add(rs.getString("TOR_HASH"));
+                    }
+                }
+            }
+        }
+
+        var notExistList = new ArrayList<String>();
+        for(var hash : inputList) {
+            if(!existsSet.contains(hash)) notExistList.add(hash);
+        }
+        return notExistList;
     }
 
     /**

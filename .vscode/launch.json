@@ -4,6 +4,13 @@
   "configurations": [
     {
         "type": "java",
+        "name": "GetTorrentHashNotExist",
+        "request": "launch",
+        "mainClass": "TestDatabase.GetTorrentHashNotExist",
+        "projectName": "kumigumi"
+    },
+    {
+        "type": "java",
         "name": "Main",
         "request": "launch",
         "mainClass": "TestTorrent.Main",
