@@ -1,16 +1,16 @@
 package FetchTask;
 
-import Database.Item.UpdateItem;
-import Database.Item.UpsertItem;
-import java.util.List;
 
+abstract class FetchTask implements Runnable {
 
-public abstract class FetchTask implements Runnable {
-    final List<UpsertItem> bufferUpsert;
-    final List<UpdateItem> bufferUpdate;
+    // 引用外部类实例
+    final FetchTaskManager manager;
 
-    public FetchTask(List<UpsertItem> bufferUpsert, List<UpdateItem> bufferUpdate) {
-        this.bufferUpsert = bufferUpsert;
-        this.bufferUpdate = bufferUpdate;
+    /**
+     * 构造函数：创建 FetchTask 实例
+     * @param manager
+     */
+    public FetchTask(FetchTaskManager manager) {
+        this.manager = manager;
     }
 }

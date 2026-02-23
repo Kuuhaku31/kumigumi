@@ -4,10 +4,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 class BlockMetaData {
-    String blockName; // 块名称
-    String sheetName; // 工作表名称
-    Integer startRow; // 起始行
-    Integer endRow; // 结束行
+    String  blockName; // 块名称
+    String  sheetName; // 工作表名称
+    Integer startRow;  // 起始行
+    Integer endRow;    // 结束行
 
     Map<String, pair> headerToColIndex = new HashMap<>();
 

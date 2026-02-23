@@ -6,7 +6,7 @@ import Excel.BlockData;
 import FetchTask.FetchTask;
 import FetchTask.FetchTaskAni;
 import FetchTask.FetchTaskEpi;
-import FetchTask.FetchTaskTor;
+import FetchTask.FetchTaskAniTor;
 import InfoItem.InfoAniTor.InfoAniTorStore;
 import InfoItem.InfoEpi.InfoEpiStore;
 
@@ -32,7 +32,7 @@ public class MainFunc {
                 fetchTaskList.add(new FetchTaskAni(upsertBuffer, fetchBuffer, ani_id));
                 fetchTaskList.add(new FetchTaskEpi(upsertBuffer, fetchBuffer, ani_id));
                 if(url_rss != null && !url_rss.isBlank())
-                    fetchTaskList.add(new FetchTaskTor(upsertBuffer, fetchBuffer, new ArrayList<>(), url_rss, ani_id));
+                    fetchTaskList.add(new FetchTaskAniTor(upsertBuffer, fetchBuffer, new ArrayList<>(), url_rss, ani_id));
             }
         }
     }

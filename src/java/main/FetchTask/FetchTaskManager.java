@@ -12,40 +12,148 @@ import Database.Item.UpsertItem;
 import Excel.BlockData;
 
 
-
 public class FetchTaskManager {
 
-    private final List<UpsertItem> bufferUpsert = new ArrayList<>();
-    private final List<UpdateItem> bufferUpdate = new ArrayList<>(); // 待更新数据库的项
-    private final List<String> checkTorHashList = new ArrayList<>(); // 需要确认的 TOR_HASH 列表
+    final List<UpsertItem> bufferUpsert = new ArrayList<>(); // 待插入或更新数据库的项
+    final List<UpdateItem> bufferUpdate = new ArrayList<>(); // 待更新数据库的项
+    final List<String> checkTorHashList = new ArrayList<>(); // 需要确认的 TOR_HASH 列表
+
+    final List<FetchTask> taskQueue     = new ArrayList<>(); // 任务队列
 
     /**
-     * 任务队列
+     * 获取任务队列信息
+     * @return
      */
-    private final List<FetchTask> taskQueue = new ArrayList<>();
+    public String getTaskQueueInfo() {
+        var sb = new StringBuilder();
+        sb.append("FetchTaskManager: ").append(taskQueue.size()).append(" tasks\n");
+        for(var task : taskQueue) {
+            sb.append("  - ").append(task.toString()).append("\n");
+        }
+        return sb.toString();
+    }
 
+    /**
+     * 检查任务队列是否为空
+     * @return
+     */
+    public boolean isEmpty() {
+        return taskQueue.isEmpty();
+    }
+    
     /**
      * 添加 FetchTaskAni 到任务队列
      */
     public void addFetchTaskAni(Integer ani_id) {
-        var newAniTask = new FetchTaskAni(bufferUpsert, bufferUpdate, ani_id);
+        var newAniTask = new FetchTaskAni(this, ani_id);
         taskQueue.add(newAniTask);
+    }
+
+    /**
+     * 通过 BlockData 添加多个 FetchTaskAni 到任务队列
+     * @param blockData
+     */
+    public void addFetchTaskAni(BlockData blockData) {
+
+        // 参数检查
+        if(bufferUpsert == null || bufferUpdate == null || blockData == null) return;
+
+        // 确保关键字段存在
+        var ani_id_index = blockData.GetHeaderIndex("ANI_ID");
+        if(ani_id_index == -1) return;
+
+        // 创建任务
+        for(var row : blockData.GetData()) {
+            Integer ani_id;
+            try { ani_id = Integer.parseInt(row[ani_id_index]); }
+            catch(NumberFormatException e) {
+                System.err.println("Invalid ANI_ID: " + row[ani_id_index]);
+                continue; // 跳过无效数据
+            }
+            taskQueue.add(new FetchTaskAni(this, ani_id));
+        }
     }
 
     /**
      * 添加 FetchTaskEpi 到任务队列
      */
     public void addFetchTaskEpi(Integer ani_id) {
-        var newEpiTask = new FetchTaskEpi(bufferUpsert, bufferUpdate, ani_id);
+        var newEpiTask = new FetchTaskEpi(this, ani_id);
         taskQueue.add(newEpiTask);
+    }
+
+    /**
+     *  通过 BlockData 添加多个 FetchTaskEpi 到任务队列
+     * @param blockData
+     */
+    public void createFetchTaskEpi(BlockData blockData) {
+
+        // 参数检查
+        if(bufferUpsert == null || bufferUpdate == null || blockData == null) return;
+
+        // 确保关键字段存在
+        var ani_id_index = blockData.GetHeaderIndex("ANI_ID");
+        if(ani_id_index == -1) return;
+
+        // 创建任务
+        for(var row : blockData.GetData()) {
+            Integer ani_id;
+            try {
+                ani_id = Integer.parseInt(row[ani_id_index]);
+            } catch(NumberFormatException e) {
+                System.err.println("Invalid ANI_ID: " + row[ani_id_index]);
+                continue; // 跳过无效数据
+            }
+            taskQueue.add(new FetchTaskEpi(this, ani_id));
+        }
     }
 
     /**
      * 添加 FetchTaskTor 到任务队列
      */
-    public void addFetchTaskTor(String url_rss, Integer ani_id) {
-        var newTorTask = new FetchTaskTor(bufferUpsert, bufferUpdate, checkTorHashList, url_rss, ani_id);
+    public void addFetchTaskAniTor(String url_rss, Integer ani_id) {
+        var newTorTask = new FetchTaskAniTor(this, url_rss, ani_id);
         taskQueue.add(newTorTask);
+    }
+
+    /**
+     * 通过 BlockData 添加任务s
+     * @param blockData
+     */
+    public void createFetchTaskAniTor(BlockData blockData) {
+
+        // 参数检查
+        if(bufferUpsert == null || bufferUpdate == null || blockData == null) return;
+
+        // 确保关键字段存在
+        var ani_id_index  = blockData.GetHeaderIndex("ANI_ID");
+        var url_rss_index = blockData.GetHeaderIndex("url_rss");
+        if(ani_id_index == -1 || url_rss_index == -1) return;
+
+        // 创建任务
+        for(var row : blockData.GetData()) {
+            Integer ani_id;
+            try {
+                ani_id = Integer.parseInt(row[ani_id_index]);
+            } catch(NumberFormatException e) {
+                // System.err.println("Invalid ANI_ID: " + row[ani_id_index]);
+                continue; // 跳过无效数据
+            }
+            String url_rss = row[url_rss_index];
+            if(url_rss == null || url_rss.isBlank()) {
+                // System.err.println("Empty url_rss for ANI_ID: " + ani_id);
+                continue; // 跳过无效数据
+            } else {
+
+                // 根据分号分割多个 RSS URL
+                for(var url : url_rss.split(";")) {
+                    var trimmedUrl = url.trim();
+                    if(!trimmedUrl.isEmpty()) {
+                        taskQueue.add(new FetchTaskAniTor(this, trimmedUrl, ani_id));
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -108,110 +216,6 @@ public class FetchTaskManager {
         } else {
             System.err.println("并发任务出现异常");
         }
-    }
-
-    public static List<FetchTaskAni> createFetchTaskAni(
-        List<UpsertItem> upsertBuffer,
-        List<UpdateItem> fetchBuffer,
-        BlockData        blockData) {
-
-        // 参数检查
-        if(upsertBuffer == null || fetchBuffer == null || blockData == null)
-            return null;
-
-        // 确保关键字段存在
-        var ani_id_index = blockData.GetHeaderIndex("ANI_ID");
-        if(ani_id_index == -1)
-            return null;
-
-        // 创建任务
-        List<FetchTaskAni> res = new ArrayList<>();
-        for(var row : blockData.GetData()) {
-            Integer ani_id;
-            try {
-                ani_id = Integer.parseInt(row[ani_id_index]);
-            } catch(NumberFormatException e) {
-                System.err.println("Invalid ANI_ID: " + row[ani_id_index]);
-                continue; // 跳过无效数据
-            }
-            res.add(new FetchTaskAni(upsertBuffer, fetchBuffer, ani_id));
-        }
-
-        return res;
-    }
-
-    public static List<FetchTaskEpi> createFetchTaskEpi(
-        List<UpsertItem> upsertBuffer,
-        List<UpdateItem> fetchBuffer,
-        BlockData        blockData) {
-
-        // 参数检查
-        if(upsertBuffer == null || fetchBuffer == null || blockData == null)
-            return null;
-
-        // 确保关键字段存在
-        var ani_id_index = blockData.GetHeaderIndex("ANI_ID");
-        if(ani_id_index == -1)
-            return null;
-
-        // 创建任务
-        List<FetchTaskEpi> res = new ArrayList<>();
-        for(var row : blockData.GetData()) {
-            Integer ani_id;
-            try {
-                ani_id = Integer.parseInt(row[ani_id_index]);
-            } catch(NumberFormatException e) {
-                System.err.println("Invalid ANI_ID: " + row[ani_id_index]);
-                continue; // 跳过无效数据
-            }
-            res.add(new FetchTaskEpi(upsertBuffer, fetchBuffer, ani_id));
-        }
-
-        return res;
-    }
-
-    public static List<FetchTaskTor> createFetchTaskTor(
-        List<UpsertItem> upsertBuffer,
-        List<UpdateItem> fetchBuffer,
-        BlockData        blockData) {
-
-        // 参数检查
-        if(upsertBuffer == null || fetchBuffer == null || blockData == null)
-            return null;
-
-        // 确保关键字段存在
-        var ani_id_index  = blockData.GetHeaderIndex("ANI_ID");
-        var url_rss_index = blockData.GetHeaderIndex("url_rss");
-        if(ani_id_index == -1 || url_rss_index == -1)
-            return null;
-
-        // 创建任务
-        List<FetchTaskTor> res = new ArrayList<>();
-        for(var row : blockData.GetData()) {
-            Integer ani_id;
-            try {
-                ani_id = Integer.parseInt(row[ani_id_index]);
-            } catch(NumberFormatException e) {
-                // System.err.println("Invalid ANI_ID: " + row[ani_id_index]);
-                continue; // 跳过无效数据
-            }
-            String url_rss = row[url_rss_index];
-            if(url_rss == null || url_rss.isBlank()) {
-                // System.err.println("Empty url_rss for ANI_ID: " + ani_id);
-                continue; // 跳过无效数据
-            } else {
-
-                // 根据分号分割多个 RSS URL
-                for(var url : url_rss.split(";")) {
-                    var trimmedUrl = url.trim();
-                    if(!trimmedUrl.isEmpty()) {
-                        res.add(new FetchTaskTor(upsertBuffer, fetchBuffer, new ArrayList<>(), trimmedUrl, ani_id));
-                    }
-                }
-            }
-        }
-
-        return res;
     }
 
     // 控制台进度条显示函数

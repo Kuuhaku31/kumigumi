@@ -1,6 +1,9 @@
 package Main;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,55 +12,36 @@ import java.util.Map;
 import Database.Item.DatabaseItem;
 import Database.Item.UpdateItem;
 import Database.Item.UpsertItem;
-import Excel.BlockData;
+import Database.SQLiteAccess;
 import Excel.ExcelReader;
-import FetchTask.FetchTask;
 import FetchTask.FetchTaskManager;
 import InfoItem.InfoAni.InfoAniStore;
 import InfoItem.InfoAniTor.InfoAniTorStore;
 import InfoItem.InfoEpi.InfoEpiStore;
 import MetaData.TestMetaData;
-import Util.MainUtils;
+import Excel.ExcelResult;
 
 
 public class Main {
 
     // 保存结果
-    private final static Map<String, List<? extends DatabaseItem>> dbItemMap    = new HashMap<>();
-    private final static Map<String, FetchTaskItem>                fetchTaskMap = new HashMap<>();
+    private final static Map<String, List<? extends DatabaseItem>> dbItemMap        = new HashMap<>();
+    private final static Map<String, FetchTaskManager>             fetchTaskMap     = new HashMap<>(); // 任务列表
+    private final static Map<String, List<String>>                 checkTorHashList = new HashMap<>(); // 需要确认的 TOR_HASH 列表
 
-    private final static ExcelReader            excelReader;
-    private final static List<BlockData>        blockDataList;
-    private final static Map<String, BlockData> blockLookup;
-
-    static {
-        try {
-            excelReader   = new ExcelReader(TestMetaData.EXCEL_FILE_KG_PATH);
-            blockDataList = excelReader.getBlockDataList();
-
-            blockLookup = new HashMap<String, BlockData>();
-            for(var block : blockDataList) blockLookup.putIfAbsent(block.block_name, block);
-
-        } catch(IOException e) {
-            throw new RuntimeException("Failed to initialize ExcelReader", e);
-        }
-    }
-
-    // 任务容器
-    private static class FetchTaskItem {
-        List<FetchTask>  fetchTasks   = new ArrayList<>();
-        List<UpsertItem> bufferUpsert = new ArrayList<>();
-        List<UpdateItem> bufferUpdate = new ArrayList<>();
-    }
+    private static ExcelResult excelResult;
 
     public static void main(String[] args) throws IOException {
         System.out.println("Main");
 
-        System.out.println(excelReader.getCommandsInfo());
+        // 读取 Excel 文件并解析数据
+        excelResult = ReadExcel(TestMetaData.EXCEL_FILE_PATH);
+
+        System.out.println(excelResult.getCommandsInfo());
 
         // 依次执行命令
         // 根据命令执行对应的操作
-        var cmds = excelReader.getCommands();
+        var cmds = excelResult.commands();
         var it   = cmds.iterator();
         while(it.hasNext()) {
             var cmd = it.next();
@@ -67,7 +51,7 @@ public class Main {
             case "_item_tor_store" -> item_tor_store(cmd);
             case "_fetch_task_ani" -> fetch_task_ani(cmd);
             case "_fetch_task_epi" -> fetch_task_epi(cmd);
-            case "_fetch_task_tor" -> fetch_task_tor(cmd);
+            case "_fetch_task_tor" -> fetch_task_ani_tor(cmd);
             case "_run_fetch_task" -> run_fetch_task(cmd);
             case "_to_db" -> to_db(cmd);
             default -> unknown_command(cmd);
@@ -80,7 +64,7 @@ public class Main {
             var dbItems    = entry.getValue();
             var outputPath = "ignore/" + varName + "_output.txt";
             System.out.println("Writing " + varName + " to " + outputPath);
-            MainUtils.WriteItemListToFile(dbItems, outputPath);
+            WriteItemListToFile(dbItems, outputPath);
         }
 
         // 输出 FetchTask 结果
@@ -89,25 +73,23 @@ public class Main {
             var fetchTaskItem = entry.getValue();
             var outputPath    = "ignore/" + varName + "_fetch_tasks_output.txt";
             System.out.println("Writing FetchTasks " + varName + " to " + outputPath);
-            MainUtils.WriteItemListToFile(fetchTaskItem.fetchTasks, outputPath);
+            WriteStringToFile(fetchTaskItem.getTaskQueueInfo(), outputPath);
         }
     }
 
-
     private static void item_ani_store(List<String> cmd) {
-        var varName    = cmd.get(1);
-        var blockNames = cmd.subList(2, cmd.size());
-        var items      = new ArrayList<InfoAniStore>();
+        var varName    = cmd.get(1);                 // 变量名
+        var blockNames = cmd.subList(2, cmd.size()); // 表格数据块名称列表
+
+        // 从 blockDataList 中找到对应 blockName 的数据块，转换成 InfoAniStore 对象，并保存到 dbItemMap 中
+        var items = new ArrayList<InfoAniStore>();
         for(var blockName : blockNames) {
-            var blockData = blockLookup.get(blockName);
-            if(blockData == null)
-                continue;
+            var blockData = excelResult.getBlockDataByName(blockName);
+            if(blockData == null) continue;
             var converted = InfoAniStore.convertInfoAniStore(blockData);
-            if(converted != null && !converted.isEmpty())
-                items.addAll(converted);
+            if(converted != null && !converted.isEmpty()) items.addAll(converted);
         }
-        if(!items.isEmpty())
-            dbItemMap.put(varName, items);
+        if(!items.isEmpty()) dbItemMap.put(varName, items);
     }
 
     private static void item_epi_store(List<String> cmd) {
@@ -115,7 +97,7 @@ public class Main {
         var blockNames = cmd.subList(2, cmd.size());
         var items      = new ArrayList<InfoEpiStore>();
         for(var blockName : blockNames) {
-            var blockData = blockLookup.get(blockName);
+            var blockData = excelResult.getBlockDataByName(blockName);
             if(blockData == null)
                 continue;
             var converted = InfoEpiStore.convertInfoEpiStore(blockData);
@@ -131,7 +113,7 @@ public class Main {
         var blockNames = cmd.subList(2, cmd.size());
         var items      = new ArrayList<InfoAniTorStore>();
         for(var blockName : blockNames) {
-            var blockData = blockLookup.get(blockName);
+            var blockData = excelResult.getBlockDataByName(blockName);
             if(blockData == null)
                 continue;
             var converted = InfoAniTorStore.convertInfoAniTorStore(blockData);
@@ -145,86 +127,74 @@ public class Main {
     private static void fetch_task_ani(List<String> cmd) {
         var varName       = cmd.get(1);
         var blockNames    = cmd.subList(2, cmd.size());
-        var fetchTaskItem = new FetchTaskItem();
+        var fetchTaskItem = new FetchTaskManager();
         for(var blockName : blockNames) {
-            var blockData = blockLookup.get(blockName);
-            if(blockData == null)
-                continue;
-            var tasks = FetchTaskManager.createFetchTaskAni(fetchTaskItem.bufferUpsert, fetchTaskItem.bufferUpdate, blockData);
-            if(tasks != null && !tasks.isEmpty())
-                fetchTaskItem.fetchTasks.addAll(tasks);
+            var blockData = excelResult.getBlockDataByName(blockName);
+            if(blockData == null) continue;
+            fetchTaskItem.addFetchTaskAni(blockData);
         }
-        if(!fetchTaskItem.fetchTasks.isEmpty())
+        if(!fetchTaskItem.isEmpty())
             fetchTaskMap.put(varName, fetchTaskItem);
     }
 
     private static void fetch_task_epi(List<String> cmd) {
         var varName       = cmd.get(1);
         var blockNames    = cmd.subList(2, cmd.size());
-        var fetchTaskItem = new FetchTaskItem();
+        var fetchTaskItem = new FetchTaskManager();
         for(var blockName : blockNames) {
-            var blockData = blockLookup.get(blockName);
-            if(blockData == null)
-                continue;
-            var tasks = FetchTaskManager.createFetchTaskEpi(fetchTaskItem.bufferUpsert, fetchTaskItem.bufferUpdate, blockData);
-            if(tasks != null && !tasks.isEmpty())
-                fetchTaskItem.fetchTasks.addAll(tasks);
+            var blockData = excelResult.getBlockDataByName(blockName);
+            if(blockData == null) continue;
+            fetchTaskItem.createFetchTaskEpi(blockData);
         }
-        if(!fetchTaskItem.fetchTasks.isEmpty())
+        if(!fetchTaskItem.isEmpty())
             fetchTaskMap.put(varName, fetchTaskItem);
     }
 
-    private static void fetch_task_tor(List<String> cmd) {
+    private static void fetch_task_ani_tor(List<String> cmd) {
         var varName       = cmd.get(1);
         var blockNames    = cmd.subList(2, cmd.size());
-        var fetchTaskItem = new FetchTaskItem();
+        var fetchTaskItem = new FetchTaskManager();
         for(var blockName : blockNames) {
-            var blockData = blockLookup.get(blockName);
-            if(blockData == null)
-                continue;
-            var tasks = FetchTaskManager.createFetchTaskTor(fetchTaskItem.bufferUpsert, fetchTaskItem.bufferUpdate, blockData);
-            if(tasks != null && !tasks.isEmpty())
-                fetchTaskItem.fetchTasks.addAll(tasks);
+            var blockData = excelResult.getBlockDataByName(blockName);
+            if(blockData == null) continue;
+            fetchTaskItem.createFetchTaskAniTor(blockData);
         }
-        if(!fetchTaskItem.fetchTasks.isEmpty())
+        if(!fetchTaskItem.isEmpty())
             fetchTaskMap.put(varName, fetchTaskItem);
     }
 
     private static void run_fetch_task(List<String> cmd) {
-        var varUpsertName = cmd.get(1);
-        var varUpdateName = cmd.get(2);
+        var varUpsertName   = cmd.get(1);
+        var varUpdateName   = cmd.get(2);
+        var varCheckTorHash = cmd.get(3);
 
-        List<FetchTaskItem> runTaskItemList = new ArrayList<>();
+        // 运行任务
+        List<FetchTaskManager> runTaskManagerList = new ArrayList<>();
         for(var i = 3; i < cmd.size(); i++) {
             var taskName      = cmd.get(i);
             var fetchTaskItem = fetchTaskMap.get(taskName);
-            if(fetchTaskItem != null) {
-                runTaskItemList.add(fetchTaskItem);
+            if(fetchTaskItem != null) try {
+                runTaskManagerList.add(fetchTaskItem);
+                fetchTaskItem.runAllTasks();
+            } catch(Exception e) {
+                System.err.println("Main: 运行任务 " + taskName + " 时发生错误: " + e.getMessage());
             }
         }
 
-        // 合并任务
-        List<FetchTask> runTaskList = new ArrayList<>();
-        for(var fetchTaskItem : runTaskItemList) {
-            runTaskList.addAll(fetchTaskItem.fetchTasks);
-        }
-
-        // 运行任务
-        MainUtils.RunFetchTasks(runTaskList);
-
         // 合并结果
-        List<UpsertItem> combinedUpsert = new ArrayList<>();
-        List<UpdateItem> combinedUpdate = new ArrayList<>();
-        for(var fetchTaskItem : runTaskItemList) {
-            combinedUpsert.addAll(fetchTaskItem.bufferUpsert);
-            combinedUpdate.addAll(fetchTaskItem.bufferUpdate);
+        List<UpsertItem> combinedUpsert    = new ArrayList<>();
+        List<UpdateItem> combinedUpdate    = new ArrayList<>();
+        List<String>     combinedCheckHash = new ArrayList<>();
+        for(var fetchTaskItem : runTaskManagerList) {
+            combinedUpsert.addAll(fetchTaskItem.getUpsertItemList());
+            combinedUpdate.addAll(fetchTaskItem.getUpdateItemList());
+            combinedCheckHash.addAll(fetchTaskItem.getCheckTorHashList());
         }
 
         // 保存结果
-        if(!combinedUpsert.isEmpty())
-            dbItemMap.put(varUpsertName, combinedUpsert);
-        if(!combinedUpdate.isEmpty())
-            dbItemMap.put(varUpdateName, combinedUpdate);
+        if(!combinedUpsert   .isEmpty()) dbItemMap       .put(varUpsertName,   combinedUpsert   );
+        if(!combinedUpdate   .isEmpty()) dbItemMap       .put(varUpdateName,   combinedUpdate   );
+        if(!combinedCheckHash.isEmpty()) checkTorHashList.put(varCheckTorHash, combinedCheckHash);
     }
 
     private static void to_db(List<String> cmd) {
@@ -236,10 +206,79 @@ public class Main {
                 dbItems.addAll(items);
             }
         }
-        MainUtils.ToDatabase(dbItems, TestMetaData.DATABASE_PATH);
+        ToDatabase(dbItems, TestMetaData.DATABASE_PATH);
     }
 
     private static void unknown_command(List<String> cmd) {
         System.out.println("Unknown Command: " + cmd.get(0));
+    }
+
+    public static void WriteItemListToFile(List<?> itemList, String filePath) throws IOException {
+        // 保证目录存在
+        Files.createDirectories(Path.of(filePath).getParent());
+
+        // 写入文件
+        try(var writer = Files.newBufferedWriter(Path.of(filePath))) {
+            for(var item : itemList) {
+                writer.write(item.toString());
+                writer.write("\n");
+            }
+        }
+    }
+
+    public static void WriteStringToFile(String str, String filePath) throws IOException {
+        // 保证目录存在
+        Files.createDirectories(Path.of(filePath).getParent());
+
+        // 写入文件
+        try(var writer = Files.newBufferedWriter(Path.of(filePath))) {
+            writer.write(str);
+        }
+    }
+
+    // 读取表格
+    public static ExcelResult ReadExcel(String excelFilePath) throws IOException {
+        System.out.println("Reading excel file...");
+        var excelResult = new ExcelReader().Read(excelFilePath);
+
+        // 将 excelReader.commands 保存到文件
+        System.out.println("Saving commands to file...");
+        try(var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_EXCEL_CMDS))) {
+            writer.write(excelResult.getCommandsInfo());
+        }
+
+        // 将 blockDataList 保存到文件
+        System.out.println("Saving block data...");
+        try(var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_EXCEL_BLOCKS))) {
+            writer.write(excelResult.getBlocksInfo());
+        }
+
+        return excelResult;
+    }
+
+    // 保存到数据库
+    public static void ToDatabase(List<? extends DatabaseItem> items, String databasePath) {
+
+        List<UpsertItem> upsertList = new ArrayList<>();
+        List<UpdateItem> updateList = new ArrayList<>();
+        for(var item : items) {
+            if(item instanceof UpsertItem)
+                upsertList.add((UpsertItem)item);
+            else if(item instanceof UpdateItem)
+                updateList.add((UpdateItem)item);
+            else {
+                System.err.print("Unknown DatabaseItem type: ");
+                System.err.print(item.getClass().getName());
+                System.err.print(", item: ");
+                System.err.println(item.toString());
+            }
+        }
+
+        try(var db = new SQLiteAccess(databasePath)) {
+            db.Upsert(upsertList);
+            db.Update(updateList);
+        } catch(SQLException e) {
+            System.err.println("Database operation error: " + e.getMessage());
+        }
     }
 }

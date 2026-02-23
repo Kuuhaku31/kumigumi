@@ -1,20 +1,20 @@
 package FetchTask;
 
-import Database.Item.UpdateItem;
-import Database.Item.UpsertItem;
-import Main.ItemTranslation;
-import NetAccess.NetAccess;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.List;
+
+import InfoItem.InfoEpi.InfoEpi;
+import InfoItem.InfoEpi.InfoEpiFetch;
+import NetAccess.NetAccess;
 
 
 public class FetchTaskEpi extends FetchTask {
 
+    // 任务参数
     final Integer ani_id;
 
-    public FetchTaskEpi(List<UpsertItem> bufferUpsert, List<UpdateItem> bufferUpdate, Integer ani_id) {
-        super(bufferUpsert, bufferUpdate);
+    public FetchTaskEpi(FetchTaskManager manager, Integer ani_id) {
+        super(manager);
         this.ani_id = ani_id;
     }
 
@@ -23,8 +23,8 @@ public class FetchTaskEpi extends FetchTask {
         try {
             var epiInfoList = NetAccess.FetchEpisodeInfo(ani_id);
             for(var epi : epiInfoList) {
-                bufferUpsert.add(ItemTranslation.transEpiUpsert(epi));
-                bufferUpdate.add(ItemTranslation.convertInfoEpiFetch(epi));
+                manager.bufferUpsert.add(new InfoEpi(epi));
+                manager.bufferUpdate.add(new InfoEpiFetch(epi));
             }
         } catch(URISyntaxException | IOException e) {
             System.err.println("Error fetching episode info for ANI_ID=" + ani_id + ": " + e.getMessage());

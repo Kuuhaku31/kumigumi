@@ -35,7 +35,7 @@ public class NetAccess {
         return res;
     }
 
-    public static List<Map<String, String>> FetchTorrentInfo(String rss_url) throws IOException {
+    public static List<Map<String, String>> FetchAnimeTorrentInfo(String rss_url) throws IOException {
         List<Map<String, String>> torrent_data = null;
 
         // 构建 client
@@ -58,8 +58,8 @@ public class NetAccess {
             return torrent_data;
     }
 
-    public static List<Map<String, String>> FetchTorrentInfo(String rss_url, int anime_id) throws IOException {
-        List<Map<String, String>> torrent_data = FetchTorrentInfo(rss_url);
+    public static List<Map<String, String>> FetchAnimeTorrentInfo(String rss_url, int anime_id) throws IOException {
+        List<Map<String, String>> torrent_data = FetchAnimeTorrentInfo(rss_url);
 
         // 为每个 torrent 条目添加 ANI_ID 字段
         for (var tor : torrent_data) {
