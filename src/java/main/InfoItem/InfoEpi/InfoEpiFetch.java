@@ -60,10 +60,10 @@ public class InfoEpiFetch extends InfoEpi implements UpdateItem {
             + ", ep=" + ep 
             + ", sort=" + sort 
             + ", air_date=" + getDateString(air_date) 
-            + ", duration=" + duration 
+            + ", duration=" + duration
             + ", title='" + title + '\''
             + ", title_cn='" + title_cn + '\''
-            + ", description='" + description + '\''
+            + ", description='" + (description == null ? null : description.replace("\n", "\\n")) + '\''
             + '}';
     }
 }

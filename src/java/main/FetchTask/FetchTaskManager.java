@@ -8,14 +8,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import Database.Item.UpdateItem;
-import Database.Item.UpsertItem;
 import Excel.BlockData;
 import InfoItem.InfoAniTor.InfoAniTorFetch;
+import Util.Util;
 
 
 public class FetchTaskManager {
 
-    final List<UpsertItem> bufferUpsert = new ArrayList<>(); // 待插入或更新数据库的项
     final List<UpdateItem> bufferUpdate = new ArrayList<>(); // 待更新数据库的项
 
     final List<FetchTask> taskQueue        = new ArrayList<>(); // 任务队列
@@ -41,6 +40,26 @@ public class FetchTaskManager {
      */
     int getFinishedCount() {
         return finished.get();
+    }
+
+    /**
+     * 保存日志到文件
+     * @param path
+     * @param name
+     * @throws IOException
+     */
+    public void saveLog(String path, String name) throws IOException {
+
+        // 保存任务完成情况
+        var logContentTaskQueueInfoFileName = name + "_task_queue_info.txt"; 
+        var logContentTaskQueueInfoPath = path + logContentTaskQueueInfoFileName;
+        var logContentTaskQueueInfo = getTaskQueueInfo();
+        Util.WriteStringToFile(logContentTaskQueueInfo, logContentTaskQueueInfoPath);
+
+        // 保存 UpdateItemList
+        var logContentUpdateItemListFileName = name + "_update_item_list.txt";
+        var logContentUpdateItemListPath = path + logContentUpdateItemListFileName;
+        Util.WriteItemListToFile(bufferUpdate, logContentUpdateItemListPath);
     }
 
     /**
@@ -98,7 +117,7 @@ public class FetchTaskManager {
     public void addFetchTaskAni(BlockData blockData) {
 
         // 参数检查
-        if(bufferUpsert == null || bufferUpdate == null || blockData == null) return;
+        if(blockData == null) return;
 
         // 确保关键字段存在
         var ani_id_index = blockData.GetHeaderIndex("ANI_ID");
@@ -116,6 +135,11 @@ public class FetchTaskManager {
         }
     }
 
+    public void addFetchTaskAni(List<BlockData> blockDataList) {
+        if(blockDataList == null) return;
+        for(var blockData : blockDataList) addFetchTaskAni(blockData);
+    }
+
     /**
      * 添加 FetchTaskEpi 到任务队列
      */
@@ -131,7 +155,7 @@ public class FetchTaskManager {
     public void createFetchTaskEpi(BlockData blockData) {
 
         // 参数检查
-        if(bufferUpsert == null || bufferUpdate == null || blockData == null) return;
+        if(blockData == null) return;
 
         // 确保关键字段存在
         var ani_id_index = blockData.GetHeaderIndex("ANI_ID");
@@ -148,6 +172,11 @@ public class FetchTaskManager {
             }
             taskQueue.add(new FetchTaskEpi(this, ani_id));
         }
+    }
+
+    public void addFetchTaskEpi(List<BlockData> blockDataList) {
+        if(blockDataList == null) return;
+        for(var blockData : blockDataList) createFetchTaskEpi(blockData);
     }
 
     /**
@@ -175,7 +204,7 @@ public class FetchTaskManager {
     public void createFetchTaskAniTor(BlockData blockData) {
 
         // 参数检查
-        if(bufferUpsert == null || bufferUpdate == null || blockData == null) return;
+        if(blockData == null) return;
 
         // 确保关键字段存在
         var ani_id_index  = blockData.GetHeaderIndex("ANI_ID");
@@ -208,10 +237,10 @@ public class FetchTaskManager {
         }
     }
 
-    /**
-     * 获取 UpsertItemList
-     */
-    public List<UpsertItem> getUpsertItemList() { return bufferUpsert; }
+    public void addFetchTaskAniTor(List<BlockData> blockDataList) {
+        if(blockDataList == null) return;
+        for(var blockData : blockDataList) createFetchTaskAniTor(blockData);
+    }
 
     /**
      * 获取 UpdateItemList

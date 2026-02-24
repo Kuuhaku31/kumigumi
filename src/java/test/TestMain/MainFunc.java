@@ -37,17 +37,17 @@ public class MainFunc {
     //     }
     // }
 
-    public static void store2510epi(
-        List<UpdateItem> updateList,
-        BlockData        blockData) {
-        System.out.println("store2510epi");
-        updateList.addAll(InfoEpiStore.convertInfoEpiStore(blockData));
-    }
+    // public static void store2510epi(
+    //     List<UpdateItem> updateList,
+    //     BlockData        blockData) {
+    //     System.out.println("store2510epi");
+    //     updateList.addAll(InfoEpiStore.convertInfoEpiStore(blockData));
+    // }
 
-    public static void storeTor(
-        List<UpdateItem> updateList,
-        BlockData        blockData) {
-        System.out.println("storeTor");
-        updateList.addAll(InfoAniTorStore.convertInfoAniTorStore(blockData));
-    }
+    // public static void storeTor(
+    //     List<UpdateItem> updateList,
+    //     BlockData        blockData) {
+    //     System.out.println("storeTor");
+    //     updateList.addAll(InfoAniTorStore.convertInfoAniTorStore(blockData));
+    // }
 }

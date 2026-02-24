@@ -1,6 +1,5 @@
 package FetchTask;
 
-import InfoItem.InfoAniTor.InfoAniTor;
 import InfoItem.InfoAniTor.InfoAniTorFetch;
 import NetAccess.NetAccess;
 
@@ -27,7 +26,6 @@ public class FetchTaskAniTor extends FetchTask {
             var torInfoList = NetAccess.FetchAnimeTorrentInfo(url_rss);
             for(var tor : torInfoList) {
                 tor.put("ANI_ID", ani_id.toString());
-                manager.bufferUpsert.add(new InfoAniTor(tor));
                 manager.bufferUpdate.add(new InfoAniTorFetch(tor));
             }
 

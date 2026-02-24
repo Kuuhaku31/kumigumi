@@ -26,7 +26,6 @@ public class FetchTaskTor extends FetchTask {
         try {
             var torInfoByte = NetAccess.DownloadFile(url_download);
             var newInfoTor = new InfoTorFetch(TOR_HASH, torInfoByte);
-            manager.bufferUpsert.add(newInfoTor);
             manager.bufferUpdate.add(newInfoTor);
 
             status = TaskStatus.SUCCESS; // 标记任务成功

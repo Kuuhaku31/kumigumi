@@ -113,6 +113,11 @@ public class SQLiteAccess implements Closeable {
             // InfoAniTorUpsert
             else if(it instanceof InfoAniTor) {
                 var itemInfoAniTorUpsert = (InfoAniTor)it;
+
+                if(itemInfoAniTorUpsert.TOR_HASH.startsWith("http")) {
+                    System.err.println("Warning: InfoAniTorUpsert with null TOR_HASH for ANI_ID: " + itemInfoAniTorUpsert.ANI_ID);
+                }
+
                 safeSetInt(statementCache.psAniTorUpsert, 1, itemInfoAniTorUpsert.ANI_ID);      // 设置 ANI_ID 以满足外键约束，但不作为主键更新的字段
                 safeSetString(statementCache.psAniTorUpsert, 2, itemInfoAniTorUpsert.TOR_HASH); // 设置 TOR_HASH 以满足外键约束，但不作为主键更新的字段
                 statementCache.psAniTorUpsert.addBatch();

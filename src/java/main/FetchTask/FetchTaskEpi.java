@@ -3,7 +3,6 @@ package FetchTask;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import InfoItem.InfoEpi.InfoEpi;
 import InfoItem.InfoEpi.InfoEpiFetch;
 import NetAccess.NetAccess;
 
@@ -23,7 +22,6 @@ public class FetchTaskEpi extends FetchTask {
         try {
             var epiInfoList = NetAccess.FetchEpisodeInfo(ani_id);
             for(var epi : epiInfoList) {
-                manager.bufferUpsert.add(new InfoEpi(epi));
                 manager.bufferUpdate.add(new InfoEpiFetch(epi));
             }
             status = TaskStatus.SUCCESS; // 标记任务成功

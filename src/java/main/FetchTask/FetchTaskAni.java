@@ -3,7 +3,6 @@ package FetchTask;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import InfoItem.InfoAni.InfoAni;
 import InfoItem.InfoAni.InfoAniFetch;
 import NetAccess.NetAccess;
 
@@ -27,7 +26,6 @@ class FetchTaskAni extends FetchTask {
     public void run() {
         try {
             var aniInfo = NetAccess.FetchAnimeInfo(ani_id);
-            manager.bufferUpsert.add(new InfoAni(aniInfo));
             manager.bufferUpdate.add(new InfoAniFetch(aniInfo));
 
             status = TaskStatus.SUCCESS; // 标记任务成功

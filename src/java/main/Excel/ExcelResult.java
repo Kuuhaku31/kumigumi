@@ -1,5 +1,6 @@
 package Excel;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -43,6 +44,15 @@ public record ExcelResult(
         for(var blockData : blockDataList) if(blockData.block_name.equals(blockName))
         return blockData;
         return null;
+    }
+
+    public List<BlockData> getBlockDataByNames(List<String> blockNames) {
+        List<BlockData> res = new ArrayList<>();
+        for(var blockName : blockNames) {
+            var blockData = getBlockDataByName(blockName);
+            if(blockData != null) res.add(blockData);
+        }
+        return res;
     }
 
     @Override
