@@ -13,10 +13,15 @@ public class ARGS {
     public static final String TOR_HASH_2 = "HASH222";
     public static final String TOR_HASH_3 = "HASH333";
     public static final String TOR_PATH_1 = "ignore/a.torrent";
+    public static final String TOR_PATH_B = "ignore/b.torrent";
     public static final byte[] TOR_FILE_BIN_1;
+    public static final byte[] TOR_FILE_BIN_B;
     static {
-        try { TOR_FILE_BIN_1 = readFile(TOR_PATH_1); }
-        catch(IOException _) { throw new RuntimeException("Failed to read file for TOR_FILE_BIN_1"); }
+        try {
+            TOR_FILE_BIN_1 = readFile(TOR_PATH_1); 
+            TOR_FILE_BIN_B = readFile(TOR_PATH_B);
+        }
+        catch(IOException _) { throw new RuntimeException("Failed to read file"); }
     }
 
     public static byte[] readFile(String path) throws java.io.IOException {

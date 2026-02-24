@@ -26,17 +26,10 @@ public class NetAccess {
         conn.setRequestMethod("GET"); // 设置请求方法
         conn.setRequestProperty("User-Agent", "Mozilla/5.0"); // 添加 User-Agent
 
-        // 读取响应
-        var in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        var response = new StringBuilder();
-
-        // 逐行读取响应内容
-        String input_line;
-        while ((input_line = in.readLine()) != null) response.append(input_line);
-
-        in.close();
-
-        return response.toString().getBytes();
+        // 直接读取原始字节流（适用于二进制文件如 torrent）
+        try (var in = conn.getInputStream()) {
+            return in.readAllBytes();
+        }
     }
 
     public static Map<String, String> FetchAnimeInfo(int anime_id) throws URISyntaxException, IOException {

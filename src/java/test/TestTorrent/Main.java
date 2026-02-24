@@ -10,7 +10,7 @@ public class Main {
         var file = ARGS.TOR_PATH_1;
         System.out.println("File path: " + file);
 
-        var meta = TorrentMetaUtil.extractMeta(ARGS.TOR_FILE_BIN_1);
+        var meta = TorrentMetaUtil.extractMeta(ARGS.TOR_FILE_BIN_B);
 
         System.out.println("Extracted metadata:");
         System.out.println("File Name: " + meta.fileName);

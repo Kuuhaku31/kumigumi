@@ -87,13 +87,18 @@ public class Util {
         }
     }
 
-    public static void WriteStringToFile(String str, String filePath) throws IOException {
-        // 保证目录存在
-        Files.createDirectories(Path.of(filePath).getParent());
+    public static void WriteStringToFile(String str, String filePath) {
 
-        // 写入文件
-        try(var writer = Files.newBufferedWriter(Path.of(filePath))) {
-            writer.write(str);
+        try {
+            // 保证目录存在
+            Files.createDirectories(Path.of(filePath).getParent());
+
+            // 写入文件
+            try(var writer = Files.newBufferedWriter(Path.of(filePath))) {
+                writer.write(str);
+            }
+        } catch(IOException e) {
+            System.err.println(e.getMessage());
         }
     }
 }

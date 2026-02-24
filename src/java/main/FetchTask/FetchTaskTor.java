@@ -3,7 +3,7 @@ package FetchTask;
 import InfoItem.InfoTor.InfoTorFetch;
 import NetAccess.NetAccess;
 
-public class FetchTaskTor extends FetchTask {
+class FetchTaskTor extends FetchTask {
 
     // 任务参数
     final String TOR_HASH;

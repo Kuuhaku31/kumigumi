@@ -48,7 +48,7 @@ public class FetchTaskManager {
      * @param name
      * @throws IOException
      */
-    public void saveLog(String path, String name) throws IOException {
+    public void saveLog(String path, String name) {
 
         // 保存任务完成情况
         var logContentTaskQueueInfoFileName = name + "_task_queue_info.txt"; 
@@ -189,6 +189,11 @@ public class FetchTaskManager {
         }
     }
 
+    public void addFetchTaskTor(String TOR_HASH, String url_download) {
+        var newTorTask = new FetchTaskTor(this, TOR_HASH, url_download);
+        taskQueue.add(newTorTask);
+    }
+
     /**
      * 添加 FetchTaskAniTor 到任务队列
      */
@@ -251,7 +256,7 @@ public class FetchTaskManager {
      * 运行所有任务
      * 带进度条的多线程运行 FetchTask
      */
-    public void runAllTasks() throws IOException {
+    public void runAllTasks() {
 
         // 如果没有任务，直接返回
         if(taskQueue == null || taskQueue.size() == 0) {
@@ -259,7 +264,7 @@ public class FetchTaskManager {
             return;
         }
 
-        var MAX_THREADS = 32;               // 最大线程数，避免过度并发导致系统资源耗尽
+        var MAX_THREADS = 64;               // 最大线程数，避免过度并发导致系统资源耗尽
         task_count      = taskQueue.size(); // 总数
         finished.set(0);                    // 已完成数重置
 
@@ -273,7 +278,8 @@ public class FetchTaskManager {
         // 等待全部完成
         var ok = false;
         try {
-            ok = pool.awaitTermination(1, TimeUnit.MINUTES);
+            // ok = pool.awaitTermination(1, TimeUnit.MINUTES);
+            ok = pool.awaitTermination(10, TimeUnit.MINUTES);
         } catch(InterruptedException e) {
             System.out.println("中断: " + e.getMessage());
         }

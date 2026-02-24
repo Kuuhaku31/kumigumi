@@ -286,12 +286,15 @@ public class SQLiteAccess implements Closeable {
                 var itemInfoAniTorFetch = (InfoAniTorFetch)it;
 
                 // 使用安全的设置方法处理可能为 null 的值
-                safeSetOffsetDateTime(statementCache.psAniTorFetch, 1, itemInfoAniTorFetch.air_datetime);
-                safeSetString(statementCache.psAniTorFetch, 2, itemInfoAniTorFetch.url_page);
-                safeSetString(statementCache.psAniTorFetch, 3, itemInfoAniTorFetch.title);
-                safeSetString(statementCache.psAniTorFetch, 4, itemInfoAniTorFetch.subtitle_group);
-                safeSetString(statementCache.psAniTorFetch, 5, itemInfoAniTorFetch.description);
-                safeSetString(statementCache.psAniTorFetch, 6, itemInfoAniTorFetch.TOR_HASH);
+                safeSetOffsetDateTime(statementCache.psAniTorFetch, 1, itemInfoAniTorFetch.air_datetime  );
+                safeSetString        (statementCache.psAniTorFetch, 2, itemInfoAniTorFetch.url_download  );
+                safeSetString        (statementCache.psAniTorFetch, 3, itemInfoAniTorFetch.url_page      );
+                safeSetString        (statementCache.psAniTorFetch, 4, itemInfoAniTorFetch.title         );
+                safeSetString        (statementCache.psAniTorFetch, 5, itemInfoAniTorFetch.subtitle_group);
+                safeSetString        (statementCache.psAniTorFetch, 6, itemInfoAniTorFetch.description   );
+
+                safeSetInt           (statementCache.psAniTorFetch, 7, itemInfoAniTorFetch.ANI_ID        );
+                safeSetString        (statementCache.psAniTorFetch, 8, itemInfoAniTorFetch.TOR_HASH      );
 
                 // 将更新添加到批处理中
                 statementCache.psAniTorFetch.addBatch();
@@ -304,8 +307,10 @@ public class SQLiteAccess implements Closeable {
 
                 // 使用安全的设置方法处理可能为 null 的值
                 safeSetString(statementCache.psAniTorStore, 1, itemInfoAniTorStore.status_download);
-                safeSetString(statementCache.psAniTorStore, 2, itemInfoAniTorStore.remark);
-                safeSetString(statementCache.psAniTorStore, 3, itemInfoAniTorStore.TOR_HASH);
+                safeSetString(statementCache.psAniTorStore, 2, itemInfoAniTorStore.remark         );
+
+                safeSetInt   (statementCache.psAniTorStore, 3, itemInfoAniTorStore.ANI_ID         );
+                safeSetString(statementCache.psAniTorStore, 4, itemInfoAniTorStore.TOR_HASH       );
 
                 // 将更新添加到批处理中
                 statementCache.psAniTorStore.addBatch();
@@ -423,7 +428,7 @@ public class SQLiteAccess implements Closeable {
         if(uniqueHashes.isEmpty()) return List.of();
 
         var inputList   = new ArrayList<>(uniqueHashes);
-        var existsSet   = new HashSet<String>();
+        var hasFileSet  = new HashSet<String>();
         var chunkSize   = 500; // 避免 SQLite 单条语句参数过多
 
         for(int start = 0; start < inputList.size(); start += chunkSize) {
@@ -431,7 +436,11 @@ public class SQLiteAccess implements Closeable {
             var chunk = inputList.subList(start, end);
 
             var placeholders = String.join(",", java.util.Collections.nCopies(chunk.size(), "?"));
-            var sql = "SELECT TOR_HASH FROM torrent WHERE TOR_HASH IN (" + placeholders + ")";
+            var sql 
+            = "SELECT TOR_HASH FROM torrent "
+            + "WHERE TOR_HASH IN (" + placeholders + ") "
+            + "AND torrent_file IS NOT NULL "
+            + "AND length(torrent_file) > 0";
 
             try(PreparedStatement ps = conn.prepareStatement(sql)) {
                 for(int i = 0; i < chunk.size(); i++) {
@@ -440,15 +449,16 @@ public class SQLiteAccess implements Closeable {
 
                 try(ResultSet rs = ps.executeQuery()) {
                     while(rs.next()) {
-                        existsSet.add(rs.getString("TOR_HASH"));
+                        hasFileSet.add(rs.getString("TOR_HASH"));
                     }
                 }
             }
         }
 
+        // 过滤出数据库中不存在的 TOR_HASH 对应的 InfoAniTorFetch 项目
         List<InfoAniTorFetch> notExistList = new ArrayList<>();
         for(var info : infoAniTorFetchList) {
-            if(!existsSet.contains(info.TOR_HASH)) notExistList.add(info);
+            if(!hasFileSet.contains(info.TOR_HASH)) notExistList.add(info);
         }
 
         return notExistList;

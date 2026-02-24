@@ -4,6 +4,20 @@
   "configurations": [
     {
         "type": "java",
+        "name": "Main",
+        "request": "launch",
+        "mainClass": "FetchTask.Main",
+        "projectName": "kumigumi"
+    },
+    {
+        "type": "java",
+        "name": "TestTorrentDownload",
+        "request": "launch",
+        "mainClass": "NetAccess.TestTorrentDownload",
+        "projectName": "kumigumi"
+    },
+    {
+        "type": "java",
         "name": "TestA",
         "request": "launch",
         "mainClass": "Def.TestA",
