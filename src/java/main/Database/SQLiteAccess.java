@@ -255,7 +255,7 @@ public class SQLiteAccess implements Closeable {
 
                 // 使用安全的设置方法处理可能为 null 的值
                 safeSetString(statementCache.psTorFetch, 1, itemInfoTorFetch.file_name);
-                safeSetInt(statementCache.psTorFetch, 2, itemInfoTorFetch.file_size);
+                safeSetLong(statementCache.psTorFetch, 2, itemInfoTorFetch.file_size);
                 safeSetBytes(statementCache.psTorFetch, 3, itemInfoTorFetch.file);
                 safeSetString(statementCache.psTorFetch, 4, itemInfoTorFetch.TOR_HASH);
 
@@ -465,6 +465,41 @@ public class SQLiteAccess implements Closeable {
     }
 
     /**
+     * 根据给定的 TOR_HASH 列表从数据库中查询对应的 torrent_file 字段，并将其保存为 .torrent 文件到指定路径
+     * @param torHashList
+     * @param safePath
+     */
+    public void exportTorrentFiles(List<String> torHashList, String safePath) {
+        if(torHashList == null || torHashList.isEmpty()) return;
+
+        var placeholders = String.join(",", java.util.Collections.nCopies(torHashList.size(), "?"));
+        var sql = "SELECT TOR_HASH, torrent_file FROM torrent WHERE TOR_HASH IN (" + placeholders + ")";
+
+        try(PreparedStatement ps = conn.prepareStatement(sql)) {
+            for(int i = 0; i < torHashList.size(); i++) {
+                ps.setString(i + 1, torHashList.get(i));
+            }
+
+            try(ResultSet rs = ps.executeQuery()) {
+                while(rs.next()) {
+                    var torHash = rs.getString("TOR_HASH");
+                    var fileBytes = rs.getBytes("torrent_file");
+                    if(fileBytes != null && fileBytes.length > 0) {
+                        var filePath = safePath + File.separator + torHash + ".torrent";
+                        try(var fos = new java.io.FileOutputStream(filePath)) {
+                            fos.write(fileBytes);
+                        } catch(java.io.IOException e) {
+                            System.err.println("Failed to save torrent file for hash: " + torHash + ", error: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+        } catch(SQLException e) {
+            System.err.println("Failed to query torrent files: " + e.getMessage());
+        }
+    }
+
+    /**
      * 关闭数据库连接和语句缓存
      * 在关闭过程中捕获并打印任何异常，以确保资源得到正确释放
      */
@@ -493,6 +528,14 @@ public class SQLiteAccess implements Closeable {
             ps.setNull(index, java.sql.Types.INTEGER);
         } else {
             ps.setInt(index, value);
+        }
+    }
+
+    private static void safeSetLong(PreparedStatement ps, int index, Long value) throws SQLException {
+        if(value == null) {
+            ps.setNull(index, java.sql.Types.BIGINT);
+        } else {
+            ps.setLong(index, value);
         }
     }
 

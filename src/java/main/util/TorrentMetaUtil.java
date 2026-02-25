@@ -10,9 +10,9 @@ public class TorrentMetaUtil {
 
     public static final class TorrentMeta {
         public final String  fileName;
-        public final Integer fileSize;
+        public final Long fileSize;
 
-        public TorrentMeta(String fileName, Integer fileSize) {
+        public TorrentMeta(String fileName, Long fileSize) {
             this.fileName = fileName;
             this.fileSize = fileSize;
         }
@@ -41,42 +41,37 @@ public class TorrentMetaUtil {
         Map<String, Object> infoMap = (Map<String, Object>)infoObj;
 
         String  fileName = decodeUtf8(infoMap.get("name"));
-        Integer fileSize = extractFileSize(infoMap);
+        Long fileSize = extractFileSize(infoMap);
         return new TorrentMeta(fileName, fileSize);
     }
 
-    private static Integer extractFileSize(Map<String, Object> infoMap) {
-        Long singleLength = asLong(infoMap.get("length"));
-        if(singleLength != null) {
-            return longToInteger(singleLength);
+    private static Long extractFileSize(Map<String, Object> infoMap) {
+        if(infoMap.containsKey("length")) {
+            return asLong(infoMap.get("length"));
         }
 
-        Object filesObj = infoMap.get("files");
-        if(!(filesObj instanceof List<?> filesList)) {
-            return null;
-        }
-
-        long total = 0L;
-        for(Object fileObj : filesList) {
-            if(!(fileObj instanceof Map<?, ?> fileMapRaw)) {
-                continue;
+        if(infoMap.containsKey("files") && infoMap.get("files") instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<Object> files = (List<Object>)infoMap.get("files");
+            long totalSize = 0L;
+            for(Object fileObj : files) {
+                if(fileObj instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> fileMap = (Map<String, Object>)fileObj;
+                    Long fileLength = asLong(fileMap.get("length"));
+                    if(fileLength != null) {
+                        totalSize += fileLength;
+                    } else {
+                        return null; // 如果有文件缺少 length 字段，则无法确定总大小
+                    }
+                } else {
+                    return null; // 无效的 files 列表项
+                }
             }
-            Object lengthObj  = fileMapRaw.get("length");
-            Long   fileLength = asLong(lengthObj);
-            if(fileLength != null) {
-                total += fileLength;
-            }
+            return totalSize;
         }
 
-        return longToInteger(total);
-    }
-
-    private static Integer longToInteger(long value) {
-        try {
-            return Math.toIntExact(value);
-        } catch(ArithmeticException ex) {
-            return null;
-        }
+        return null; // 无法确定文件大小
     }
 
     private static Long asLong(Object value) {

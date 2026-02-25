@@ -5,8 +5,8 @@ import Util.TorrentMetaUtil;
 
 public class InfoTorFetch extends InfoTor implements UpdateItem {
 
-    public final String  file_name; // 文件名
-    public final Integer file_size; // 文件大小
+    public final String file_name; // 文件名
+    public final Long   file_size; // 文件大小
     public final byte[] file;       // 种子文件二进制数据
 
     /**

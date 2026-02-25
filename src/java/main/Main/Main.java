@@ -17,7 +17,7 @@ import Excel.ExcelReader;
 import Excel.ExcelResult;
 import FetchTask.FetchTaskManager;
 import InfoItem.InfoAniTor.InfoAniTorFetch;
-import MetaData.TestMetaData;
+import MetaData.ARGS;
 import Util.DatabaseItemBuilder;
 import Util.StoreItemBuilderAni;
 import Util.StoreItemBuilderAniTor;
@@ -33,15 +33,44 @@ public class Main {
 
     private static ExcelResult excelResult;
 
-
+    /**
+     * 主函数
+     * @param args
+     * @throws IOException
+     * --excel_file_path: Excel文件路径，默认为 TestMetaData.EXCEL_FILE_KG_PATH
+     * --database_path: 数据库路径，默认为 TestMetaData.DATABASE_PATH
+     * --log_path: 日志保存路径，默认为 TestMetaData.LOG_PATH
+     */
     public static void main(String[] args) throws IOException {
         System.out.println("Main");
 
-        Files.createDirectories(Path.of(TestMetaData.LOG_PATH)); // 确保日志目录存在
+        // 参数解析
+        for(int i = 0; i < args.length; i++) {
+            switch(args[i]) {
+            case "--excel_file_path" -> {
+                if(i + 1 < args.length) ARGS.EXCEL_FILE_PATH = args[++i];
+            }
+            case "--database_path" -> {
+                if(i + 1 < args.length) ARGS.DATABASE_PATH = args[++i];
+            }
+            case "--log_path" -> {
+                if(i + 1 < args.length) ARGS.LOG_PATH = args[++i];
+            }
+            default -> System.out.println("Unknown argument: " + args[i]);
+            }
+        }
+        String nowTimeStr = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        ARGS.LOG_PATH += nowTimeStr + "/";  // 每次运行都使用一个新的日志目录
+        System.out.println("Excel File Path: " + ARGS.EXCEL_FILE_PATH);
+        System.out.println("Database Path: " + ARGS.DATABASE_PATH);
+        System.out.println("Log Path: " + ARGS.LOG_PATH);
+
+        // 确保日志目录存在
+        Files.createDirectories(Path.of(ARGS.LOG_PATH));
 
         // 读取 Excel 文件并解析数据
-        excelResult = ReadExcel(TestMetaData.EXCEL_FILE_KG_PATH);
-        Util.WriteStringToFile(excelResult.toString(), TestMetaData.LOG_PATH + "01.excel_result.txt");
+        excelResult = ReadExcel(ARGS.EXCEL_FILE_PATH);
+        Util.WriteStringToFile(excelResult.toString(), ARGS.LOG_PATH + "01.excel_result.txt");
         System.out.println(excelResult.getVariables());
         System.out.println(excelResult.getCommandsInfo());
 
@@ -139,7 +168,7 @@ public class Main {
                 System.out.println("Running FetchTask: " + taskName);
 
                 fetchTaskItem.runAllTasks();
-                fetchTaskItem.saveLog(TestMetaData.LOG_PATH, taskName); // 保存日志
+                fetchTaskItem.saveLog(ARGS.LOG_PATH, taskName); // 保存日志
             }
             catch(Exception e) {
                 System.err.println("Main: 运行任务 " + taskName + " 时发生错误: " + e.getMessage());
@@ -175,7 +204,7 @@ public class Main {
             // 检查数据库中不存在的 TOR_HASH 列表
             List<InfoAniTorFetch> notExistInfoAniTorFetchList = new ArrayList<>();
             if(!infoAniTorFetchList.isEmpty()) {
-                try(var db = new SQLiteAccess(TestMetaData.DATABASE_PATH)) {
+                try(var db = new SQLiteAccess(ARGS.DATABASE_PATH)) {
                     notExistInfoAniTorFetchList = db.getTorrentHashNotExist(infoAniTorFetchList);
                 } catch(SQLException e) {
                     System.err.println("数据库操作失败: " + e.getMessage());
@@ -190,7 +219,7 @@ public class Main {
                 try {
                     System.out.println("正在下载种子文件...");
                     manager.runAllTasks();
-                    manager.saveLog(TestMetaData.LOG_PATH, varUpdateName + "_download_torrent"); // 保存日志
+                    manager.saveLog(ARGS.LOG_PATH, varUpdateName + "_download_torrent"); // 保存日志
                 } catch(Exception e) {
                     System.err.println("下载种子文件时发生错误: " + e.getMessage());
                 }
@@ -213,7 +242,7 @@ public class Main {
                     dbItems.addAll(items);
                 }
             }
-            ToDatabase(dbItems, TestMetaData.DATABASE_PATH);
+            ToDatabase(dbItems, ARGS.DATABASE_PATH);
 
             System.out.println(" - 完成\n");
         }
@@ -233,7 +262,7 @@ public class Main {
             }
             if(!items.isEmpty()) dbItemMap.put(varName, items);
 
-            Util.WriteItemListToFile(items, TestMetaData.LOG_PATH + varName + "_store.txt");
+            Util.WriteItemListToFile(items, ARGS.LOG_PATH + varName + "_store.txt");
         }
 
         // 读取表格
@@ -243,13 +272,13 @@ public class Main {
 
             // 将 excelReader.commands 保存到文件
             System.out.println("Saving commands to file...");
-            try(var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_EXCEL_CMDS))) {
+            try(var writer = Files.newBufferedWriter(Path.of(ARGS.OUTPUT_EXCEL_CMDS))) {
                 writer.write(excelResult.getCommandsInfo());
             }
 
             // 将 blockDataList 保存到文件
             System.out.println("Saving block data...");
-            try(var writer = Files.newBufferedWriter(Path.of(TestMetaData.OUTPUT_EXCEL_BLOCKS))) {
+            try(var writer = Files.newBufferedWriter(Path.of(ARGS.OUTPUT_EXCEL_BLOCKS))) {
                 writer.write(excelResult.getBlocksInfo());
             }
 
@@ -273,7 +302,7 @@ public class Main {
             System.err.println("Database operation error: " + e.getMessage());
         }
 
-        Util.WriteItemListToFile(upsertList, TestMetaData.LOG_PATH + "db_upsert.txt");
-        Util.WriteItemListToFile(updateList, TestMetaData.LOG_PATH + "db_update.txt");
+        Util.WriteItemListToFile(upsertList, ARGS.LOG_PATH + "db_upsert.txt");
+        Util.WriteItemListToFile(updateList, ARGS.LOG_PATH + "db_update.txt");
     }
     }

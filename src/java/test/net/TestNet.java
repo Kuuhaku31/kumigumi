@@ -6,7 +6,7 @@ import java.net.URISyntaxException;
 
 import InfoItem.InfoEpi.InfoEpi;
 import InfoItem.InfoEpi.InfoEpiFetch;
-import MetaData.TestMetaData;
+import MetaData.ARGS;
 import NetAccess.NetAccess;
 
 
@@ -16,7 +16,7 @@ public class TestNet {
     }
 
     static void fun0() throws URISyntaxException, IOException {
-        var meta = TestMetaData.meta_公主管弦乐;
+        var meta = ARGS.meta_公主管弦乐;
         var tor_info_list = NetAccess.FetchAnimeTorrentInfo(meta.url_rss);
         
         // 保存到文件
@@ -29,7 +29,7 @@ public class TestNet {
     }
 
     static void fun1() throws URISyntaxException, IOException {
-        var meta          = TestMetaData.meta_公主管弦乐;
+        var meta          = ARGS.meta_公主管弦乐;
         var epi_info_list = NetAccess.FetchEpisodeInfo(meta.ANI_ID);
         for(var map : epi_info_list) {
             for(var entry : map.entrySet()) {

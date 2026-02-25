@@ -50,12 +50,12 @@ public class ExcelReader {
         while(isReading) {
 
             // 依次读取每一个单元格
-            var          dx       = 0;                 // 游标列偏移量
+            cursor.dx             = 0;
             List<String> row_data = new ArrayList<>(); // 保存该行数据
             while(true) {
 
                 // 如果遇到空单元格，结束该行读取
-                var cell = getCell(dx++);
+                var cell = getCell(cursor.dx++);
                 if(cell == null || cell.getCellType() == CellType.BLANK) {
                     cursor.gotoNextRow();
                     break;
@@ -209,6 +209,7 @@ public class ExcelReader {
         var newSheet   = GetCellValue(getCell(dx + 3));
 
         cursor.gotoPosition(r, c, newSheet);
+        cursor.dx = 0; // 重置列偏移量
         System.out.println("#Goto Position: (" + r + ", " + c + ") in Sheet: " + newSheet);
     }
 

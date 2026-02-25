@@ -3,7 +3,7 @@ package net;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import MetaData.TestMetaData;
+import MetaData.ARGS;
 
 import static NetAccess.NetAccess.*;
 
@@ -11,7 +11,7 @@ public class TestNetAccess {
 
     static void main() throws URISyntaxException, IOException {
 
-        var meta = TestMetaData.meta_公主管弦乐;
+        var meta = ARGS.meta_公主管弦乐;
 
         // var ani_info = FetchAnimeInfo(meta.ANI_ID);
         var epi_info = FetchEpisodeInfo(meta.ANI_ID);

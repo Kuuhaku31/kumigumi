@@ -4,6 +4,13 @@
   "configurations": [
     {
         "type": "java",
+        "name": "SaveTorrentFile",
+        "request": "launch",
+        "mainClass": "Database.SaveTorrentFile",
+        "projectName": "kumigumi"
+    },
+    {
+        "type": "java",
         "name": "Main",
         "request": "launch",
         "mainClass": "FetchTask.Main",
@@ -115,6 +122,11 @@
         "request": "launch",
         "mainClass": "Main.Main",
         "projectName": "kumigumi",
+        "args": [
+            "--excel_file_path", "D:/OneDrive/db/kumigumi/test.xlsx",
+            "--database_path", "D:/OneDrive/db/kumigumi/kumigumi.db",
+            "--log_path", "D:/OneDrive/db/kumigumi/logs/"
+        ],
         "vmArgs": [
             "--enable-native-access=ALL-UNNAMED"
         ]
