@@ -1,236 +1,308 @@
 package Main;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
-import Database.InfoItem.DatabaseItem;
-import Database.InfoItem.UpdateItem;
-import Database.InfoItem.UpsertItem;
-
-import Excel.BlockData;
+import Database.Item.DatabaseItem;
+import Database.Item.UpdateItem;
+import Database.Item.UpsertItem;
+import Database.SQLiteAccess;
 import Excel.ExcelReader;
-import FetchTask.FetchTask;
-import MetaData.TestMetaData;
-import util.TableData;
+import Excel.ExcelResult;
+import FetchTask.FetchTaskManager;
+import InfoItem.InfoAniTor.InfoAniTorFetch;
+import MetaData.ARGS;
+import Util.DatabaseItemBuilder;
+import Util.StoreItemBuilderAni;
+import Util.StoreItemBuilderAniTor;
+import Util.StoreItemBuilderEpi;
+import Util.Util;
+
 
 public class Main {
 
-    // 任务容器
-    private static class FetchTaskItem {
-        List<FetchTask> fetchTasks = new ArrayList<>();
-        List<UpsertItem> bufferUpsert = new ArrayList<>();
-        List<UpdateItem> bufferUpdate = new ArrayList<>();
-    }
+    // 保存结果
+    private final static Map<String, List<? extends DatabaseItem>> dbItemMap    = new HashMap<>();
+    private final static Map<String, FetchTaskManager>             fetchTaskMap = new HashMap<>(); // 任务列表
 
-    @FunctionalInterface
-    private interface FetchTaskFactory {
-        List<? extends FetchTask> create(
-                List<UpsertItem> upsertBuffer,
-                List<UpdateItem> updateBuffer,
-                BlockData blockData);
-    }
+    private static ExcelResult excelResult;
 
-    private static Map<String, BlockData> indexBlocks(List<BlockData> blockDataList) {
-        var map = new HashMap<String, BlockData>();
-        for (var block : blockDataList) {
-            map.putIfAbsent(block.block_name, block);
-        }
-        return map;
-    }
-
-    private static <T extends DatabaseItem> void handleItemStore(
-            String varName,
-            List<String> blockNames,
-            Map<String, BlockData> blockLookup,
-            Map<String, List<? extends DatabaseItem>> dbItemMap,
-            Function<TableData, List<T>> converter) {
-
-        var items = new ArrayList<T>();
-        for (var blockName : blockNames) {
-            var blockData = blockLookup.get(blockName);
-            if (blockData == null)
-                continue;
-            var converted = converter.apply(blockData);
-            if (converted != null && !converted.isEmpty())
-                items.addAll(converted);
-        }
-        if (!items.isEmpty())
-            dbItemMap.put(varName, items);
-    }
-
-    private static void handleFetchTask(
-            String varName,
-            List<String> blockNames,
-            Map<String, BlockData> blockLookup,
-            Map<String, FetchTaskItem> fetchTaskMap,
-            FetchTaskFactory factory) {
-
-        var fetchTaskItem = new FetchTaskItem();
-        for (var blockName : blockNames) {
-            var blockData = blockLookup.get(blockName);
-            if (blockData == null)
-                continue;
-            var tasks = factory.create(fetchTaskItem.bufferUpsert, fetchTaskItem.bufferUpdate, blockData);
-            if (tasks != null && !tasks.isEmpty())
-                fetchTaskItem.fetchTasks.addAll(tasks);
-        }
-        if (!fetchTaskItem.fetchTasks.isEmpty())
-            fetchTaskMap.put(varName, fetchTaskItem);
-    }
-
+    /**
+     * 主函数
+     * @param args
+     * @throws IOException
+     * --excel_file_path: Excel文件路径，默认为 TestMetaData.EXCEL_FILE_KG_PATH
+     * --database_path: 数据库路径，默认为 TestMetaData.DATABASE_PATH
+     * --log_path: 日志保存路径，默认为 TestMetaData.LOG_PATH
+     */
     public static void main(String[] args) throws IOException {
         System.out.println("Main");
 
-        var excelReader = new ExcelReader(TestMetaData.EXCEL_FILE_KG_PATH);
-        var blockDataList = excelReader.getBlockDataList();
-        var blockLookup = indexBlocks(blockDataList);
+        // 参数解析
+        for(int i = 0; i < args.length; i++) {
+            switch(args[i]) {
+            case "--excel_file_path" -> {
+                if(i + 1 < args.length) ARGS.EXCEL_FILE_PATH = args[++i];
+            }
+            case "--database_path" -> {
+                if(i + 1 < args.length) ARGS.DATABASE_PATH = args[++i];
+            }
+            case "--log_path" -> {
+                if(i + 1 < args.length) ARGS.LOG_PATH = args[++i];
+            }
+            default -> System.out.println("Unknown argument: " + args[i]);
+            }
+        }
+        String nowTimeStr = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        ARGS.LOG_PATH += nowTimeStr + "/";  // 每次运行都使用一个新的日志目录
+        System.out.println("Excel File Path: " + ARGS.EXCEL_FILE_PATH);
+        System.out.println("Database Path: " + ARGS.DATABASE_PATH);
+        System.out.println("Log Path: " + ARGS.LOG_PATH);
 
-        System.out.println(excelReader.getCommandsInfo());
+        // 确保日志目录存在
+        Files.createDirectories(Path.of(ARGS.LOG_PATH));
 
-        // 保存结果
-        Map<String, List<? extends DatabaseItem>> dbItemMap = new HashMap<>();
-        Map<String, FetchTaskItem> fetchTaskMap = new HashMap<>();
+        // 读取 Excel 文件并解析数据
+        excelResult = ReadExcel(ARGS.EXCEL_FILE_PATH);
+        Util.WriteStringToFile(excelResult.toString(), ARGS.LOG_PATH + "01.excel_result.txt");
+        System.out.println(excelResult.getVariables());
+        System.out.println(excelResult.getCommandsInfo());
 
-        // 解析命令
-        var cmds = excelReader.getCommands();
-        var it = cmds.iterator();
-        while (it.hasNext()) {
+        // 依次执行命令
+        // 根据命令执行对应的操作
+        var cmds = excelResult.commands();
+        var it   = cmds.iterator();
+        while(it.hasNext()) {
             var cmd = it.next();
-
-            switch (cmd.get(0)) {
-
-                // 处理 _item_ani_store 命令
-                case "_item_ani_store" -> {
-                    var varName = cmd.get(1);
-                    handleItemStore(varName,
-                            cmd.subList(2, cmd.size()),
-                            blockLookup, dbItemMap,
-                            ItemTranslation::convertInfoAniStore);
-                }
-
-                // 处理 _item_epi_store 命令
-                case "_item_epi_store" -> {
-                    var varName = cmd.get(1);
-                    handleItemStore(varName,
-                            cmd.subList(2, cmd.size()),
-                            blockLookup, dbItemMap,
-                            ItemTranslation::convertInfoEpiStore);
-                }
-
-                // 处理 _item_tor_store 命令
-                case "_item_tor_store" -> {
-                    var varName = cmd.get(1);
-                    handleItemStore(varName,
-                            cmd.subList(2, cmd.size()),
-                            blockLookup, dbItemMap,
-                            ItemTranslation::convertInfoTorStore);
-                }
-
-                // 处理 _fetch_task_ani 命令
-                case "_fetch_task_ani" -> {
-                    var varName = cmd.get(1);
-                    handleFetchTask(varName,
-                            cmd.subList(2, cmd.size()),
-                            blockLookup, fetchTaskMap,
-                            ItemTranslation::createFetchTaskAni);
-                }
-
-                // 处理 _fetch_task_epi 命令
-                case "_fetch_task_epi" -> {
-                    var varName = cmd.get(1);
-                    handleFetchTask(varName,
-                            cmd.subList(2, cmd.size()),
-                            blockLookup, fetchTaskMap,
-                            ItemTranslation::createFetchTaskEpi);
-                }
-
-                // 处理 _fetch_task_tor 命令
-                case "_fetch_task_tor" -> {
-                    var varName = cmd.get(1);
-                    handleFetchTask(varName,
-                            cmd.subList(2, cmd.size()),
-                            blockLookup, fetchTaskMap,
-                            ItemTranslation::createFetchTaskTor);
-                }
-
-                // _run_fetch_task
-                case "_run_fetch_task" -> {
-                    var varUpsertName = cmd.get(1);
-                    var varUpdateName = cmd.get(2);
-
-                    List<FetchTaskItem> runTaskItemList = new ArrayList<>();
-                    for (var i = 3; i < cmd.size(); i++) {
-                        var taskName = cmd.get(i);
-                        var fetchTaskItem = fetchTaskMap.get(taskName);
-                        if (fetchTaskItem != null) {
-                            runTaskItemList.add(fetchTaskItem);
-                        }
-                    }
-
-                    // 合并任务
-                    List<FetchTask> runTaskList = new ArrayList<>();
-                    for (var fetchTaskItem : runTaskItemList) {
-                        runTaskList.addAll(fetchTaskItem.fetchTasks);
-                    }
-
-                    // 运行任务
-                    MainUtils.RunFetchTasks(runTaskList);
-
-                    // 合并结果
-                    List<UpsertItem> combinedUpsert = new ArrayList<>();
-                    List<UpdateItem> combinedUpdate = new ArrayList<>();
-                    for (var fetchTaskItem : runTaskItemList) {
-                        combinedUpsert.addAll(fetchTaskItem.bufferUpsert);
-                        combinedUpdate.addAll(fetchTaskItem.bufferUpdate);
-                    }
-
-                    // 保存结果
-                    if (!combinedUpsert.isEmpty())
-                        dbItemMap.put(varUpsertName, combinedUpsert);
-                    if (!combinedUpdate.isEmpty())
-                        dbItemMap.put(varUpdateName, combinedUpdate);
-                }
-
-                // _to_db
-                case "_to_db" -> {
-                    List<DatabaseItem> dbItems = new ArrayList<>();
-                    for (var i = 1; i < cmd.size(); i++) {
-                        var varName = cmd.get(i);
-                        var items = dbItemMap.get(varName);
-                        if (items != null && !items.isEmpty()) {
-                            dbItems.addAll(items);
-                        }
-                    }
-                    MainUtils.ToDatabase(dbItems, TestMetaData.DATABASE_PATH);
-                }
-
-                default -> {
-                    // System.out.println("Unknown Command: " + cmd.get(0));
-                }
+            switch(cmd.get(0)) {
+            case "_item_ani_store"   ->   item_ani_store(cmd);
+            case "_item_epi_store"   ->   item_epi_store(cmd);
+            case "_item_tor_store"   ->   item_ani_tor_store(cmd);
+            case "_fetch_task_ani"   ->   fetch_task_ani(cmd);
+            case "_fetch_task_epi"   ->   fetch_task_epi(cmd);
+            case "_fetch_task_tor"   ->   fetch_task_ani_tor(cmd);
+            case "_run_fetch_task"   ->   run_fetch_task(cmd);
+            case "_download_torrent" ->   download_torrent(cmd);
+            case "_to_db"            ->   to_db(cmd);
+            default                  ->   unknown_command(cmd);
             }
         }
 
-        // 输出结果
-        for (var entry : dbItemMap.entrySet()) {
-            var varName = entry.getKey();
-            var dbItems = entry.getValue();
-            var outputPath = "ignore/" + varName + "_output.txt";
-            System.out.println("Writing " + varName + " to " + outputPath);
-            MainUtils.WriteItemListToFile(dbItems, outputPath);
+       System.out.println("完成");
+    }
+
+    private static void item_ani_store(List<String> cmd) {
+        var varName    = cmd.get(1);                 // 变量名
+        var blockNames = cmd.subList(2, cmd.size()); // 表格数据块名称列表
+        var builder    = new StoreItemBuilderAni();     // 构建器
+
+        buildDatabaseItemsFromBlocks(builder, blockNames, varName);
+    }
+
+    private static void item_epi_store(List<String> cmd) {
+        var varName    = cmd.get(1);
+        var blockNames = cmd.subList(2, cmd.size());
+        var builder    = new StoreItemBuilderEpi();
+       
+        buildDatabaseItemsFromBlocks(builder, blockNames, varName);
+    }
+
+    private static void item_ani_tor_store(List<String> cmd) {
+        var varName    = cmd.get(1);
+        var blockNames = cmd.subList(2, cmd.size());
+        var builder    = new StoreItemBuilderAniTor();
+
+        buildDatabaseItemsFromBlocks(builder, blockNames, varName);   
+    }
+
+    private static void fetch_task_ani(List<String> cmd) {
+        var varName       = cmd.get(1);
+        var blockNames    = cmd.subList(2, cmd.size());
+
+        var fetchTaskItem = new FetchTaskManager();
+        var blockDataList = excelResult.getBlockDataByNames(blockNames);
+
+        fetchTaskItem.addFetchTaskAni(blockDataList);
+        if(!fetchTaskItem.isEmpty()) fetchTaskMap.put(varName, fetchTaskItem);
+    }
+
+    private static void fetch_task_epi(List<String> cmd) {
+        var varName       = cmd.get(1);
+        var blockNames    = cmd.subList(2, cmd.size());
+
+        var fetchTaskItem = new FetchTaskManager();
+        var blockDataList = excelResult.getBlockDataByNames(blockNames);
+
+        fetchTaskItem.addFetchTaskEpi(blockDataList);
+        if(!fetchTaskItem.isEmpty()) fetchTaskMap.put(varName, fetchTaskItem);
+    }
+
+    private static void fetch_task_ani_tor(List<String> cmd) {
+        var varName       = cmd.get(1);
+        var blockNames    = cmd.subList(2, cmd.size());
+
+        var fetchTaskItem = new FetchTaskManager();
+        var blockDataList = excelResult.getBlockDataByNames(blockNames);
+
+        fetchTaskItem.addFetchTaskAniTor(blockDataList);
+        if(!fetchTaskItem.isEmpty()) fetchTaskMap.put(varName, fetchTaskItem);
+    }
+
+    private static void run_fetch_task(List<String> cmd) {
+        var varUpdateName = cmd.get(1);
+
+        // 运行任务
+        List<FetchTaskManager> runTaskManagerList = new ArrayList<>();
+        for(var i = 2; i < cmd.size(); i++) {
+            var taskName      = cmd.get(i);
+            var fetchTaskItem = fetchTaskMap.get(taskName);
+            if(fetchTaskItem != null) try {
+                runTaskManagerList.add(fetchTaskItem);
+
+                System.out.println("Running FetchTask: " + taskName);
+
+                fetchTaskItem.runAllTasks();
+                fetchTaskItem.saveLog(ARGS.LOG_PATH, taskName); // 保存日志
+            }
+            catch(Exception e) {
+                System.err.println("Main: 运行任务 " + taskName + " 时发生错误: " + e.getMessage());
+            }
         }
 
-        // 输出 FetchTask 结果
-        for (var entry : fetchTaskMap.entrySet()) {
-            var varName = entry.getKey();
-            var fetchTaskItem = entry.getValue();
-            var outputPath = "ignore/" + varName + "_fetch_tasks_output.txt";
-            System.out.println("Writing FetchTasks " + varName + " to " + outputPath);
-            MainUtils.WriteItemListToFile(fetchTaskItem.fetchTasks, outputPath);
+        // 合并结果
+        List<UpdateItem> combinedUpdate = new ArrayList<>();
+        for(var fetchTaskItem : runTaskManagerList) {
+            combinedUpdate.addAll(fetchTaskItem.getUpdateItemList());
+        }
+
+        // 保存结果
+        if(!combinedUpdate.isEmpty()) dbItemMap.put(varUpdateName, combinedUpdate);
+    }
+
+    private static void download_torrent(List<String> cmd) {
+        var varUpdateName   = cmd.get(1);
+        var updateItemNames = cmd.subList(2, cmd.size());
+
+        // 获取所有 updateItemNames 项
+        List<InfoAniTorFetch> infoAniTorFetchList = new ArrayList<>();
+        for(var updateItemName : updateItemNames) {
+            var items = dbItemMap.get(updateItemName);
+            if(items != null) {
+                for(var item : items) {
+                    if(item instanceof InfoAniTorFetch) {
+                        infoAniTorFetchList.add((InfoAniTorFetch)item);
+                    }
+                }
+            }
+
+            // 检查数据库中不存在的 TOR_HASH 列表
+            List<InfoAniTorFetch> notExistInfoAniTorFetchList = new ArrayList<>();
+            if(!infoAniTorFetchList.isEmpty()) {
+                try(var db = new SQLiteAccess(ARGS.DATABASE_PATH)) {
+                    notExistInfoAniTorFetchList = db.getTorrentHashNotExist(infoAniTorFetchList);
+                } catch(SQLException e) {
+                    System.err.println("数据库操作失败: " + e.getMessage());
+                }
+            }
+
+            // 下载不存在的 TOR_HASH 对应的种子文件，并保存到 dbItemMap 中
+            if(!notExistInfoAniTorFetchList.isEmpty()) {
+                var manager = new FetchTaskManager();
+                manager.addFetchTaskTor(notExistInfoAniTorFetchList);
+
+                try {
+                    System.out.println("正在下载种子文件...");
+                    manager.runAllTasks();
+                    manager.saveLog(ARGS.LOG_PATH, varUpdateName + "_download_torrent"); // 保存日志
+                } catch(Exception e) {
+                    System.err.println("下载种子文件时发生错误: " + e.getMessage());
+                }
+
+                // 保存到 dbItemMap 中
+                if(!manager.getUpdateItemList().isEmpty()) dbItemMap.put(varUpdateName, manager.getUpdateItemList());
+            }
         }
     }
 
-}
+        private static void to_db(List<String> cmd) {
+
+            System.out.print("正在同步到数据库");
+
+            List<DatabaseItem> dbItems = new ArrayList<>();
+            for(var i = 1; i < cmd.size(); i++) {
+                var varName = cmd.get(i);
+                var items   = dbItemMap.get(varName);
+                if(items != null && !items.isEmpty()) {
+                    dbItems.addAll(items);
+                }
+            }
+            ToDatabase(dbItems, ARGS.DATABASE_PATH);
+
+            System.out.println(" - 完成\n");
+        }
+
+        private static void unknown_command(List<String> cmd) {
+            System.out.println("Unknown Command: " + cmd.get(0));
+        }
+
+        private static void buildDatabaseItemsFromBlocks(DatabaseItemBuilder builder, List<String> blockNames, String varName) {
+
+            // 从 blockDataList 中找到对应 blockName 的数据块，转换成 DatabaseItem 对象，并返回列表
+            List<DatabaseItem> items         = new ArrayList<>();
+            var                blockDataList = excelResult.getBlockDataByNames(blockNames);
+            for(var blockData : blockDataList) {
+                var converted = builder.build(blockData);
+                if(converted != null && !converted.isEmpty()) items.addAll(converted);
+            }
+            if(!items.isEmpty()) dbItemMap.put(varName, items);
+
+            Util.WriteItemListToFile(items, ARGS.LOG_PATH + varName + "_store.txt");
+        }
+
+        // 读取表格
+        public static ExcelResult ReadExcel(String excelFilePath) throws IOException {
+            System.out.println("Reading excel file...");
+            var excelResult = new ExcelReader().Read(excelFilePath);
+
+            // 将 excelReader.commands 保存到文件
+            System.out.println("Saving commands to file...");
+            try(var writer = Files.newBufferedWriter(Path.of(ARGS.OUTPUT_EXCEL_CMDS))) {
+                writer.write(excelResult.getCommandsInfo());
+            }
+
+            // 将 blockDataList 保存到文件
+            System.out.println("Saving block data...");
+            try(var writer = Files.newBufferedWriter(Path.of(ARGS.OUTPUT_EXCEL_BLOCKS))) {
+                writer.write(excelResult.getBlocksInfo());
+            }
+
+            return excelResult;
+        }
+
+        // 保存到数据库
+    public static void ToDatabase(List<? extends DatabaseItem> items, String databasePath) {
+
+        List<UpsertItem> upsertList = new ArrayList<>();
+        List<UpdateItem> updateList = new ArrayList<>();
+        for(var item : items) {
+            if(item instanceof UpsertItem) upsertList.add((UpsertItem)item);
+            if(item instanceof UpdateItem) updateList.add((UpdateItem)item);
+        }
+
+        try(var db = new SQLiteAccess(databasePath)) {
+            db.Upsert(upsertList);
+            db.Update(updateList);
+        } catch(SQLException e) {
+            System.err.println("Database operation error: " + e.getMessage());
+        }
+
+        Util.WriteItemListToFile(upsertList, ARGS.LOG_PATH + "db_upsert.txt");
+        Util.WriteItemListToFile(updateList, ARGS.LOG_PATH + "db_update.txt");
+    }
+    }

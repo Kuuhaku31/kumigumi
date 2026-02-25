@@ -1,40 +1,46 @@
 package FetchTask;
 
-import java.io.IOException;
-import java.util.List;
-
+import InfoItem.InfoTor.InfoTorFetch;
 import NetAccess.NetAccess;
-import Database.InfoItem.UpdateItem;
-import Database.InfoItem.UpsertItem;
-import Main.ItemTranslation;
 
-public class FetchTaskTor extends FetchTask {
+class FetchTaskTor extends FetchTask {
 
-    final String tor_url;
-    final Integer ani_id;
+    // 任务参数
+    final String TOR_HASH;
+    final String url_download;
 
-    public FetchTaskTor(List<UpsertItem> bufferUpsert, List<UpdateItem> bufferUpdate, String tor_url, Integer ani_id) {
-        super(bufferUpsert, bufferUpdate);
-        this.tor_url = tor_url;
-        this.ani_id = ani_id;
+    /**
+     * 构造函数：创建 FetchTaskTor 实例
+     * @param manager
+     * @param TOR_HASH
+     * @param url_download
+     */
+    public FetchTaskTor(FetchTaskManager manager, String TOR_HASH, String url_download) {
+        super(manager);                   // 调用外部类构造函数
+        this.TOR_HASH     = TOR_HASH;     // 初始化 TOR_HASH
+        this.url_download = url_download; // 初始化 url_download
     }
 
     @Override
     public void run() {
         try {
-            var torInfoList = NetAccess.FetchTorrentInfo(tor_url);
-            for (var tor : torInfoList) {
-                tor.put("ANI_ID", ani_id.toString());
-                bufferUpsert.add(ItemTranslation.transTorUpsert(tor));
-                bufferUpdate.add(ItemTranslation.convertInfoTorFetch(tor));
-            }
-        } catch (IOException e) {
-            System.err.println("Error fetching torrent info for TOR_URL=" + tor_url + ": " + e.getMessage());
+            var torInfoByte = NetAccess.DownloadFile(url_download);
+            var newInfoTor = new InfoTorFetch(TOR_HASH, torInfoByte);
+            manager.bufferUpdate.add(newInfoTor);
+
+            status = TaskStatus.SUCCESS; // 标记任务成功
         }
+        catch(Exception e) {
+            // System.err.println("Error fetching torrent info for URL=" + url_download + ": " + e.getMessage());
+            log += "Error fetching torrent info for URL=" + url_download + ": " + e.getMessage() + "\n";
+
+            status = TaskStatus.FAIL; // 标记任务失败
+        }
+        finally { taskFinally(); }
     }
 
     @Override
     public String toString() {
-        return "FetchTaskTor{TOR_URL=" + tor_url + ", ANI_ID=" + ani_id + "}";
+        return "FetchTaskTor{TOR_HASH=" + TOR_HASH + ", URL_DOWNLOAD=" + url_download + ", status=" + status + ", log=" + log.replace("\n", "\\n") + "}";
     }
 }

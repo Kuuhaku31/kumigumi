@@ -3,113 +3,218 @@
 
   "configurations": [
     {
-      "type": "java",
-      "name": "BuildTable",
-      "request": "launch",
-      "mainClass": "Excel.BuildTable",
-      "projectName": "kumigumi"
+        "type": "java",
+        "name": "SaveTorrentFile",
+        "request": "launch",
+        "mainClass": "Database.SaveTorrentFile",
+        "projectName": "kumigumi"
     },
     {
-      "type": "java",
-      "name": "TestNetAccess",
-      "request": "launch",
-      "mainClass": "NetAccess.TestNetAccess",
-      "projectName": "kumigumi"
+        "type": "java",
+        "name": "Main",
+        "request": "launch",
+        "mainClass": "FetchTask.Main",
+        "projectName": "kumigumi"
     },
     {
-      "type": "java",
-      "name": "TestExcelCmd",
-      "request": "launch",
-      "mainClass": "testExcel.TestExcelCmd",
-      "projectName": "kumigumi"
+        "type": "java",
+        "name": "TestTorrentDownload",
+        "request": "launch",
+        "mainClass": "NetAccess.TestTorrentDownload",
+        "projectName": "kumigumi"
     },
     {
-      "type": "java",
-      "name": "Main",
-      "request": "launch",
-      "mainClass": "Main.Main",
-      "projectName": "kumigumi",
-      "vmArgs": ["--enable-native-access=ALL-UNNAMED"]
+        "type": "java",
+        "name": "TestA",
+        "request": "launch",
+        "mainClass": "Def.TestA",
+        "projectName": "kumigumi"
     },
     {
-      "type": "java",
-      "name": "TestExcelDataBlock",
-      "request": "launch",
-      "mainClass": "Excel.TestExcelDataBlock",
-      "projectName": "kumigumi"
+        "type": "java",
+        "name": "GetTorrentHashNotExist",
+        "request": "launch",
+        "mainClass": "TestDatabase.GetTorrentHashNotExist",
+        "projectName": "kumigumi"
     },
     {
-      "type": "java",
-      "name": "BatchDownloader",
-      "request": "launch",
-      "mainClass": "net.BatchDownloader",
-      "projectName": "kumigumi",
-      "args": ["./resources/urls.txt", "./resources/failed_urls.txt"]
+        "type": "java",
+        "name": "Main",
+        "request": "launch",
+        "mainClass": "TestTorrent.Main",
+        "projectName": "kumigumi"
     },
     {
-      "type": "java",
-      "name": "TestNet",
-      "request": "launch",
-      "mainClass": "net.TestNet",
-      "projectName": "kumigumi"
+        "type": "java",
+        "name": "TestDatabase.Update",
+        "request": "launch",
+        "mainClass": "TestDatabase.Update",
+        "projectName": "kumigumi",
+        "vmArgs": [
+            "--enable-native-access=ALL-UNNAMED"
+        ]
     },
     {
-      "type": "java",
-      "name": "TestFetchTask",
-      "request": "launch",
-      "mainClass": "Task.TestFetchTask",
-      "projectName": "kumigumi"
+        "type": "java",
+        "name": "TestDatabase.Upsert",
+        "request": "launch",
+        "mainClass": "TestDatabase.Upsert",
+        "projectName": "kumigumi",
+        "vmArgs": [
+            "--enable-native-access=ALL-UNNAMED"
+        ]
     },
     {
-      "type": "java",
-      "name": "TestNetAccess",
-      "request": "launch",
-      "mainClass": "net.TestNetAccess",
-      "projectName": "kumigumi"
+        "type": "java",
+        "name": "TestDatabase.CreateDB",
+        "request": "launch",
+        "mainClass": "TestDatabase.CreateDB",
+        "projectName": "kumigumi",
+        "vmArgs": [
+            "--enable-native-access=ALL-UNNAMED"
+        ]
     },
     {
-      "type": "java",
-      "name": "TestTableToInfo",
-      "request": "launch",
-      "mainClass": "Def.TestTableToInfo",
-      "projectName": "kumigumi"
+        "type": "java",
+        "name": "TestDatabase.Main",
+        "request": "launch",
+        "mainClass": "TestDatabase.Main",
+        "projectName": "kumigumi"
     },
     {
-      "type": "java",
-      "name": "TestExcel",
-      "request": "launch",
-      "mainClass": "Excel.TestExcel",
-      "projectName": "kumigumi"
+        "type": "java",
+        "name": "Test Main",
+        "request": "launch",
+        "mainClass": "TestMain.TestMain",
+        "projectName": "kumigumi"
     },
     {
-      "type": "java",
-      "name": "TestDB",
-      "request": "launch",
-      "mainClass": "db.TestDB",
-      "projectName": "kumigumi",
-      "vmArgs": ["--enable-native-access=ALL-UNNAMED"]
+        "type": "debugpy",
+        "name": "py_main",
+        "request": "launch",
+        "cwd": "${workspaceFolder}/src/python/",
+        "program": "${workspaceFolder}/src/python/main.py"
     },
     {
-      "type": "java",
-      "name": "TestInfo",
-      "request": "launch",
-      "mainClass": "Def.TestInfo",
-      "projectName": "kumigumi"
+        "type": "java",
+        "name": "BuildTable",
+        "request": "launch",
+        "mainClass": "Excel.BuildTable",
+        "projectName": "kumigumi"
     },
     {
-      "type": "java",
-      "name": "Test",
-      "request": "launch",
-      "mainClass": "Def.Test",
-      "projectName": "kumigumi",
-      "args": "123"
+        "type": "java",
+        "name": "TestNetAccess",
+        "request": "launch",
+        "mainClass": "NetAccess.TestNetAccess",
+        "projectName": "kumigumi"
     },
     {
-      "type": "java",
-      "name": "Main",
-      "request": "launch",
-      "mainClass": "Main.Main",
-      "projectName": "kumigumi"
+        "type": "java",
+        "name": "TestExcelCmd",
+        "request": "launch",
+        "mainClass": "testExcel.TestExcelCmd",
+        "projectName": "kumigumi"
+    },
+    {
+        "type": "java",
+        "name": "Main.Main",
+        "request": "launch",
+        "mainClass": "Main.Main",
+        "projectName": "kumigumi",
+        "args": [
+            "--excel_file_path", "D:/OneDrive/db/kumigumi/test.xlsx",
+            "--database_path", "D:/OneDrive/db/kumigumi/kumigumi.db",
+            "--log_path", "D:/OneDrive/db/kumigumi/logs/"
+        ],
+        "vmArgs": [
+            "--enable-native-access=ALL-UNNAMED"
+        ]
+    },
+    {
+        "type": "java",
+        "name": "TestExcelDataBlock",
+        "request": "launch",
+        "mainClass": "Excel.TestExcelDataBlock",
+        "projectName": "kumigumi"
+    },
+    {
+        "type": "java",
+        "name": "BatchDownloader",
+        "request": "launch",
+        "mainClass": "net.BatchDownloader",
+        "projectName": "kumigumi",
+        "args": [
+            "./resources/urls.txt",
+            "./resources/failed_urls.txt"
+        ]
+    },
+    {
+        "type": "java",
+        "name": "TestNet",
+        "request": "launch",
+        "mainClass": "net.TestNet",
+        "projectName": "kumigumi"
+    },
+    {
+        "type": "java",
+        "name": "TestFetchTask",
+        "request": "launch",
+        "mainClass": "Task.TestFetchTask",
+        "projectName": "kumigumi"
+    },
+    {
+        "type": "java",
+        "name": "TestNetAccess",
+        "request": "launch",
+        "mainClass": "net.TestNetAccess",
+        "projectName": "kumigumi"
+    },
+    {
+        "type": "java",
+        "name": "TestTableToInfo",
+        "request": "launch",
+        "mainClass": "Def.TestTableToInfo",
+        "projectName": "kumigumi"
+    },
+    {
+        "type": "java",
+        "name": "TestExcel",
+        "request": "launch",
+        "mainClass": "Excel.TestExcel",
+        "projectName": "kumigumi"
+    },
+    {
+        "type": "java",
+        "name": "TestDB",
+        "request": "launch",
+        "mainClass": "db.TestDB",
+        "projectName": "kumigumi",
+        "vmArgs": [
+            "--enable-native-access=ALL-UNNAMED"
+        ]
+    },
+    {
+        "type": "java",
+        "name": "TestInfo",
+        "request": "launch",
+        "mainClass": "Def.TestInfo",
+        "projectName": "kumigumi"
+    },
+    {
+        "type": "java",
+        "name": "Test",
+        "request": "launch",
+        "mainClass": "Def.Test",
+        "projectName": "kumigumi",
+        "args": "123"
+    },
+    {
+        "type": "java",
+        "name": "Main",
+        "request": "launch",
+        "mainClass": "Main.Main",
+        "projectName": "kumigumi"
     }
-  ]
+]
 }

@@ -18,22 +18,14 @@ public class BatchDownloader {
     private static final int BUFFER_SIZE = 8192;
 
     // 失败 URL 记录文件
-    private static String failed_url_file_path = null;
+    private static String failed_url_file_path = "D:/Downloads/dt_failed.txt";
+    private static String url_file_path = "D:/Downloads/dt.txt";
 
     private static int total_count;
     private static int success_count;
     private static int failed_count;
 
     public static void main(String[] args) {
-
-        String url_file_path = null;
-        if (args.length > 1) {
-            url_file_path = args[0];
-            failed_url_file_path = args[1];
-        } else {
-            System.out.println("请提供包含 URL 列表的文件路径和失败 URL 记录文件路径作为参数");
-            return;
-        }
 
         Path urlFile = Paths.get(url_file_path); // 存放 URL 的文件
         var downloadDir = Paths.get("D:/Downloads/dt");
