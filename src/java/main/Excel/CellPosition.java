@@ -1,9 +1,11 @@
 package Excel;
 
-public class CellPosition {
+class CellPosition {
     private String sheetName = "main";
     private int row = 0;
     private int col = 0;
+
+    int dx = 0; // 游标列偏移量
 
     String sheetName() {
         return sheetName;

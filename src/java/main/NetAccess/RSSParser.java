@@ -30,9 +30,11 @@ class RSSParser {
             Map<String, String> recode = new HashMap<>();
             res.add(recode);
 
-            recode.put("TOR_URL", enclosure.getUrl());
+            var tor_hash = enclosure.getUrl().substring(enclosure.getUrl().lastIndexOf("/") + 1).replace(".torrent", "");
+
+            recode.put("TOR_HASH", tor_hash);
             recode.put("air_datetime", item.getPubDate().orElse(null));
-            recode.put("size", String.valueOf(enclosure.getLength().orElse(null)));
+            recode.put("url_download", enclosure.getUrl());
             recode.put("url_page", item.getLink().orElse(null));
 
             var title = item.getTitle().orElse(null);
@@ -71,7 +73,7 @@ class RSSParser {
 
             try {
                 var rssFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", java.util.Locale.ENGLISH);
-                var dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                var dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
                 // 解析字符串为 Date 转成标准格式字符串
                 var air_datetime = dateTimeFormat.format(rssFormat.parse(item.getPubDate().orElse(null)));

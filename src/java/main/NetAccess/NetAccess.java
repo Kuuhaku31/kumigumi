@@ -19,6 +19,19 @@ import static NetAccess.RSSParser.parseMikanRSS;
 import static NetAccess.RSSParser.parseNyaaRSS;
 
 public class NetAccess {
+
+    public static byte[] DownloadFile(String url_str) throws URISyntaxException, IOException {
+        var url = new URI(url_str).toURL(); // 创建URL对象
+        var conn = (HttpURLConnection) url.openConnection(); // 打开连接
+        conn.setRequestMethod("GET"); // 设置请求方法
+        conn.setRequestProperty("User-Agent", "Mozilla/5.0"); // 添加 User-Agent
+
+        // 直接读取原始字节流（适用于二进制文件如 torrent）
+        try (var in = conn.getInputStream()) {
+            return in.readAllBytes();
+        }
+    }
+
     public static Map<String, String> FetchAnimeInfo(int anime_id) throws URISyntaxException, IOException {
         // 解析 anime 信息
         return ParseAnimeInfo(GetInfo(QueryType.anime_info, anime_id));
@@ -35,12 +48,12 @@ public class NetAccess {
         return res;
     }
 
-    public static List<Map<String, String>> FetchTorrentInfo(String rss_url) throws IOException {
+    public static List<Map<String, String>> FetchAnimeTorrentInfo(String rss_url) throws IOException {
         List<Map<String, String>> torrent_data = null;
 
         // 构建 client
         var client = HttpClient.newBuilder()
-                .proxy(ProxySelector.of(new InetSocketAddress("127.0.0.1", 10809))) // 例：Clash 代理
+                .proxy(ProxySelector.of(new InetSocketAddress("127.0.0.1", 10808))) // 例：Clash 代理
                 .connectTimeout(Duration.ofSeconds(30))
                 .build();
         var reader = new RssReader(client);
@@ -58,8 +71,8 @@ public class NetAccess {
             return torrent_data;
     }
 
-    public static List<Map<String, String>> FetchTorrentInfo(String rss_url, int anime_id) throws IOException {
-        List<Map<String, String>> torrent_data = FetchTorrentInfo(rss_url);
+    public static List<Map<String, String>> FetchAnimeTorrentInfo(String rss_url, int anime_id) throws IOException {
+        List<Map<String, String>> torrent_data = FetchAnimeTorrentInfo(rss_url);
 
         // 为每个 torrent 条目添加 ANI_ID 字段
         for (var tor : torrent_data) {
@@ -96,8 +109,7 @@ public class NetAccess {
 
         // 逐行读取响应内容
         String input_line;
-        while ((input_line = in.readLine()) != null)
-            response.append(input_line);
+        while ((input_line = in.readLine()) != null) response.append(input_line);
 
         in.close();
 

@@ -2,7 +2,7 @@ package Task;
 
 import java.util.List;
 
-import Database.InfoItem.UpdateItem;
+import Database.Item.UpdateItem;
 
 public class TestFetchTask {
 

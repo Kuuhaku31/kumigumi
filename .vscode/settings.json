@@ -3,6 +3,13 @@
   "java.project.referencedLibraries": ["lib/gson-2.13.2.jar"],
   "java.project.outputPath": "bin",
   "java.autobuild.enabled": false,
-  "java.configuration.updateBuildConfiguration": "interactive",
-  "cSpell.words": ["XSSF"]
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "cSpell.words": [
+    "bdecode",
+    "bencode",
+    "bencoded",
+    "Mikan",
+    "Nyaa",
+    "XSSF"
+  ]
 }

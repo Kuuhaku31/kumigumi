@@ -3,15 +3,15 @@ package net;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import static NetAccess.NetAccess.*;
+import MetaData.ARGS;
 
-import MetaData.TestMetaData;
+import static NetAccess.NetAccess.*;
 
 public class TestNetAccess {
 
     static void main() throws URISyntaxException, IOException {
 
-        var meta = TestMetaData.meta_公主管弦乐;
+        var meta = ARGS.meta_公主管弦乐;
 
         // var ani_info = FetchAnimeInfo(meta.ANI_ID);
         var epi_info = FetchEpisodeInfo(meta.ANI_ID);
@@ -31,7 +31,7 @@ public class TestNetAccess {
         }
 
         // printMap(ani_info);
-        util.Util.printMapList(epi_info);
+        Util.Util.printMapList(epi_info);
         // printMapList(tor_info);
 
         // var aniFetch = convertInfoAniFetch(ani_info);

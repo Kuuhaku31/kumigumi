@@ -3,3 +3,11 @@
 /ignore/
 /resources/
 /out/
+/log/
+
+*.jar
+/*.code-workspace
+
+*.torrent
+
+*.tmp
