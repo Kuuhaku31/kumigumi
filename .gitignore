@@ -1,11 +1,13 @@
 
-.vscode
-__pycache__
 
-/helps
-/ignore
-/target
-/log
-/data
+/ignore/
+/resources/
+/out/
+/log/
 
-/kumigumi.json
+*.jar
+/*.code-workspace
+
+*.torrent
+
+*.tmp

@@ -1,0 +1,15 @@
+{
+  "java.project.sourcePaths": ["src/java/main", "src/java/test"],
+  "java.project.referencedLibraries": ["lib/gson-2.13.2.jar"],
+  "java.project.outputPath": "bin",
+  "java.autobuild.enabled": false,
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "cSpell.words": [
+    "bdecode",
+    "bencode",
+    "bencoded",
+    "Mikan",
+    "Nyaa",
+    "XSSF"
+  ]
+}
