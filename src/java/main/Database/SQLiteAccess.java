@@ -472,6 +472,8 @@ public class SQLiteAccess implements Closeable {
     public void exportTorrentFiles(List<String> torHashList, String safePath) {
         if(torHashList == null || torHashList.isEmpty()) return;
 
+        System.out.println("正在导出种子文件: " + torHashList.size() + " 个，保存路径: " + safePath);
+
         var placeholders = String.join(",", java.util.Collections.nCopies(torHashList.size(), "?"));
         var sql = "SELECT TOR_HASH, torrent_file FROM torrent WHERE TOR_HASH IN (" + placeholders + ")";
 
@@ -497,6 +499,8 @@ public class SQLiteAccess implements Closeable {
         } catch(SQLException e) {
             System.err.println("Failed to query torrent files: " + e.getMessage());
         }
+
+        System.out.println("种子文件导出完成");
     }
 
     /**

@@ -230,62 +230,62 @@ public class Main {
         }
     }
 
-        private static void to_db(List<String> cmd) {
+    private static void to_db(List<String> cmd) {
 
-            System.out.print("正在同步到数据库");
+        System.out.print("正在同步到数据库");
 
-            List<DatabaseItem> dbItems = new ArrayList<>();
-            for(var i = 1; i < cmd.size(); i++) {
-                var varName = cmd.get(i);
-                var items   = dbItemMap.get(varName);
-                if(items != null && !items.isEmpty()) {
-                    dbItems.addAll(items);
-                }
+        List<DatabaseItem> dbItems = new ArrayList<>();
+        for(var i = 1; i < cmd.size(); i++) {
+            var varName = cmd.get(i);
+            var items   = dbItemMap.get(varName);
+            if(items != null && !items.isEmpty()) {
+                dbItems.addAll(items);
             }
-            ToDatabase(dbItems, ARGS.DATABASE_PATH);
+        }
+        ToDatabase(dbItems, ARGS.DATABASE_PATH);
 
-            System.out.println(" - 完成\n");
+        System.out.println(" - 完成\n");
+    }
+
+    private static void unknown_command(List<String> cmd) {
+        System.out.println("Unknown Command: " + cmd.get(0));
+    }
+
+    private static void buildDatabaseItemsFromBlocks(DatabaseItemBuilder builder, List<String> blockNames, String varName) {
+
+        // 从 blockDataList 中找到对应 blockName 的数据块，转换成 DatabaseItem 对象，并返回列表
+        List<DatabaseItem> items         = new ArrayList<>();
+        var                blockDataList = excelResult.getBlockDataByNames(blockNames);
+        for(var blockData : blockDataList) {
+            var converted = builder.build(blockData);
+            if(converted != null && !converted.isEmpty()) items.addAll(converted);
+        }
+        if(!items.isEmpty()) dbItemMap.put(varName, items);
+
+        Util.WriteItemListToFile(items, ARGS.LOG_PATH + varName + "_store.txt");
+    }
+
+    // 读取表格
+    public static ExcelResult ReadExcel(String excelFilePath) throws IOException {
+        System.out.println("Reading excel file...");
+        var excelResult = new ExcelReader().Read(excelFilePath);
+
+        // 将 excelReader.commands 保存到文件
+        System.out.println("Saving commands to file...");
+        try(var writer = Files.newBufferedWriter(Path.of(ARGS.OUTPUT_EXCEL_CMDS))) {
+            writer.write(excelResult.getCommandsInfo());
         }
 
-        private static void unknown_command(List<String> cmd) {
-            System.out.println("Unknown Command: " + cmd.get(0));
+        // 将 blockDataList 保存到文件
+        System.out.println("Saving block data...");
+        try(var writer = Files.newBufferedWriter(Path.of(ARGS.OUTPUT_EXCEL_BLOCKS))) {
+            writer.write(excelResult.getBlocksInfo());
         }
 
-        private static void buildDatabaseItemsFromBlocks(DatabaseItemBuilder builder, List<String> blockNames, String varName) {
+        return excelResult;
+    }
 
-            // 从 blockDataList 中找到对应 blockName 的数据块，转换成 DatabaseItem 对象，并返回列表
-            List<DatabaseItem> items         = new ArrayList<>();
-            var                blockDataList = excelResult.getBlockDataByNames(blockNames);
-            for(var blockData : blockDataList) {
-                var converted = builder.build(blockData);
-                if(converted != null && !converted.isEmpty()) items.addAll(converted);
-            }
-            if(!items.isEmpty()) dbItemMap.put(varName, items);
-
-            Util.WriteItemListToFile(items, ARGS.LOG_PATH + varName + "_store.txt");
-        }
-
-        // 读取表格
-        public static ExcelResult ReadExcel(String excelFilePath) throws IOException {
-            System.out.println("Reading excel file...");
-            var excelResult = new ExcelReader().Read(excelFilePath);
-
-            // 将 excelReader.commands 保存到文件
-            System.out.println("Saving commands to file...");
-            try(var writer = Files.newBufferedWriter(Path.of(ARGS.OUTPUT_EXCEL_CMDS))) {
-                writer.write(excelResult.getCommandsInfo());
-            }
-
-            // 将 blockDataList 保存到文件
-            System.out.println("Saving block data...");
-            try(var writer = Files.newBufferedWriter(Path.of(ARGS.OUTPUT_EXCEL_BLOCKS))) {
-                writer.write(excelResult.getBlocksInfo());
-            }
-
-            return excelResult;
-        }
-
-        // 保存到数据库
+    // 保存到数据库
     public static void ToDatabase(List<? extends DatabaseItem> items, String databasePath) {
 
         List<UpsertItem> upsertList = new ArrayList<>();
@@ -305,4 +305,4 @@ public class Main {
         Util.WriteItemListToFile(upsertList, ARGS.LOG_PATH + "db_upsert.txt");
         Util.WriteItemListToFile(updateList, ARGS.LOG_PATH + "db_update.txt");
     }
-    }
+}
