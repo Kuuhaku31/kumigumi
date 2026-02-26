@@ -272,13 +272,13 @@ public class Main {
 
         // 将 excelReader.commands 保存到文件
         System.out.println("Saving commands to file...");
-        try(var writer = Files.newBufferedWriter(Path.of(ARGS.OUTPUT_EXCEL_CMDS))) {
+        try(var writer = Files.newBufferedWriter(Path.of(ARGS.LOG_PATH + "00.commands.txt"))) {
             writer.write(excelResult.getCommandsInfo());
         }
 
         // 将 blockDataList 保存到文件
         System.out.println("Saving block data...");
-        try(var writer = Files.newBufferedWriter(Path.of(ARGS.OUTPUT_EXCEL_BLOCKS))) {
+        try(var writer = Files.newBufferedWriter(Path.of(ARGS.LOG_PATH + "00.blocks.txt"))) {
             writer.write(excelResult.getBlocksInfo());
         }
 
