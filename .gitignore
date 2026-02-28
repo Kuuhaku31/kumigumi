@@ -11,3 +11,4 @@
 *.torrent
 
 *.tmp
+tmp_*

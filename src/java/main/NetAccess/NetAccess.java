@@ -19,6 +19,10 @@ import static NetAccess.RSSParser.parseMikanRSS;
 import static NetAccess.RSSParser.parseNyaaRSS;
 
 public class NetAccess {
+    // 复用 HttpClient 实例
+    private static final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(30))
+            .build();
 
     public static byte[] DownloadFile(String url_str) throws URISyntaxException, IOException {
         var url = new URI(url_str).toURL(); // 创建URL对象
@@ -49,37 +53,18 @@ public class NetAccess {
     }
 
     public static List<Map<String, String>> FetchAnimeTorrentInfo(String rss_url) throws IOException {
-        List<Map<String, String>> torrent_data = null;
-
-        // 构建 client
-        var client = HttpClient.newBuilder()
-                .proxy(ProxySelector.of(new InetSocketAddress("127.0.0.1", 10808))) // 例：Clash 代理
-                .connectTimeout(Duration.ofSeconds(30))
-                .build();
-        var reader = new RssReader(client);
-
-        // 不同的订阅源选择不同方法获取
-        if (rss_url.startsWith("https://mikanani.me") || rss_url.startsWith("https://mikan.tangbai.cc"))
-            torrent_data = parseMikanRSS(reader, rss_url);
-        else if (rss_url.startsWith("https://nyaa"))
-            torrent_data = parseNyaaRSS(reader, rss_url);
-
-        // 返回结果
-        if (torrent_data == null)
-            throw new IOException("不支持的RSS源");
-        else
-            return torrent_data;
+        var reader = new RssReader(httpClient);
+        return switch (detectRSSSourceType(rss_url)) {
+            case MIKAN -> parseMikanRSS(reader, rss_url);
+            case NYAA -> parseNyaaRSS(reader, rss_url);
+            case UNKNOWN -> throw new IOException("不支持的RSS源: " + rss_url);
+        };
     }
 
     public static List<Map<String, String>> FetchAnimeTorrentInfo(String rss_url, int anime_id) throws IOException {
-        List<Map<String, String>> torrent_data = FetchAnimeTorrentInfo(rss_url);
-
-        // 为每个 torrent 条目添加 ANI_ID 字段
-        for (var tor : torrent_data) {
-            tor.put("ANI_ID", String.valueOf(anime_id));
-        }
-
-        return torrent_data;
+        return FetchAnimeTorrentInfo(rss_url).stream()
+                .peek(tor -> tor.put("ANI_ID", String.valueOf(anime_id)))
+                .toList();
     }
 
     private static JSONObject GetInfo(QueryType type, int anime_id) throws URISyntaxException, IOException {
@@ -114,6 +99,23 @@ public class NetAccess {
         in.close();
 
         return response.toString();
+    }
+
+    /**
+     * 检测 RSS 源类型
+     */
+    private static RSSSourceType detectRSSSourceType(String rss_url) {
+        if (rss_url.startsWith("https://mikanani.me") || rss_url.startsWith("https://mikan.tangbai.cc")) {
+            return RSSSourceType.MIKAN;
+        } else if (rss_url.startsWith("https://nyaa")) {
+            return RSSSourceType.NYAA;
+        }
+        return RSSSourceType.UNKNOWN;
+    }
+
+    // RSS 源类型
+    private enum RSSSourceType {
+        MIKAN, NYAA, UNKNOWN
     }
 
     // 请求类型
