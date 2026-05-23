@@ -1,0 +1,143 @@
+package Database;
+
+import java.sql.*;
+import java.time.OffsetDateTime;
+import java.util.Map;
+
+
+public class EpisodeInfo {
+
+    public final Integer        EPI_ID;
+    public final Integer        ANI_ID;
+
+    public final String         ep;
+    public final Double         sort;
+    public final String         air_date;
+    public final Integer        duration;
+    public final String         title;
+    public final String         title_cn;
+    public final String         description;
+
+    public final OffsetDateTime update_datetime;
+
+
+    static PreparedStatement GetUpsertStatement(Connection conn) throws SQLException {
+        String upsertSqlFetch =
+        """
+        INSERT INTO episode (
+            EPI_ID,
+            ANI_ID,
+            ep,
+            sort,
+            air_date,
+            duration,
+            title,
+            title_cn,
+            description,
+            update_datetime
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(EPI_ID) DO UPDATE SET
+            ANI_ID              = excluded.ANI_ID,
+            ep                  = excluded.ep,
+            sort                = excluded.sort,
+            air_date            = excluded.air_date,
+            duration            = excluded.duration,
+            title               = excluded.title,
+            title_cn            = excluded.title_cn,
+            description         = excluded.description,
+            update_datetime     = excluded.update_datetime;
+        """;
+        return conn.prepareStatement(upsertSqlFetch);
+    }
+
+    void SetParams(PreparedStatement ps) throws SQLException {
+        Utils.safeSetInt            (ps,  1, EPI_ID         );
+        Utils.safeSetInt            (ps,  2, ANI_ID         );
+        Utils.safeSetString         (ps,  3, ep             );
+        Utils.safeSetDouble         (ps,  4, sort           );
+        Utils.safeSetString         (ps,  5, air_date       );
+        Utils.safeSetInt            (ps,  6, duration       );
+        Utils.safeSetString         (ps,  7, title          );
+        Utils.safeSetString         (ps,  8, title_cn       );
+        Utils.safeSetString         (ps,  9, description    );
+        Utils.safeSetOffsetDateTime (ps, 10, update_datetime);
+    }
+
+
+    public EpisodeInfo(Map<String, String> data) {
+
+        // 参数检查
+        if(data == null || data.isEmpty()) {
+            throw new IllegalArgumentException("EpisodeInfo构造函数: 传入的Map<String, String>为null或空");
+        }
+
+        // 解析 EPI_ID
+        {
+            Integer parsedEpiId = null;
+            var epi_id_str = data.getOrDefault("EPI_ID", null);
+
+            if(epi_id_str == null) {
+                throw new IllegalArgumentException("EpisodeInfo构造函数: Map<String, String>缺少必需的键 'EPI_ID'");
+            }
+
+            try {
+                parsedEpiId = Integer.parseInt(epi_id_str);
+            } catch(NumberFormatException e) {
+                throw new IllegalArgumentException("EpisodeInfo构造函数: 键 'EPI_ID' 的值无法解析为整数: " + epi_id_str, e);
+            }
+
+            EPI_ID = parsedEpiId;
+        }
+
+        // 解析 ANI_ID
+        {
+            Integer parsedAniId = null;
+            var ani_id_str = data.getOrDefault("ANI_ID", null);
+
+            if(ani_id_str == null) {
+                throw new IllegalArgumentException("EpisodeInfo构造函数: Map<String, String>缺少必需的键 'ANI_ID'");
+            }
+
+            try {
+                parsedAniId = Integer.parseInt(ani_id_str);
+            } catch(NumberFormatException e) {
+                throw new IllegalArgumentException("EpisodeInfo构造函数: 键 'ANI_ID' 的值无法解析为整数: " + ani_id_str, e);
+            }
+
+            ANI_ID = parsedAniId;
+        }
+
+        ep = data.getOrDefault("ep", null);
+
+        {
+            Double parsedSort = null;
+            if(data.containsKey("sort")) {
+                var sortStr = data.get("sort");
+                if(sortStr != null) try {
+                    parsedSort = Double.parseDouble(sortStr);
+                } catch(NumberFormatException _) {}
+            }
+            sort = parsedSort;
+        }
+
+        air_date    = data.getOrDefault("air_date", null);
+
+        {
+            Integer parsedDuration = null;
+            if(data.containsKey("duration")) {
+                var durationStr = data.get("duration");
+                if(durationStr != null) try {
+                    parsedDuration = Integer.parseInt(durationStr);
+                } catch(NumberFormatException _) {}
+            }
+            duration = parsedDuration;
+        }
+
+        title       = data.getOrDefault("title", null);
+        title_cn    = data.getOrDefault("title_cn", null);
+        description = data.getOrDefault("description", null);
+
+        update_datetime = OffsetDateTime.now(); // 设置更新时间为当前时间
+    }
+}

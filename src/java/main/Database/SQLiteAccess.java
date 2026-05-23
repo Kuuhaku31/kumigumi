@@ -10,7 +10,7 @@ import InfoItem.InfoEpi.*;
 import InfoItem.InfoItem;
 import InfoItem.InfoTor.*;
 
-import static Util.Util.getDateString;
+// import static Util.Util.getDateString;
 
 import java.io.Closeable;
 import java.io.File;
@@ -19,11 +19,20 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.OffsetDateTime;
+// import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+
+// import Database.Utils.*;
+import static Database.Utils.safeSetBytes;
+import static Database.Utils.safeSetDate;
+import static Database.Utils.safeSetFloat;
+import static Database.Utils.safeSetInt;
+import static Database.Utils.safeSetLong;
+import static Database.Utils.safeSetOffsetDateTime;
+import static Database.Utils.safeSetString;
 
 
 public class SQLiteAccess implements Closeable {
@@ -54,7 +63,54 @@ public class SQLiteAccess implements Closeable {
         }
 
         // 初始化语句缓存
-        statementCache = new SQLiteStatementCache(conn);
+        // statementCache = new SQLiteStatementCache(conn);
+        statementCache = null;
+    }
+
+
+    void UpsertAnime(AnimeInfo item){
+        try(var ps = AnimeInfo.GetUpsertStatement(conn)) {
+            item.SetParams(ps);
+            ps.executeUpdate();
+        } catch(SQLException e) {
+            System.err.println("Failed to upsert anime info for ANI_ID: " + item.ANI_ID + ", error: " + e.getMessage());
+        }
+    }
+
+    void UpsertEpisode(EpisodeInfo item){
+        try(var ps = EpisodeInfo.GetUpsertStatement(conn)) {
+            item.SetParams(ps);
+            ps.executeUpdate();
+        } catch(SQLException e) {
+            System.err.println("Failed to upsert episode info for EPI_ID: " + item.EPI_ID + ", error: " + e.getMessage());
+        }
+    }
+
+    void UpsertTorrentPageInfo(TorrentPageInfo item){
+        try(var ps = TorrentPageInfo.GetUpsertStatement(conn)) {
+            item.SetParams(ps);
+            ps.executeUpdate();
+        } catch(SQLException e) {
+            System.err.println("Failed to upsert torrent info for TOR_HASH: " + item.TOR_HASH + ", error: " + e.getMessage());
+        }
+    }
+
+    void UpsertRSS(RSSInfo item){
+        try(var ps = RSSInfo.GetUpsertStatement(conn)) {
+            item.SetParams(ps);
+            ps.executeUpdate();
+        } catch(SQLException e) {
+            System.err.println("Failed to upsert RSS info for URL_RSS: " + item.URL_RSS + ", error: " + e.getMessage());
+        }
+    }
+
+    void UpsertEpisodeRecord(EpisodeRecordInfo item){
+        try(var ps = EpisodeRecordInfo.GetUpsertStatement(conn)) {
+            item.SetParams(ps);
+            ps.executeUpdate();
+        } catch(SQLException e) {
+            System.err.println("Failed to upsert episode record for EPI_ID: " + item.EPI_ID + ", error: " + e.getMessage());
+        }
     }
 
     /**
@@ -215,7 +271,7 @@ public class SQLiteAccess implements Closeable {
 
                 // 使用安全的设置方法处理可能为 null 的值
                 safeSetInt(statementCache.psEpiFetch, 1, itemInfoEpiFetch.ep);
-                safeSetDouble(statementCache.psEpiFetch, 2, itemInfoEpiFetch.sort);
+                safeSetFloat(statementCache.psEpiFetch, 2, itemInfoEpiFetch.sort);
                 safeSetDate(statementCache.psEpiFetch, 3, itemInfoEpiFetch.air_date);
                 safeSetInt(statementCache.psEpiFetch, 4, itemInfoEpiFetch.duration);
                 safeSetString(statementCache.psEpiFetch, 5, itemInfoEpiFetch.title);
@@ -523,63 +579,6 @@ public class SQLiteAccess implements Closeable {
             } catch(SQLException e) {
                 System.err.println("Close failed: " + e.getMessage());
             }
-        }
-    }
-
-
-    private static void safeSetInt(PreparedStatement ps, int index, Integer value) throws SQLException {
-        if(value == null) {
-            ps.setNull(index, java.sql.Types.INTEGER);
-        } else {
-            ps.setInt(index, value);
-        }
-    }
-
-    private static void safeSetLong(PreparedStatement ps, int index, Long value) throws SQLException {
-        if(value == null) {
-            ps.setNull(index, java.sql.Types.BIGINT);
-        } else {
-            ps.setLong(index, value);
-        }
-    }
-
-    private static void safeSetDouble(PreparedStatement ps, int index, Float value) throws SQLException {
-        if(value == null) {
-            ps.setNull(index, java.sql.Types.REAL);
-        } else {
-            ps.setDouble(index, value);
-        }
-    }
-
-    private static void safeSetString(PreparedStatement ps, int index, String value) throws SQLException {
-        if(value == null) {
-            ps.setNull(index, java.sql.Types.VARCHAR);
-        } else {
-            ps.setString(index, value);
-        }
-    }
-
-    private static void safeSetDate(PreparedStatement ps, int index, java.util.Date value) throws SQLException {
-        if(value == null) {
-            ps.setNull(index, java.sql.Types.DATE);
-        } else {
-            ps.setString(index, getDateString(value));
-        }
-    }
-
-    private static void safeSetOffsetDateTime(PreparedStatement ps, int index, OffsetDateTime value) throws SQLException {
-        if(value == null) {
-            ps.setNull(index, java.sql.Types.TIMESTAMP);
-        } else {
-            ps.setString(index, getDateString(value));
-        }
-    }
-
-    private static void safeSetBytes(PreparedStatement ps, int index, byte[] value) throws SQLException {
-        if(value == null) {
-            ps.setNull(index, java.sql.Types.BLOB);
-        } else {
-            ps.setBytes(index, value);
         }
     }
 }
