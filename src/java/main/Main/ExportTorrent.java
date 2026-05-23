@@ -48,7 +48,7 @@ public class ExportTorrent {
 
         // 访问数据库
         try(var db = new Database.SQLiteAccess(db_path)) {
-            db.exportTorrentFiles(hashList, export_dir);
+            db.ExportTorrentFiles(hashList, export_dir);
         } catch(Exception e) {
             System.err.println("数据库操作失败: " + e.getMessage());
         }

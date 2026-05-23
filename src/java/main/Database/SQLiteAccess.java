@@ -113,6 +113,16 @@ public class SQLiteAccess implements Closeable {
         }
     }
 
+    void UpsertTorrent(TorrentInfo item){
+        try(var ps = TorrentInfo.GetUpsertStatement(conn)) {
+            item.SetParams(ps);
+            ps.executeUpdate();
+        } catch(SQLException e) {
+            System.err.println("Failed to upsert torrent info for TOR_HASH: " + item.TOR_HASH + ", error: " + e.getMessage());
+        }
+    }
+
+
     /**
      * 利用 UpsertItem 插入或更新项目
      * 根据 UpsertItem 的类型执行相应的插入或更新操作
@@ -525,7 +535,7 @@ public class SQLiteAccess implements Closeable {
      * @param torHashList
      * @param safePath
      */
-    public void exportTorrentFiles(List<String> torHashList, String safePath) {
+    public void ExportTorrentFiles(List<String> torHashList, String safePath) {
         if(torHashList == null || torHashList.isEmpty()) return;
 
         System.out.println("正在导出种子文件: " + torHashList.size() + " 个，保存路径: " + safePath);

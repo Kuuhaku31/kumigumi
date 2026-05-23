@@ -1,12 +1,14 @@
 package Database;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 
 
 public class TestUpsert {
-    public static void main(String[] args) throws SQLException {
+    public static void main(String[] args) throws SQLException, IOException {
 
         System.out.println("Testing Upsert...");
 
@@ -77,6 +79,23 @@ public class TestUpsert {
                 "comment", "这是一个测试剧集记录。"
             ));
             db.UpsertEpisodeRecord(item);
+        }
+
+        System.out.println("Testing Upsert TorrentInfo...");
+        try (var db = new SQLiteAccess("db/test.db")) {
+            var tor_path = "ea5e686c111c47dcadbd16f335d7e7d79e48563f.torrent";
+
+            // 读取文件内容为字节数组
+            byte[] data = java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(tor_path));
+
+            var item = new TorrentInfo(data);
+            db.UpsertTorrent(item);
+        }
+
+        System.out.println("Testing Export Torrent Files...");
+        try (var db = new SQLiteAccess("db/test.db")) {
+            List<String> torHashList = List.of("ea5e686c111c47dcadbd16f335d7e7d79e48563f");
+            db.ExportTorrentFiles(torHashList, "./db/");
         }
     }
 }
