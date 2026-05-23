@@ -4,6 +4,16 @@
   "configurations": [
     {
         "type": "java",
+        "name": "TestInitDB",
+        "request": "launch",
+        "mainClass": "Database.TestInitDB",
+        "projectName": "kumigumi",
+        "vmArgs": [
+            "--enable-native-access=ALL-UNNAMED"
+        ]
+    },
+    {
+        "type": "java",
         "name": "TestDownloadTorrent",
         "request": "launch",
         "mainClass": "FetchTask.TestDownloadTorrent",
