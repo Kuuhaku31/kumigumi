@@ -3,6 +3,7 @@ package Database;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -94,8 +95,24 @@ public class TestUpsert {
 
         System.out.println("Testing Export Torrent Files...");
         try (var db = new SQLiteAccess("db/test.db")) {
-            List<String> torHashList = List.of("ea5e686c111c47dcadbd16f335d7e7d79e48563f");
+            List<String> torHashList = new ArrayList<>();
+            torHashList.add("ea5e686c111c47dcadbd16f335d7e7d79e48563f");
             db.ExportTorrentFiles(torHashList, "./db/");
+
+            torHashList.add("68768");
+            var notExistHashes = db.GetTorrentHashNotExist(torHashList);
+            System.out.println("Torrent hashes not found in database: " + notExistHashes);
+        }
+
+        System.out.println("Testing Get Torrent Files Download URLs...");
+        try (var db = new SQLiteAccess("db/test.db")) {
+            List<String> torHashList = new ArrayList<>();
+            torHashList.add("abc123");
+            var downloader_list = db.GetDownloadURLByHash(torHashList);
+            for (var downloader : downloader_list) {
+                System.out.println("TOR_HASH: " + downloader.TOR_HASH());
+                System.out.println("Download URLs: " + downloader.url_download_list());
+            }
         }
     }
 }

@@ -122,6 +122,123 @@ public class SQLiteAccess implements Closeable {
         }
     }
 
+    /**
+     * 根据给定的 TOR_HASH 列表从数据库中查询对应的 torrent_file 字段，并将其保存为 .torrent 文件到指定路径
+     * @param torHashList
+     * @param safePath
+     */
+    public void ExportTorrentFiles(List<String> torHashList, String safePath) {
+        if(torHashList == null || torHashList.isEmpty()) return;
+
+        System.out.println("正在导出种子文件: " + torHashList.size() + " 个，保存路径: " + safePath);
+
+        var placeholders = String.join(",", java.util.Collections.nCopies(torHashList.size(), "?"));
+        var sql = "SELECT TOR_HASH, torrent_file FROM torrent WHERE TOR_HASH IN (" + placeholders + ")";
+
+        try(PreparedStatement ps = conn.prepareStatement(sql)) {
+            for(int i = 0; i < torHashList.size(); i++) {
+                ps.setString(i + 1, torHashList.get(i));
+            }
+
+            try(ResultSet rs = ps.executeQuery()) {
+                while(rs.next()) {
+                    var torHash = rs.getString("TOR_HASH");
+                    var fileBytes = rs.getBytes("torrent_file");
+                    if(fileBytes != null && fileBytes.length > 0) {
+                        var filePath = safePath + File.separator + torHash + ".torrent";
+                        try(var fos = new java.io.FileOutputStream(filePath)) {
+                            fos.write(fileBytes);
+                        } catch(java.io.IOException e) {
+                            System.err.println("Failed to save torrent file for hash: " + torHash + ", error: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+        } catch(SQLException e) {
+            System.err.println("Failed to query torrent files: " + e.getMessage());
+        }
+
+        System.out.println("种子文件导出完成");
+    }
+
+    // 获取不在 torrent 表中的 hash 列表
+    List<String> GetTorrentHashNotExist(List<String> hashList) throws SQLException {
+
+        // 如果输入列表为空或 null，则直接返回一个空列表
+        if(hashList == null || hashList.isEmpty()) return List.of();
+
+        // 使用 LinkedHashSet 去重并保持输入顺序
+        var uniqueHashes = new LinkedHashSet<String>();
+        for(var hash : hashList) {
+            if(hash != null && !hash.isBlank()) uniqueHashes.add(hash);
+        }
+        if(uniqueHashes.isEmpty()) return List.of();
+
+        // 将去重后的哈希列表分块查询数据库，避免单条 SQL 语句参数过多导致性能问题
+        var inputList  = new ArrayList<>(uniqueHashes);
+        var hasFileSet = new HashSet<String>();
+        var chunkSize  = 500; // 避免 SQLite 单条语句参数过多
+
+        // 分块查询数据库，获取存在且有种子文件的 TOR_HASH 列表
+        for(var start = 0; start < inputList.size(); start += chunkSize) {
+            var end = Math.min(start + chunkSize, inputList.size());
+            var chunk = inputList.subList(start, end);
+
+            var placeholders = String.join(",", java.util.Collections.nCopies(chunk.size(), "?"));
+            var sql
+            = "SELECT TOR_HASH FROM torrent "
+            + "WHERE TOR_HASH IN (" + placeholders + ") "
+            + "AND torrent_file IS NOT NULL "
+            + "AND length(torrent_file) > 0";
+
+            // 使用 try-with-resources 确保 PreparedStatement 和 ResultSet 正确关闭
+            try(var ps = conn.prepareStatement(sql)) {
+                for(var i = 0; i < chunk.size(); i++) {
+                    ps.setString(i + 1, chunk.get(i));
+                }
+
+                try(ResultSet rs = ps.executeQuery()) {
+                    while(rs.next()) {
+                        hasFileSet.add(rs.getString("TOR_HASH"));
+                    }
+                }
+            }
+        }
+
+        // 过滤出数据库中不存在的 TOR_HASH 对应的 InfoAniTorFetch 项目
+        List<String> notExistList = new ArrayList<>();
+        for(var hash : hashList) {
+            if(!hasFileSet.contains(hash)) notExistList.add(hash);
+        }
+
+        return notExistList;
+    }
+
+    List<TorrentDownloader> GetDownloadURLByHash(List<String> hash_list) {
+
+        if(hash_list == null || hash_list.isEmpty()) return List.of();
+
+        List<TorrentDownloader> torrent_downloader_list = new ArrayList<>();
+        for(var hash : hash_list)
+        {
+            var new_downloader = new TorrentDownloader(hash, new ArrayList<String>());
+
+            var sql ="SELECT url_download FROM 'torrent_page' WHERE TOR_HASH='" + hash + "'";
+            try(var ps = conn.prepareStatement(sql)) {
+                try(var rs = ps.executeQuery()) {
+                    while(rs.next()) {
+                        new_downloader.url_download_list().add(rs.getString("url_download"));
+                    }
+                }
+            } catch(SQLException e) {
+                System.err.println("Failed to query download URL for hash: " + hash + ", error: " + e.getMessage());
+            }
+
+            torrent_downloader_list.add(new_downloader);
+        }
+
+        return torrent_downloader_list;
+    }
 
     /**
      * 利用 UpsertItem 插入或更新项目
@@ -528,45 +645,6 @@ public class SQLiteAccess implements Closeable {
         }
 
         return notExistList;
-    }
-
-    /**
-     * 根据给定的 TOR_HASH 列表从数据库中查询对应的 torrent_file 字段，并将其保存为 .torrent 文件到指定路径
-     * @param torHashList
-     * @param safePath
-     */
-    public void ExportTorrentFiles(List<String> torHashList, String safePath) {
-        if(torHashList == null || torHashList.isEmpty()) return;
-
-        System.out.println("正在导出种子文件: " + torHashList.size() + " 个，保存路径: " + safePath);
-
-        var placeholders = String.join(",", java.util.Collections.nCopies(torHashList.size(), "?"));
-        var sql = "SELECT TOR_HASH, torrent_file FROM torrent WHERE TOR_HASH IN (" + placeholders + ")";
-
-        try(PreparedStatement ps = conn.prepareStatement(sql)) {
-            for(int i = 0; i < torHashList.size(); i++) {
-                ps.setString(i + 1, torHashList.get(i));
-            }
-
-            try(ResultSet rs = ps.executeQuery()) {
-                while(rs.next()) {
-                    var torHash = rs.getString("TOR_HASH");
-                    var fileBytes = rs.getBytes("torrent_file");
-                    if(fileBytes != null && fileBytes.length > 0) {
-                        var filePath = safePath + File.separator + torHash + ".torrent";
-                        try(var fos = new java.io.FileOutputStream(filePath)) {
-                            fos.write(fileBytes);
-                        } catch(java.io.IOException e) {
-                            System.err.println("Failed to save torrent file for hash: " + torHash + ", error: " + e.getMessage());
-                        }
-                    }
-                }
-            }
-        } catch(SQLException e) {
-            System.err.println("Failed to query torrent files: " + e.getMessage());
-        }
-
-        System.out.println("种子文件导出完成");
     }
 
     /**
