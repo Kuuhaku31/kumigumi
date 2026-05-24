@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 // import Database.Utils.*;
 import static Database.Utils.safeSetBytes;
@@ -127,7 +128,7 @@ public class SQLiteAccess implements Closeable {
      * @param torHashList
      * @param safePath
      */
-    public void ExportTorrentFiles(List<String> torHashList, String safePath) {
+    public void ExportTorrentFiles(Set<String> torHashList, String safePath) {
         if(torHashList == null || torHashList.isEmpty()) return;
 
         System.out.println("正在导出种子文件: " + torHashList.size() + " 个，保存路径: " + safePath);
@@ -136,8 +137,9 @@ public class SQLiteAccess implements Closeable {
         var sql = "SELECT TOR_HASH, torrent_file FROM torrent WHERE TOR_HASH IN (" + placeholders + ")";
 
         try(PreparedStatement ps = conn.prepareStatement(sql)) {
-            for(int i = 0; i < torHashList.size(); i++) {
-                ps.setString(i + 1, torHashList.get(i));
+            var i = 1;
+            for(var torHash : torHashList) {
+                ps.setString(i++, torHash);
             }
 
             try(ResultSet rs = ps.executeQuery()) {
@@ -162,17 +164,17 @@ public class SQLiteAccess implements Closeable {
     }
 
     // 获取不在 torrent 表中的 hash 列表
-    List<String> GetTorrentHashNotExist(List<String> hashList) throws SQLException {
+    Set<String> GetTorrentHashNotExist(Set<String> hashList) throws SQLException {
 
         // 如果输入列表为空或 null，则直接返回一个空列表
-        if(hashList == null || hashList.isEmpty()) return List.of();
+        if(hashList == null || hashList.isEmpty()) return Set.of();
 
         // 使用 LinkedHashSet 去重并保持输入顺序
         var uniqueHashes = new LinkedHashSet<String>();
         for(var hash : hashList) {
             if(hash != null && !hash.isBlank()) uniqueHashes.add(hash);
         }
-        if(uniqueHashes.isEmpty()) return List.of();
+        if(uniqueHashes.isEmpty()) return Set.of();
 
         // 将去重后的哈希列表分块查询数据库，避免单条 SQL 语句参数过多导致性能问题
         var inputList  = new ArrayList<>(uniqueHashes);
@@ -206,38 +208,66 @@ public class SQLiteAccess implements Closeable {
         }
 
         // 过滤出数据库中不存在的 TOR_HASH 对应的 InfoAniTorFetch 项目
-        List<String> notExistList = new ArrayList<>();
+        Set<String> notExistSet = new LinkedHashSet<>();
         for(var hash : hashList) {
-            if(!hasFileSet.contains(hash)) notExistList.add(hash);
+            if(!hasFileSet.contains(hash)) notExistSet.add(hash);
         }
 
-        return notExistList;
+        return notExistSet;
     }
 
-    List<TorrentDownloader> GetDownloadURLByHash(List<String> hash_list) {
+    Set<TorrentDownloader> GetDownloaderByHash(Set<String> hash_list) {
 
-        if(hash_list == null || hash_list.isEmpty()) return List.of();
+        // 如果输入列表为空或 null，则直接返回一个空列表
+        if(hash_list == null || hash_list.isEmpty()) return Set.of();
 
-        List<TorrentDownloader> torrent_downloader_list = new ArrayList<>();
-        for(var hash : hash_list)
-        {
-            var new_downloader = new TorrentDownloader(hash, new ArrayList<String>());
+        // 使用 LinkedHashSet 去重并保持输入顺序
+        var unique_hashes = new LinkedHashSet<>(hash_list);
+        if(unique_hashes.isEmpty()) return Set.of();
 
-            var sql ="SELECT url_download FROM 'torrent_page' WHERE TOR_HASH='" + hash + "'";
+        // 将去重后的哈希列表分块查询数据库，避免单条 SQL 语句参数过多导致性能问题
+        var result = new java.util.LinkedHashMap<String, List<String>>();
+        for(var hash : unique_hashes) {
+            result.put(hash, new ArrayList<String>());
+        }
+        var inputList = new ArrayList<>(unique_hashes);
+        var chunkSize = 500;
+
+        // 分块查询数据库，获取对应的下载链接列表
+        for(var start = 0; start < inputList.size(); start += chunkSize) {
+            var end = Math.min(start + chunkSize, inputList.size());
+            var chunk = inputList.subList(start, end);
+
+            var placeholders = String.join(",", java.util.Collections.nCopies(chunk.size(), "?"));
+            var sql = "SELECT TOR_HASH, url_download FROM torrent_page WHERE TOR_HASH IN (" + placeholders + ")";
+
             try(var ps = conn.prepareStatement(sql)) {
+
+                // 设置查询参数
+                for(var i = 0; i < chunk.size(); i++) {
+                    ps.setString(i + 1, chunk.get(i));
+                }
+
+                // 执行查询并处理结果
                 try(var rs = ps.executeQuery()) {
                     while(rs.next()) {
-                        new_downloader.url_download_list().add(rs.getString("url_download"));
+                        var hash = rs.getString("TOR_HASH");
+                        var url  = rs.getString("url_download");
+
+                        // 如果哈希存在于结果映射中，则将下载链接添加到对应的列表中
+                        if(result.containsKey(hash)) result.get(hash).add(url);
                     }
                 }
             } catch(SQLException e) {
-                System.err.println("Failed to query download URL for hash: " + hash + ", error: " + e.getMessage());
+                System.err.println("Failed to query download URLs: " + e.getMessage());
             }
-
-            torrent_downloader_list.add(new_downloader);
         }
 
-        return torrent_downloader_list;
+        Set<TorrentDownloader> downloaderSet = new LinkedHashSet<>();
+        for(var entry : result.entrySet()) {
+            downloaderSet.add(new TorrentDownloader(entry.getKey(), entry.getValue()));
+        }
+        return downloaderSet;
     }
 
     /**
