@@ -4,6 +4,13 @@
   "configurations": [
     {
         "type": "java",
+        "name": "ExcelToDB",
+        "request": "launch",
+        "mainClass": "Main.ExcelToDB",
+        "projectName": "kumigumi"
+    },
+    {
+        "type": "java",
         "name": "TestUpsert",
         "request": "launch",
         "mainClass": "Database.TestUpsert",
