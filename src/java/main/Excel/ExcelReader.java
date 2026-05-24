@@ -20,6 +20,8 @@ import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import Util.TableData;
+
 
 public class ExcelReader {
     private XSSFWorkbook     workbook;  // Excel 工作簿
@@ -28,7 +30,7 @@ public class ExcelReader {
     private CellPosition        cursor        = new CellPosition(); // 光标位置
     private Map<String, String> variables     = new HashMap<>();    // 定义的变量
     private List<List<String>>  commands      = new ArrayList<>();  // 保存命令列表
-    private List<BlockData>     blockDataList = new ArrayList<>();  // 保存块信息
+    private Map<String, TableData> blockDataList = new HashMap<>();  // 保存块信息
 
 
     /**
@@ -108,7 +110,7 @@ public class ExcelReader {
                 recode.Set(column_map.getKey(), cell_value);
             }
         }
-        blockDataList.add(data);
+        blockDataList.put(blockMeta.blockName, data);
     }
 
     private boolean 特殊标记处理(String cellData) {

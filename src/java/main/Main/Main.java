@@ -128,7 +128,7 @@ public class Main {
         var fetchTaskItem = new FetchTaskManager();
         var blockDataList = excelResult.getBlockDataByNames(blockNames);
 
-        fetchTaskItem.addFetchTaskAni(blockDataList);
+        // fetchTaskItem.addFetchTaskAni(blockDataList);
         if(!fetchTaskItem.isEmpty()) fetchTaskMap.put(varName, fetchTaskItem);
     }
 
@@ -139,7 +139,7 @@ public class Main {
         var fetchTaskItem = new FetchTaskManager();
         var blockDataList = excelResult.getBlockDataByNames(blockNames);
 
-        fetchTaskItem.addFetchTaskEpi(blockDataList);
+        // fetchTaskItem.addFetchTaskEpi(blockDataList);
         if(!fetchTaskItem.isEmpty()) fetchTaskMap.put(varName, fetchTaskItem);
     }
 
@@ -150,7 +150,7 @@ public class Main {
         var fetchTaskItem = new FetchTaskManager();
         var blockDataList = excelResult.getBlockDataByNames(blockNames);
 
-        fetchTaskItem.addFetchTaskAniTor(blockDataList);
+        // fetchTaskItem.addFetchTaskAniTor(blockDataList);
         if(!fetchTaskItem.isEmpty()) fetchTaskMap.put(varName, fetchTaskItem);
     }
 
