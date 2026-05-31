@@ -3,9 +3,13 @@ package NetAccess;
 import com.apptasticsoftware.rssreader.Item;
 import com.apptasticsoftware.rssreader.RssReader;
 
+import Database.TorrentPageInfo;
+import Util.Util;
+
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
 import java.util.*;
 
 class RSSParser {
@@ -16,31 +20,50 @@ class RSSParser {
      * <p>
      * 返回值：种子信息列表，如果获取失败或没有种子则抛出异常
      */
-    static List<Map<String, String>> parseMikanRSS(RssReader reader, String rss_url) throws IOException {
+    static Set<TorrentPageInfo> parseMikanRSS(RssReader reader, String rss_url) throws IOException {
+
         // 读取一个 RSS 链接
         var items = reader.read(rss_url).toList();
 
         // 遍历 RSS 条目，提取种子信息
-        List<Map<String, String>> res = new ArrayList<>();
+        Set<TorrentPageInfo> res = new HashSet<>();
         for (var item : items) {
             // 如果 enclosure 不存在，就抛异常
             var enclosure = item.getEnclosure().orElseThrow(() -> new RuntimeException("RSS 条目缺少附件 enclosure"));
 
             // 填充信息
-            Map<String, String> recode = new HashMap<>();
-            res.add(recode);
+            var tor_hash       = enclosure.getUrl().substring(enclosure.getUrl().lastIndexOf("/") + 1).replace(".torrent", "");
+            var air_datetime_str = item.getPubDate().orElse(null);
+            OffsetDateTime air_datetime = null;
+            if (air_datetime_str != null) {
+                try {
+                    var rssFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", java.util.Locale.ENGLISH);
+                    var dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
-            var tor_hash = enclosure.getUrl().substring(enclosure.getUrl().lastIndexOf("/") + 1).replace(".torrent", "");
+                    // 解析字符串为 Date 转成标准格式字符串
+                    var air_datetime_std_str = dateTimeFormat.format(rssFormat.parse(air_datetime_str));
+                    air_datetime = OffsetDateTime.parse(air_datetime_std_str);
+                } catch (ParseException _) {
+                    // 如果解析失败，就保持 air_datetime 为 null
+                }
+            }
+            var url_download   = enclosure.getUrl();
+            var url_page       = item.getLink().orElse(null);
+            var title          = item.getTitle().orElse(null);
+            var subtitle_group = ParseSubtitleGroup(title);
+            var description    = item.getDescription().orElse(null);
 
-            recode.put("TOR_HASH", tor_hash);
-            recode.put("air_datetime", item.getPubDate().orElse(null));
-            recode.put("url_download", enclosure.getUrl());
-            recode.put("url_page", item.getLink().orElse(null));
-
-            var title = item.getTitle().orElse(null);
-            recode.put("title", title);
-            recode.put("subtitle_group", ParseSubtitleGroup(title));
-            recode.put("description", item.getDescription().orElse(null));
+            var record = new TorrentPageInfo(
+                rss_url,
+                tor_hash,
+                air_datetime,
+                url_download,
+                url_page,
+                title,
+                subtitle_group,
+                description
+            );
+            res.add(record);
         }
         return res;
     }
@@ -52,48 +75,50 @@ class RSSParser {
      * <p>
      * 返回值：种子信息列表，如果获取失败或没有种子则返回 null
      */
-    static List<Map<String, String>> parseNyaaRSS(RssReader reader, String rss_url) throws IOException {
+    static Set<TorrentPageInfo>
+    parseNyaaRSS(RssReader reader, String rss_url)
+    throws IOException
+    {
         // 自建一个 Map 来保存每个 Item 对应的扩展字段
         Map<Item, Map<String, String>> itemExtensions = new IdentityHashMap<>();
-        reader.addItemExtension("nyaa:size",
-                (item, value) -> itemExtensions.computeIfAbsent(item, _ -> new HashMap<>()).put("size", value.trim()));
+        reader.addItemExtension(
+            "nyaa:infoHash",
+            (item, value) -> itemExtensions.computeIfAbsent(item, _ -> new HashMap<>()).put("infoHash", value.trim())
+        );
 
         // 读取一个 RSS 链接
         var items = reader.read(rss_url).toList();
 
         // 遍历 RSS 条目，提取种子信息
-        List<Map<String, String>> res = new ArrayList<>();
+        Set<TorrentPageInfo> res = new HashSet<>();
         for (var item : items) {
-            // 填充信息
-            Map<String, String> recode = new HashMap<>();
-            res.add(recode);
 
             // 填充信息
-            recode.put("TOR_URL", item.getLink().orElse(null));
+            var url_rss          = rss_url;
+            var ext              = itemExtensions.getOrDefault(item, Collections.emptyMap());
+            var tor_hash         = ext.getOrDefault("infoHash", null);
+            var air_datetime_str = item.getPubDate().orElse(null);
+            var air_datetime     = Util.parseOffsetDateTime(air_datetime_str);
 
-            try {
-                var rssFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", java.util.Locale.ENGLISH);
-                var dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-
-                // 解析字符串为 Date 转成标准格式字符串
-                var air_datetime = dateTimeFormat.format(rssFormat.parse(item.getPubDate().orElse(null)));
-                recode.put("air_datetime", air_datetime);
-            } catch (ParseException _) {
-                recode.put("air_datetime", null);
-            }
-
-            var ext = itemExtensions.getOrDefault(item, Collections.emptyMap());
-            var len = ParseSizeToBytes(ext.getOrDefault("size", null));
-            var size = len == null ? null : String.valueOf(len);
-            recode.put("size", size);
-
-            recode.put("url_page", item.getGuid().orElse(null));
+            var url_download     = item.getLink().orElse(null);
+            var url_page         = item.getGuid().orElse(null);
 
             var title = item.getTitle().orElse(null);
-            recode.put("title", title);
-            recode.put("subtitle_group", ParseSubtitleGroup(title));
 
-            recode.put("description", item.getDescription().orElse(null));
+            var subtitle_group = ParseSubtitleGroup(title);
+            var description    = item.getDescription().orElse(null);
+
+            var record = new TorrentPageInfo(
+                url_rss,
+                tor_hash,
+                air_datetime,
+                url_download,
+                url_page,
+                title,
+                subtitle_group,
+                description
+            );
+            res.add(record);
         }
         return res;
     }

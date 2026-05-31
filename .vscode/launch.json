@@ -4,6 +4,13 @@
   "configurations": [
     {
         "type": "java",
+        "name": "TestGetInfo",
+        "request": "launch",
+        "mainClass": "NetAccess.TestGetInfo",
+        "projectName": "kumigumi"
+    },
+    {
+        "type": "java",
         "name": "ExcelToDB",
         "request": "launch",
         "mainClass": "Main.ExcelToDB",

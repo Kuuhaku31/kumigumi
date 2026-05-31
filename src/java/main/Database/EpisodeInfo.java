@@ -2,7 +2,10 @@ package Database;
 
 import java.sql.*;
 import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.Map;
+
+import Util.Util;
 
 
 public class EpisodeInfo {
@@ -12,7 +15,7 @@ public class EpisodeInfo {
 
     public final String         ep;
     public final Double         sort;
-    public final String         air_date;
+    public final Date           air_date;
     public final Integer        duration;
     public final String         title;
     public final String         title_cn;
@@ -56,7 +59,7 @@ public class EpisodeInfo {
         Utils.safeSetInt            (ps,  2, ANI_ID         );
         Utils.safeSetString         (ps,  3, ep             );
         Utils.safeSetDouble         (ps,  4, sort           );
-        Utils.safeSetString         (ps,  5, air_date       );
+        Utils.safeSetDate           (ps,  5, air_date       );
         Utils.safeSetInt            (ps,  6, duration       );
         Utils.safeSetString         (ps,  7, title          );
         Utils.safeSetString         (ps,  8, title_cn       );
@@ -64,6 +67,36 @@ public class EpisodeInfo {
         Utils.safeSetOffsetDateTime (ps, 10, update_datetime);
     }
 
+
+    public EpisodeInfo(
+        Integer EPI_ID,
+        Integer ANI_ID,
+        String  ep,
+        Double  sort,
+        Date    air_date,
+        Integer duration,
+        String  title,
+        String  title_cn,
+        String  description
+
+    ) {
+        // 参数检查
+        String errorMsg = "";
+        if (EPI_ID == null) errorMsg += "参数 'EPI_ID' 不能为空";
+        if (ANI_ID == null) errorMsg += "参数 'ANI_ID' 不能为空";
+        if (!errorMsg.isEmpty()) throw new IllegalArgumentException("EpisodeInfo构造函数: " + errorMsg);
+
+        this.EPI_ID          = EPI_ID;
+        this.ANI_ID          = ANI_ID;
+        this.ep              = ep;
+        this.sort            = sort;
+        this.air_date        = air_date;
+        this.duration        = duration;
+        this.title           = title;
+        this.title_cn        = title_cn;
+        this.description     = description;
+        this.update_datetime = OffsetDateTime.now();
+    }
 
     public EpisodeInfo(Map<String, String> data) {
 
@@ -121,7 +154,7 @@ public class EpisodeInfo {
             sort = parsedSort;
         }
 
-        air_date    = data.getOrDefault("air_date", null);
+        air_date = Util.parseDate(data.getOrDefault("air_date", null));
 
         {
             Integer parsedDuration = null;
@@ -139,5 +172,60 @@ public class EpisodeInfo {
         description = data.getOrDefault("description", null);
 
         update_datetime = OffsetDateTime.now(); // 设置更新时间为当前时间
+    }
+
+
+    @Override
+    public String toString() {
+        return "EpisodeInfo{" +
+            "EPI_ID=" + EPI_ID +
+            ", ANI_ID=" + ANI_ID +
+            ", ep='" + ep + '\'' +
+            ", sort=" + sort +
+            ", air_date=" + Util.getDateString(air_date) +
+            ", duration=" + duration +
+            ", title='" + title + '\'' +
+            ", title_cn='" + title_cn + '\'' +
+            ", description='" + Util.standardString(description) + '\'' +
+            ", update_datetime=" + Util.getDateString(update_datetime) +
+            '}';
+    }
+
+    public String toFormatString() {
+        var format_str = 
+            """
+            EpisodeInfo(hashCode=%s)
+
+            EPI_ID:     %d
+            ANI_ID:     %d
+            ep:         %s
+            sort:       %s
+            air_date:   %s
+            duration:   %s
+            title:      %s
+            title_cn:   %s
+            description:
+
+            %s
+
+            update_datetime: %s
+
+            """;
+        return String.format(
+            format_str,
+            // 十六进制表示实例的哈希码，作为简易标识符
+            Integer.toHexString(System.identityHashCode(this)),
+
+            EPI_ID,
+            ANI_ID,
+            ep,
+            sort,
+            Util.getDateString(air_date),
+            duration,
+            title,
+            title_cn,
+            description,
+            Util.getDateString(update_datetime)
+        );
     }
 }

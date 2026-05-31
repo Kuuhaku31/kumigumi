@@ -69,6 +69,31 @@ public class AnimeInfo {
         Utils.safeSetOffsetDateTime (ps, 10, update_datetime  );
     }
 
+    public AnimeInfo(
+        Integer ANI_ID,
+        Date    air_date,
+        String  title,
+        String  title_cn,
+        String  aliases,
+        String  description,
+        Integer episode_count,
+        String  url_official_site,
+        String  url_cover
+    ) {
+        // 参数检查
+        if(ANI_ID == null) throw new IllegalArgumentException("AnimeInfo构造函数: 参数 'ANI_ID' 不能为空");
+
+        this.ANI_ID            = ANI_ID;
+        this.air_date          = air_date;
+        this.title             = title;
+        this.title_cn          = title_cn;
+        this.aliases           = aliases;
+        this.description       = description;
+        this.episode_count     = episode_count;
+        this.url_official_site = url_official_site;
+        this.url_cover         = url_cover;
+        this.update_datetime   = OffsetDateTime.now();
+    }
 
     /**
      * Map -> AnimeInfo

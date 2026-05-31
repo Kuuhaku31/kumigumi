@@ -1,22 +1,28 @@
 package NetAccess;
 
-import com.apptasticsoftware.rssreader.RssReader;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.*;
-import java.net.http.HttpClient;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import static NetAccess.BangumiParser.ParseAnimeInfo;
 import static NetAccess.BangumiParser.ParseEpisodeInfo;
 import static NetAccess.RSSParser.parseMikanRSS;
 import static NetAccess.RSSParser.parseNyaaRSS;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.time.Duration;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.json.JSONObject;
+
+import com.apptasticsoftware.rssreader.RssReader;
+
+import Database.AnimeInfo;
+import Database.EpisodeInfo;
+import Database.TorrentPageInfo;
 
 public class NetAccess {
     // 复用 HttpClient 实例
@@ -36,36 +42,48 @@ public class NetAccess {
         }
     }
 
-    public static Map<String, String> FetchAnimeInfo(int anime_id) throws URISyntaxException, IOException {
+    public static AnimeInfo
+    FetchAnimeInfo(Integer anime_id)
+    throws URISyntaxException, IOException
+    {
         // 解析 anime 信息
-        return ParseAnimeInfo(GetInfo(QueryType.anime_info, anime_id));
+        var info_json = GetInfo(QueryType.anime_info, anime_id);
+
+        return ParseAnimeInfo(info_json);
     }
 
-    public static List<Map<String, String>> FetchEpisodeInfo(int anime_id) throws URISyntaxException, IOException {
+    public static Set<EpisodeInfo>
+    FetchEpisodeInfoSet(int anime_id)
+    throws URISyntaxException, IOException
+    {
         // 解析 episode 信息
         var ep_list = GetInfo(QueryType.episode_list, anime_id).getJSONArray("data");
 
-        List<Map<String, String>> res = new ArrayList<>();
-        for (var item : ep_list)
-            res.add(ParseEpisodeInfo((JSONObject) item));
+        Set<EpisodeInfo> res = new HashSet<>();
+        for(var item : ep_list) res.add(ParseEpisodeInfo((JSONObject) item));
 
-        return res;
+        return res.isEmpty() ? null : res;
     }
 
-    public static List<Map<String, String>> FetchAnimeTorrentInfo(String rss_url) throws IOException {
+    public static Set<TorrentPageInfo>
+    FetchTorrentPageInfoSet(String rss_url)
+    throws IOException
+    {
         var reader = new RssReader(httpClient);
-        return switch (detectRSSSourceType(rss_url)) {
-            case MIKAN -> parseMikanRSS(reader, rss_url);
-            case NYAA -> parseNyaaRSS(reader, rss_url);
+
+        return switch(detectRSSSourceType(rss_url))
+        {
+            case MIKAN   -> parseMikanRSS(reader, rss_url);
+            case NYAA    -> parseNyaaRSS(reader, rss_url);
             case UNKNOWN -> throw new IOException("不支持的RSS源: " + rss_url);
         };
     }
 
-    public static List<Map<String, String>> FetchAnimeTorrentInfo(String rss_url, int anime_id) throws IOException {
-        return FetchAnimeTorrentInfo(rss_url).stream()
-                .peek(tor -> tor.put("ANI_ID", String.valueOf(anime_id)))
-                .toList();
-    }
+    // public static List<Map<String, String>> FetchAnimeTorrentInfo(String rss_url, int anime_id) throws IOException {
+    //     return FetchAnimeTorrentInfo(rss_url).stream()
+    //             .peek(tor -> tor.put("ANI_ID", String.valueOf(anime_id)))
+    //             .toList();
+    // }
 
     private static JSONObject GetInfo(QueryType type, int anime_id) throws URISyntaxException, IOException {
         var bangumi_server = "https://api.bgm.tv";

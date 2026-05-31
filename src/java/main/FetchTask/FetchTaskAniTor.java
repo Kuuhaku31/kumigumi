@@ -22,23 +22,23 @@ public class FetchTaskAniTor extends FetchTask {
 
     @Override
     public void run() {
-        try {
-            var torInfoList = NetAccess.FetchAnimeTorrentInfo(url_rss);
-            for(var tor : torInfoList) {
-                tor.put("ANI_ID", ani_id.toString());
-                manager.bufferUpdate.add(new InfoAniTorFetch(tor));
-            }
+        // try {
+        //     var torInfoList = NetAccess.FetchAnimeTorrentInfo(url_rss);
+        //     for(var tor : torInfoList) {
+        //         tor.put("ANI_ID", ani_id.toString());
+        //         manager.bufferUpdate.add(new InfoAniTorFetch(tor));
+        //     }
 
-            log += "Fetched " + torInfoList.size() + " torrent(s) for ANI_ID=" + ani_id + "\n";
-            status = TaskStatus.SUCCESS; // 标记任务成功
-        }
-        catch(Exception e) {
-            // System.err.println("Error fetching torrent info for URL_RSS=" + url_rss + ": " + e.getMessage());
-            log += "Error fetching torrent info for URL_RSS=" + url_rss + ": " + e.getMessage() + "\n";
+        //     log += "Fetched " + torInfoList.size() + " torrent(s) for ANI_ID=" + ani_id + "\n";
+        //     status = TaskStatus.SUCCESS; // 标记任务成功
+        // }
+        // catch(Exception e) {
+        //     // System.err.println("Error fetching torrent info for URL_RSS=" + url_rss + ": " + e.getMessage());
+        //     log += "Error fetching torrent info for URL_RSS=" + url_rss + ": " + e.getMessage() + "\n";
 
-            status = TaskStatus.FAIL; // 标记任务失败
-        }
-        finally { taskFinally(); }
+        //     status = TaskStatus.FAIL; // 标记任务失败
+        // }
+        // finally { taskFinally(); }
     }
 
     @Override

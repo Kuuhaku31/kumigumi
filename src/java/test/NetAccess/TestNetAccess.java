@@ -29,20 +29,20 @@ public class TestNetAccess {
         var res = RSSParser.parseNyaaRSS(reader, rss_url);
         var res_mikan = RSSParser.parseMikanRSS(reader, rss_url_mikan);
 
-        // 输出结果
-        for (var item : res) {
-            System.out.println("---- Item ----");
-            for (var entry : item.entrySet()) {
-                System.out.println(entry.getKey() + ": " + entry.getValue());
-            }
-        }
+        // // 输出结果
+        // for (var item : res) {
+        //     System.out.println("---- Item ----");
+        //     for (var entry : item.entrySet()) {
+        //         System.out.println(entry.getKey() + ": " + entry.getValue());
+        //     }
+        // }
 
-        System.out.println("---- Mikan Items ----");
-        for (var item : res_mikan) {
-            System.out.println("---- Item ----");
-            for (var entry : item.entrySet()) {
-                System.out.println(entry.getKey() + ": " + entry.getValue());
-            }
-        }
+        // System.out.println("---- Mikan Items ----");
+        // for (var item : res_mikan) {
+        //     System.out.println("---- Item ----");
+        //     for (var entry : item.entrySet()) {
+        //         System.out.println(entry.getKey() + ": " + entry.getValue());
+        //     }
+        // }
     }
 }

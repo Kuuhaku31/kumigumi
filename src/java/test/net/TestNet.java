@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 
-import InfoItem.InfoEpi.InfoEpi;
-import InfoItem.InfoEpi.InfoEpiFetch;
 import MetaData.ARGS;
 import NetAccess.NetAccess;
 
@@ -17,7 +15,7 @@ public class TestNet {
 
     static void fun0() throws URISyntaxException, IOException {
         var meta = ARGS.meta_公主管弦乐;
-        var tor_info_list = NetAccess.FetchAnimeTorrentInfo(meta.url_rss);
+        var tor_info_list = NetAccess.FetchTorrentPageInfoSet(meta.url_rss);
         
         // 保存到文件
         try(OutputStream os = java.nio.file.Files.newOutputStream(java.nio.file.Paths.get("test_torrent_info.tmp"))) {
@@ -28,28 +26,28 @@ public class TestNet {
         }
     }
 
-    static void fun1() throws URISyntaxException, IOException {
-        var meta          = ARGS.meta_公主管弦乐;
-        var epi_info_list = NetAccess.FetchEpisodeInfo(meta.ANI_ID);
-        for(var map : epi_info_list) {
-            for(var entry : map.entrySet()) {
-                // var key = entry.getKey();
-                var value = entry.getValue();
+    // static void fun1() throws URISyntaxException, IOException {
+    //     var meta          = ARGS.meta_公主管弦乐;
+    //     var epi_info_list = NetAccess.FetchEpisodeInfo(meta.ANI_ID);
+    //     for(var map : epi_info_list) {
+    //         for(var entry : map.entrySet()) {
+    //             // var key = entry.getKey();
+    //             var value = entry.getValue();
 
-                if(value != null && value.equals("1570388")) {
-                    System.out.println("Found episode with ID 1570388");
-                }
-            }
-        }
+    //             if(value != null && value.equals("1570388")) {
+    //                 System.out.println("Found episode with ID 1570388");
+    //             }
+    //         }
+    //     }
 
-        for(var epi : epi_info_list) {
-            var infoItem = new InfoEpi(epi);
-            System.out.println(infoItem);
+    //     for(var epi : epi_info_list) {
+    //         var infoItem = new InfoEpi(epi);
+    //         System.out.println(infoItem);
 
-            var infoItem2 = new InfoEpiFetch(epi);
-            System.out.println(infoItem2);
-        }
-    }
+    //         var infoItem2 = new InfoEpiFetch(epi);
+    //         System.out.println(infoItem2);
+    //     }
+    // }
 
     void fun2() throws IOException, URISyntaxException {
         System.out.println("Starting TestNetAccess...");
