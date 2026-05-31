@@ -19,20 +19,20 @@ public class FetchTaskEpi extends FetchTask {
 
     @Override
     public void run() {
-        try {
-            var epiInfoList = NetAccess.FetchEpisodeInfo(ani_id);
-            for(var epi : epiInfoList) {
-                manager.bufferUpdate.add(new InfoEpiFetch(epi));
-            }
-            status = TaskStatus.SUCCESS; // 标记任务成功
-        }
-        catch(URISyntaxException | IOException e) {
-            // System.err.println("Error fetching episode info for ANI_ID=" + ani_id + ": " + e.getMessage());
-            log += "Error fetching episode info for ANI_ID=" + ani_id + ": " + e.getMessage() + "\n";
+        // try {
+        //     var epiInfoList = NetAccess.FetchEpisodeInfo(ani_id);
+        //     for(var epi : epiInfoList) {
+        //         manager.bufferUpdate.add(new InfoEpiFetch(epi));
+        //     }
+        //     status = TaskStatus.SUCCESS; // 标记任务成功
+        // }
+        // catch(URISyntaxException | IOException e) {
+        //     // System.err.println("Error fetching episode info for ANI_ID=" + ani_id + ": " + e.getMessage());
+        //     log += "Error fetching episode info for ANI_ID=" + ani_id + ": " + e.getMessage() + "\n";
 
-            status = TaskStatus.FAIL; // 标记任务失败
-        }
-        finally { taskFinally(); }
+        //     status = TaskStatus.FAIL; // 标记任务失败
+        // }
+        // finally { taskFinally(); }
     }
 
     @Override

@@ -1,20 +1,28 @@
 package NetAccess;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.SignStyle;
 import java.time.temporal.ChronoField;
-import java.util.HashMap;
-import java.util.Map;
+
+import Database.AnimeInfo;
+import Database.EpisodeInfo;
+import Util.Util;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 
 class BangumiParser {
-    static Map<String, String> ParseAnimeInfo(JSONObject anime_info_json) {
-        var ANI_ID = String.valueOf(anime_info_json.getInt("id")); // 解析 ANI_ID
-        var air_date = ValidateDate(anime_info_json.optString("date")); // 解析放送日期
+
+    static AnimeInfo ParseAnimeInfo(JSONObject anime_info_json) {
+
+        // 解析 ANI_ID
+        var ANI_ID = anime_info_json.getInt("id");
+
+        // 解析放送日期
+        var air_date_str = ValidateDate(anime_info_json.optString("date")); 
+        var air_date = Util.parseDate(air_date_str);
 
         var title = anime_info_json.optString("name"); // 解析标题
         var title_cn = anime_info_json.optString("name_cn");
@@ -50,7 +58,7 @@ class BangumiParser {
 
         // 解析集数
         var count = anime_info_json.optInt("eps", -1);
-        var episode_count = count == -1 ? null : String.valueOf(count);
+        var episode_count = count == -1 ? null : count;
 
         // 解析官方网站
         var official_site_json = parse_info_box(anime_info_json, "官方网站");
@@ -59,32 +67,37 @@ class BangumiParser {
 
         // 解析封面图片
         var url_cover = anime_info_json.getJSONObject("images").getString("large");
-        if (url_cover.isBlank())
-            url_cover = null;
+        if(url_cover.isBlank()) url_cover = null;
 
         // 返回
-        Map<String, String> res = new HashMap<>();
-        res.put("ANI_ID", ANI_ID);
-        res.put("air_date", air_date);
-        res.put("title", title);
-        res.put("title_cn", title_cn);
-        res.put("aliases", aliases);
-        res.put("description", description);
-        res.put("episode_count", episode_count);
-        res.put("url_official_site", url_official_site);
-        res.put("url_cover", url_cover);
+        var res = new AnimeInfo(
+            ANI_ID,
+            air_date,
+            title,
+            title_cn,
+            aliases,
+            description,
+            episode_count,
+            url_official_site,
+            url_cover
+        );
         return res;
     }
 
-    static Map<String, String> ParseEpisodeInfo(JSONObject episode_info_json) {
-        var ANI_ID = String.valueOf(episode_info_json.getInt("subject_id"));
-        var EPI_ID = String.valueOf(episode_info_json.getInt("id"));
-        var air_date = ValidateDate(episode_info_json.getString("airdate"));
+    static EpisodeInfo ParseEpisodeInfo(JSONObject episode_info_json) {
+
+        var ANI_ID = episode_info_json.getInt("subject_id");
+        var EPI_ID = episode_info_json.getInt("id");
+        var air_date_str = ValidateDate(episode_info_json.getString("airdate"));
+        var air_date = Util.parseDate(air_date_str);
+
+
 
         // 解析集数
-        var ep_str = episode_info_json.getNumber("ep").toString();
-        var sort = episode_info_json.getNumber("sort").toString();
-        // var index = ep_str.equals("0") ? "SP: " + sort : sort;
+        var ep = episode_info_json.getNumber("ep").toString();
+        var sort_str = episode_info_json.getNumber("sort").toString();
+        var sort = Double.parseDouble(sort_str);
+        // var index = ep.equals("0") ? "SP: " + sort : sort;
 
         // 解析标题
         var title = episode_info_json.getString("name");
@@ -96,7 +109,7 @@ class BangumiParser {
 
         // 解析时长
         var duration_seconds = episode_info_json.optInt("duration_seconds", 0);
-        var duration = duration_seconds == 0 ? null : String.valueOf(duration_seconds);
+        var duration = duration_seconds <= 0 ? null : duration_seconds;
 
         // 解析概述
         var description = episode_info_json.optString("desc");
@@ -104,16 +117,17 @@ class BangumiParser {
             description = null;
 
         // 返回
-        Map<String, String> res = new HashMap<>();
-        res.put("EPI_ID", EPI_ID);
-        res.put("ANI_ID", ANI_ID);
-        res.put("sort", sort);
-        res.put("air_date", air_date);
-        res.put("duration", duration);
-        res.put("ep", ep_str);
-        res.put("title", title);
-        res.put("title_cn", title_cn);
-        res.put("description", description);
+        var res = new EpisodeInfo(
+            EPI_ID,
+            ANI_ID,
+            ep,
+            sort,
+            air_date,
+            duration,
+            title,
+            title_cn,
+            description
+        );
         return res;
     }
 

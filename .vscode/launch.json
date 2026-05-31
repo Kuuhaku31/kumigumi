@@ -4,6 +4,40 @@
   "configurations": [
     {
         "type": "java",
+        "name": "TestGetInfo",
+        "request": "launch",
+        "mainClass": "NetAccess.TestGetInfo",
+        "projectName": "kumigumi"
+    },
+    {
+        "type": "java",
+        "name": "ExcelToDB",
+        "request": "launch",
+        "mainClass": "Main.ExcelToDB",
+        "projectName": "kumigumi"
+    },
+    {
+        "type": "java",
+        "name": "TestUpsert",
+        "request": "launch",
+        "mainClass": "Database.TestUpsert",
+        "projectName": "kumigumi",
+        "vmArgs": [
+            "--enable-native-access=ALL-UNNAMED"
+        ]
+    },
+    {
+        "type": "java",
+        "name": "TestInitDB",
+        "request": "launch",
+        "mainClass": "Database.TestInitDB",
+        "projectName": "kumigumi",
+        "vmArgs": [
+            "--enable-native-access=ALL-UNNAMED"
+        ]
+    },
+    {
+        "type": "java",
         "name": "TestDownloadTorrent",
         "request": "launch",
         "mainClass": "FetchTask.TestDownloadTorrent",

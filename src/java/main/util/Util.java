@@ -101,4 +101,37 @@ public class Util {
             System.err.println(e.getMessage());
         }
     }
+
+    public static Date parseDate(String dateStr) {
+
+        Date air_date = null;
+
+        if(dateStr != null) try {
+            var sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+            air_date = sdf.parse(dateStr);
+        } catch (java.text.ParseException _) {}
+
+        return air_date;
+    }
+
+    public static String standardString(String str) {
+        if(str == null) return null;
+        var res_str = str.trim();
+        res_str = res_str.replace("\r", "\\r");
+        res_str = res_str.replace("\n", "\\n");
+        return res_str;
+    }
+
+    // Thu, 28 May 2026 22:06:07 -0000 -> OffsetDateTime
+    public static OffsetDateTime parseOffsetDateTime(String dateStr) {
+        if(dateStr == null) return null;
+        try {
+            var rssFormat  = new java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", java.util.Locale.ENGLISH);
+            var parsedDate = rssFormat.parse(dateStr);
+            if(parsedDate == null) return null;
+            return parsedDate.toInstant().atOffset(java.time.ZoneOffset.UTC);
+        } catch(java.text.ParseException e) {
+            return null;
+        }
+    }
 }

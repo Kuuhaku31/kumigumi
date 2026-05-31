@@ -11,27 +11,27 @@ public class TestNetAccess {
 
     static void main() throws URISyntaxException, IOException {
 
-        var meta = ARGS.meta_公主管弦乐;
+        // var meta = ARGS.meta_公主管弦乐;
 
-        // var ani_info = FetchAnimeInfo(meta.ANI_ID);
-        var epi_info = FetchEpisodeInfo(meta.ANI_ID);
-        // var tor_info = FetchTorrentInfo(meta.url_rss, meta.ANI_ID);
+        // // var ani_info = FetchAnimeInfo(meta.ANI_ID);
+        // var epi_info = FetchEpisodeInfo(meta.ANI_ID);
+        // // var tor_info = FetchTorrentInfo(meta.url_rss, meta.ANI_ID);
 
-        for (var map : epi_info) {
-            // System.out.println("--- Map ------------------------------------------");
-            for (var entry : map.entrySet()) {
-                // var key = entry.getKey();
-                // var value = entry.getValue();
-                // System.out.println("[" + key + "]: " + value);
-                var key = entry.getKey();
-                if (key != null && key.equals("1570388")) {
-                    System.out.println("Found episode with ID 1570388");
-                }
-            }
-        }
+        // for (var map : epi_info) {
+        //     // System.out.println("--- Map ------------------------------------------");
+        //     for (var entry : map.entrySet()) {
+        //         // var key = entry.getKey();
+        //         // var value = entry.getValue();
+        //         // System.out.println("[" + key + "]: " + value);
+        //         var key = entry.getKey();
+        //         if (key != null && key.equals("1570388")) {
+        //             System.out.println("Found episode with ID 1570388");
+        //         }
+        //     }
+        // }
 
-        // printMap(ani_info);
-        Util.Util.printMapList(epi_info);
+        // // printMap(ani_info);
+        // Util.Util.printMapList(epi_info);
         // printMapList(tor_info);
 
         // var aniFetch = convertInfoAniFetch(ani_info);

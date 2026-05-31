@@ -11,7 +11,7 @@ public class InfoTorFetch extends InfoTor implements UpdateItem {
 
     /**
      * 构造 InfoTorFetch 实例
-     * @param file 种子文件的二进制数据
+     * @param torrent_file 种子文件的二进制数据
      */
     public InfoTorFetch(String torHash, byte[] file) {
         super(torHash);

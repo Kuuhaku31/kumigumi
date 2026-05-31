@@ -10,7 +10,7 @@ import InfoItem.InfoEpi.*;
 import InfoItem.InfoItem;
 import InfoItem.InfoTor.*;
 
-import static Util.Util.getDateString;
+// import static Util.Util.getDateString;
 
 import java.io.Closeable;
 import java.io.File;
@@ -19,11 +19,21 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.OffsetDateTime;
+// import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+
+// import Database.Utils.*;
+import static Database.Utils.safeSetBytes;
+import static Database.Utils.safeSetDate;
+import static Database.Utils.safeSetFloat;
+import static Database.Utils.safeSetInt;
+import static Database.Utils.safeSetLong;
+import static Database.Utils.safeSetOffsetDateTime;
+import static Database.Utils.safeSetString;
 
 
 public class SQLiteAccess implements Closeable {
@@ -54,7 +64,210 @@ public class SQLiteAccess implements Closeable {
         }
 
         // 初始化语句缓存
-        statementCache = new SQLiteStatementCache(conn);
+        // statementCache = new SQLiteStatementCache(conn);
+        statementCache = null;
+    }
+
+
+    void UpsertAnime(AnimeInfo item){
+        try(var ps = AnimeInfo.GetUpsertStatement(conn)) {
+            item.SetParams(ps);
+            ps.executeUpdate();
+        } catch(SQLException e) {
+            System.err.println("Failed to upsert anime info for ANI_ID: " + item.ANI_ID + ", error: " + e.getMessage());
+        }
+    }
+
+    void UpsertEpisode(EpisodeInfo item){
+        try(var ps = EpisodeInfo.GetUpsertStatement(conn)) {
+            item.SetParams(ps);
+            ps.executeUpdate();
+        } catch(SQLException e) {
+            System.err.println("Failed to upsert episode info for EPI_ID: " + item.EPI_ID + ", error: " + e.getMessage());
+        }
+    }
+
+    void UpsertTorrentPageInfo(TorrentPageInfo item){
+        try(var ps = TorrentPageInfo.GetUpsertStatement(conn)) {
+            item.SetParams(ps);
+            ps.executeUpdate();
+        } catch(SQLException e) {
+            System.err.println("Failed to upsert torrent info for TOR_HASH: " + item.TOR_HASH + ", error: " + e.getMessage());
+        }
+    }
+
+    void UpsertRSS(RSSInfo item){
+        try(var ps = RSSInfo.GetUpsertStatement(conn)) {
+            item.SetParams(ps);
+            ps.executeUpdate();
+        } catch(SQLException e) {
+            System.err.println("Failed to upsert RSS info for URL_RSS: " + item.URL_RSS + ", error: " + e.getMessage());
+        }
+    }
+
+    void UpsertEpisodeRecord(EpisodeRecordInfo item){
+        try(var ps = EpisodeRecordInfo.GetUpsertStatement(conn)) {
+            item.SetParams(ps);
+            ps.executeUpdate();
+        } catch(SQLException e) {
+            System.err.println("Failed to upsert episode record for EPI_ID: " + item.EPI_ID + ", error: " + e.getMessage());
+        }
+    }
+
+    void UpsertTorrent(TorrentInfo item){
+        try(var ps = TorrentInfo.GetUpsertStatement(conn)) {
+            item.SetParams(ps);
+            ps.executeUpdate();
+        } catch(SQLException e) {
+            System.err.println("Failed to upsert torrent info for TOR_HASH: " + item.TOR_HASH + ", error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 根据给定的 TOR_HASH 列表从数据库中查询对应的 torrent_file 字段，并将其保存为 .torrent 文件到指定路径
+     * @param torHashList
+     * @param safePath
+     */
+    public void ExportTorrentFiles(Set<String> torHashList, String safePath) {
+        if(torHashList == null || torHashList.isEmpty()) return;
+
+        System.out.println("正在导出种子文件: " + torHashList.size() + " 个，保存路径: " + safePath);
+
+        var placeholders = String.join(",", java.util.Collections.nCopies(torHashList.size(), "?"));
+        var sql = "SELECT TOR_HASH, torrent_file FROM torrent WHERE TOR_HASH IN (" + placeholders + ")";
+
+        try(PreparedStatement ps = conn.prepareStatement(sql)) {
+            var i = 1;
+            for(var torHash : torHashList) {
+                ps.setString(i++, torHash);
+            }
+
+            try(ResultSet rs = ps.executeQuery()) {
+                while(rs.next()) {
+                    var torHash = rs.getString("TOR_HASH");
+                    var fileBytes = rs.getBytes("torrent_file");
+                    if(fileBytes != null && fileBytes.length > 0) {
+                        var filePath = safePath + File.separator + torHash + ".torrent";
+                        try(var fos = new java.io.FileOutputStream(filePath)) {
+                            fos.write(fileBytes);
+                        } catch(java.io.IOException e) {
+                            System.err.println("Failed to save torrent file for hash: " + torHash + ", error: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+        } catch(SQLException e) {
+            System.err.println("Failed to query torrent files: " + e.getMessage());
+        }
+
+        System.out.println("种子文件导出完成");
+    }
+
+    // 获取不在 torrent 表中的 hash 列表
+    Set<String> GetTorrentHashNotExist(Set<String> hashList) throws SQLException {
+
+        // 如果输入列表为空或 null，则直接返回一个空列表
+        if(hashList == null || hashList.isEmpty()) return Set.of();
+
+        // 使用 LinkedHashSet 去重并保持输入顺序
+        var uniqueHashes = new LinkedHashSet<String>();
+        for(var hash : hashList) {
+            if(hash != null && !hash.isBlank()) uniqueHashes.add(hash);
+        }
+        if(uniqueHashes.isEmpty()) return Set.of();
+
+        // 将去重后的哈希列表分块查询数据库，避免单条 SQL 语句参数过多导致性能问题
+        var inputList  = new ArrayList<>(uniqueHashes);
+        var hasFileSet = new HashSet<String>();
+        var chunkSize  = 500; // 避免 SQLite 单条语句参数过多
+
+        // 分块查询数据库，获取存在且有种子文件的 TOR_HASH 列表
+        for(var start = 0; start < inputList.size(); start += chunkSize) {
+            var end = Math.min(start + chunkSize, inputList.size());
+            var chunk = inputList.subList(start, end);
+
+            var placeholders = String.join(",", java.util.Collections.nCopies(chunk.size(), "?"));
+            var sql
+            = "SELECT TOR_HASH FROM torrent "
+            + "WHERE TOR_HASH IN (" + placeholders + ") "
+            + "AND torrent_file IS NOT NULL "
+            + "AND length(torrent_file) > 0";
+
+            // 使用 try-with-resources 确保 PreparedStatement 和 ResultSet 正确关闭
+            try(var ps = conn.prepareStatement(sql)) {
+                for(var i = 0; i < chunk.size(); i++) {
+                    ps.setString(i + 1, chunk.get(i));
+                }
+
+                try(ResultSet rs = ps.executeQuery()) {
+                    while(rs.next()) {
+                        hasFileSet.add(rs.getString("TOR_HASH"));
+                    }
+                }
+            }
+        }
+
+        // 过滤出数据库中不存在的 TOR_HASH 对应的 InfoAniTorFetch 项目
+        Set<String> notExistSet = new LinkedHashSet<>();
+        for(var hash : hashList) {
+            if(!hasFileSet.contains(hash)) notExistSet.add(hash);
+        }
+
+        return notExistSet;
+    }
+
+    Set<TorrentDownloader> GetDownloaderByHash(Set<String> hash_list) {
+
+        // 如果输入列表为空或 null，则直接返回一个空列表
+        if(hash_list == null || hash_list.isEmpty()) return Set.of();
+
+        // 使用 LinkedHashSet 去重并保持输入顺序
+        var unique_hashes = new LinkedHashSet<>(hash_list);
+        if(unique_hashes.isEmpty()) return Set.of();
+
+        // 将去重后的哈希列表分块查询数据库，避免单条 SQL 语句参数过多导致性能问题
+        var result = new java.util.LinkedHashMap<String, List<String>>();
+        for(var hash : unique_hashes) {
+            result.put(hash, new ArrayList<String>());
+        }
+        var inputList = new ArrayList<>(unique_hashes);
+        var chunkSize = 500;
+
+        // 分块查询数据库，获取对应的下载链接列表
+        for(var start = 0; start < inputList.size(); start += chunkSize) {
+            var end = Math.min(start + chunkSize, inputList.size());
+            var chunk = inputList.subList(start, end);
+
+            var placeholders = String.join(",", java.util.Collections.nCopies(chunk.size(), "?"));
+            var sql = "SELECT TOR_HASH, url_download FROM torrent_page WHERE TOR_HASH IN (" + placeholders + ")";
+
+            try(var ps = conn.prepareStatement(sql)) {
+
+                // 设置查询参数
+                for(var i = 0; i < chunk.size(); i++) {
+                    ps.setString(i + 1, chunk.get(i));
+                }
+
+                // 执行查询并处理结果
+                try(var rs = ps.executeQuery()) {
+                    while(rs.next()) {
+                        var hash = rs.getString("TOR_HASH");
+                        var url  = rs.getString("url_download");
+
+                        // 如果哈希存在于结果映射中，则将下载链接添加到对应的列表中
+                        if(result.containsKey(hash)) result.get(hash).add(url);
+                    }
+                }
+            } catch(SQLException e) {
+                System.err.println("Failed to query download URLs: " + e.getMessage());
+            }
+        }
+
+        Set<TorrentDownloader> downloaderSet = new LinkedHashSet<>();
+        for(var entry : result.entrySet()) {
+            downloaderSet.add(new TorrentDownloader(entry.getKey(), entry.getValue()));
+        }
+        return downloaderSet;
     }
 
     /**
@@ -215,7 +428,7 @@ public class SQLiteAccess implements Closeable {
 
                 // 使用安全的设置方法处理可能为 null 的值
                 safeSetInt(statementCache.psEpiFetch, 1, itemInfoEpiFetch.ep);
-                safeSetDouble(statementCache.psEpiFetch, 2, itemInfoEpiFetch.sort);
+                safeSetFloat(statementCache.psEpiFetch, 2, itemInfoEpiFetch.sort);
                 safeSetDate(statementCache.psEpiFetch, 3, itemInfoEpiFetch.air_date);
                 safeSetInt(statementCache.psEpiFetch, 4, itemInfoEpiFetch.duration);
                 safeSetString(statementCache.psEpiFetch, 5, itemInfoEpiFetch.title);
@@ -465,45 +678,6 @@ public class SQLiteAccess implements Closeable {
     }
 
     /**
-     * 根据给定的 TOR_HASH 列表从数据库中查询对应的 torrent_file 字段，并将其保存为 .torrent 文件到指定路径
-     * @param torHashList
-     * @param safePath
-     */
-    public void exportTorrentFiles(List<String> torHashList, String safePath) {
-        if(torHashList == null || torHashList.isEmpty()) return;
-
-        System.out.println("正在导出种子文件: " + torHashList.size() + " 个，保存路径: " + safePath);
-
-        var placeholders = String.join(",", java.util.Collections.nCopies(torHashList.size(), "?"));
-        var sql = "SELECT TOR_HASH, torrent_file FROM torrent WHERE TOR_HASH IN (" + placeholders + ")";
-
-        try(PreparedStatement ps = conn.prepareStatement(sql)) {
-            for(int i = 0; i < torHashList.size(); i++) {
-                ps.setString(i + 1, torHashList.get(i));
-            }
-
-            try(ResultSet rs = ps.executeQuery()) {
-                while(rs.next()) {
-                    var torHash = rs.getString("TOR_HASH");
-                    var fileBytes = rs.getBytes("torrent_file");
-                    if(fileBytes != null && fileBytes.length > 0) {
-                        var filePath = safePath + File.separator + torHash + ".torrent";
-                        try(var fos = new java.io.FileOutputStream(filePath)) {
-                            fos.write(fileBytes);
-                        } catch(java.io.IOException e) {
-                            System.err.println("Failed to save torrent file for hash: " + torHash + ", error: " + e.getMessage());
-                        }
-                    }
-                }
-            }
-        } catch(SQLException e) {
-            System.err.println("Failed to query torrent files: " + e.getMessage());
-        }
-
-        System.out.println("种子文件导出完成");
-    }
-
-    /**
      * 关闭数据库连接和语句缓存
      * 在关闭过程中捕获并打印任何异常，以确保资源得到正确释放
      */
@@ -523,63 +697,6 @@ public class SQLiteAccess implements Closeable {
             } catch(SQLException e) {
                 System.err.println("Close failed: " + e.getMessage());
             }
-        }
-    }
-
-
-    private static void safeSetInt(PreparedStatement ps, int index, Integer value) throws SQLException {
-        if(value == null) {
-            ps.setNull(index, java.sql.Types.INTEGER);
-        } else {
-            ps.setInt(index, value);
-        }
-    }
-
-    private static void safeSetLong(PreparedStatement ps, int index, Long value) throws SQLException {
-        if(value == null) {
-            ps.setNull(index, java.sql.Types.BIGINT);
-        } else {
-            ps.setLong(index, value);
-        }
-    }
-
-    private static void safeSetDouble(PreparedStatement ps, int index, Float value) throws SQLException {
-        if(value == null) {
-            ps.setNull(index, java.sql.Types.REAL);
-        } else {
-            ps.setDouble(index, value);
-        }
-    }
-
-    private static void safeSetString(PreparedStatement ps, int index, String value) throws SQLException {
-        if(value == null) {
-            ps.setNull(index, java.sql.Types.VARCHAR);
-        } else {
-            ps.setString(index, value);
-        }
-    }
-
-    private static void safeSetDate(PreparedStatement ps, int index, java.util.Date value) throws SQLException {
-        if(value == null) {
-            ps.setNull(index, java.sql.Types.DATE);
-        } else {
-            ps.setString(index, getDateString(value));
-        }
-    }
-
-    private static void safeSetOffsetDateTime(PreparedStatement ps, int index, OffsetDateTime value) throws SQLException {
-        if(value == null) {
-            ps.setNull(index, java.sql.Types.TIMESTAMP);
-        } else {
-            ps.setString(index, getDateString(value));
-        }
-    }
-
-    private static void safeSetBytes(PreparedStatement ps, int index, byte[] value) throws SQLException {
-        if(value == null) {
-            ps.setNull(index, java.sql.Types.BLOB);
-        } else {
-            ps.setBytes(index, value);
         }
     }
 }

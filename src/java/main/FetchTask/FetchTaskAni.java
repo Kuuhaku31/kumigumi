@@ -26,7 +26,7 @@ class FetchTaskAni extends FetchTask {
     public void run() {
         try {
             var aniInfo = NetAccess.FetchAnimeInfo(ani_id);
-            manager.bufferUpdate.add(new InfoAniFetch(aniInfo));
+            // manager.bufferUpdate.add(new InfoAniFetch(aniInfo));
 
             status = TaskStatus.SUCCESS; // 标记任务成功
         }

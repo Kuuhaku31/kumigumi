@@ -1,7 +1,10 @@
 package Util;
 
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,10 +12,13 @@ import java.util.Map;
 public class TorrentMetaUtil {
 
     public static final class TorrentMeta {
-        public final String  fileName;
-        public final Long fileSize;
 
-        public TorrentMeta(String fileName, Long fileSize) {
+        public final String  torHash;
+        public final String  fileName;
+        public final Long    fileSize;
+
+        public TorrentMeta(String torHash, String fileName, Long fileSize) {
+            this.torHash  = torHash;
             this.fileName = fileName;
             this.fileSize = fileSize;
         }
@@ -42,7 +48,15 @@ public class TorrentMetaUtil {
 
         String  fileName = decodeUtf8(infoMap.get("name"));
         Long fileSize = extractFileSize(infoMap);
-        return new TorrentMeta(fileName, fileSize);
+
+        byte[] infoRaw = null;
+        Object rawObj = rootMap.get("__info_raw__");
+        if(rawObj instanceof byte[]) {
+            infoRaw = (byte[]) rawObj;
+        }
+
+        String torHash = sha1Hex(infoRaw);
+        return new TorrentMeta(torHash, fileName, fileSize);
     }
 
     private static Long extractFileSize(Map<String, Object> infoMap) {
@@ -96,8 +110,14 @@ public class TorrentMetaUtil {
             Map<String, Object> result = new LinkedHashMap<>();
             while(cursor.peek() != 'e') {
                 String key   = decodeUtf8(parseByteString(cursor));
+                int valueStart = cursor.getIndex();
                 Object value = parseBencodeValue(cursor);
+                int valueEnd = cursor.getIndex();
                 result.put(key, value);
+                if("info".equals(key)) {
+                    byte[] raw = cursor.slice(valueStart, valueEnd);
+                    result.put("__info_raw__", raw);
+                }
             }
             cursor.next();
             return result;
@@ -180,6 +200,14 @@ public class TorrentMetaUtil {
             this.index = 0;
         }
 
+        private int getIndex() {
+            return index;
+        }
+
+        private byte[] slice(int start, int end) {
+            return Arrays.copyOfRange(data, start, end);
+        }
+
         private byte peek() {
             if(index >= data.length) {
                 throw new IllegalArgumentException("无效的 bencode 数据：意外结束");
@@ -195,6 +223,21 @@ public class TorrentMetaUtil {
 
         private int remaining() {
             return data.length - index;
+        }
+    }
+
+    private static String sha1Hex(byte[] data) {
+        if(data == null) return null;
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-1");
+            byte[] digest = md.digest(data);
+            StringBuilder sb = new StringBuilder();
+            for(byte b : digest) {
+                sb.append(String.format("%02x", b & 0xff));
+            }
+            return sb.toString();
+        } catch(NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
         }
     }
 }

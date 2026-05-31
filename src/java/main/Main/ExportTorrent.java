@@ -1,7 +1,6 @@
 package Main;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 
 public class ExportTorrent {
 
@@ -35,7 +34,7 @@ public class ExportTorrent {
         }
 
         // 读取文件内容
-        List<String> hashList = new ArrayList<>();
+        Set<String> hashList = new java.util.HashSet<>();
         try(var reader = new java.io.BufferedReader(new java.io.FileReader(dt_file_path))) {
             String line;
             while((line = reader.readLine()) != null) {
@@ -48,7 +47,7 @@ public class ExportTorrent {
 
         // 访问数据库
         try(var db = new Database.SQLiteAccess(db_path)) {
-            db.exportTorrentFiles(hashList, export_dir);
+            db.ExportTorrentFiles(hashList, export_dir);
         } catch(Exception e) {
             System.err.println("数据库操作失败: " + e.getMessage());
         }
