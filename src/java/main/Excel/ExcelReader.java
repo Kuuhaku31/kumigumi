@@ -257,11 +257,11 @@ public class ExcelReader {
                     var pattern = switch(type) {
                         case Date -> "yyyy-MM-dd";
                         case Time -> "HH:mm:ss";
-                        case Datetime -> "yyyy-MM-dd'T'HH:mm:ssXXX";
+                        case Datetime -> "yyyy-MM-dd'T'HH:mm:ss";
                         default -> null;
                     };
                     var   fmt = DateTimeFormatter.ofPattern(pattern);
-                    yield datetime.atZone(ZoneId.systemDefault()).format(fmt);
+                    yield datetime.format(fmt);
                 } catch(Exception e) {
                     yield null; // 解析失败则返回空
                 }

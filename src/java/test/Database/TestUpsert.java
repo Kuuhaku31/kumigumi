@@ -26,7 +26,7 @@ public class TestUpsert {
                 "url_official_site", "https://example.com/test-anime",
                 "url_cover", "https://example.com/test-anime-cover.jpg"
             ));
-            db.UpsertAnime(item);
+            db.UpsertAnimeInfo(item);
         }
 
         System.out.println("Testing Upsert EpisodeInfo...");
@@ -42,7 +42,7 @@ public class TestUpsert {
                 "title_cn", "测试集",
                 "description", "这是一个测试集。"
             ));
-            db.UpsertEpisode(item);
+            db.UpsertEpisodeInfo(item);
         }
 
         System.out.println("Testing Upsert TorrentPageInfo...");

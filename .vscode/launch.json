@@ -4,6 +4,23 @@
   "configurations": [
     {
         "type": "java",
+        "name": "TestDT",
+        "request": "launch",
+        "mainClass": "Main.TestDT",
+        "projectName": "kumigumi"
+    },
+    {
+        "type": "java",
+        "name": "TestMain",
+        "request": "launch",
+        "mainClass": "Main.TestMain",
+        "projectName": "kumigumi",
+        "vmArgs": [
+            "--enable-native-access=ALL-UNNAMED"
+        ]
+    },
+    {
+        "type": "java",
         "name": "TestGetInfo",
         "request": "launch",
         "mainClass": "NetAccess.TestGetInfo",

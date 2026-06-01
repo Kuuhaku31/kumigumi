@@ -69,7 +69,7 @@ public class SQLiteAccess implements Closeable {
     }
 
 
-    public void UpsertAnime(AnimeInfo item){
+    public void UpsertAnimeInfo(AnimeInfo item){
         try(var ps = AnimeInfo.GetUpsertStatement(conn)) {
             item.SetParams(ps);
             ps.executeUpdate();
@@ -78,7 +78,7 @@ public class SQLiteAccess implements Closeable {
         }
     }
 
-    public void UpsertEpisode(EpisodeInfo item){
+    public void UpsertEpisodeInfo(EpisodeInfo item){
         try(var ps = EpisodeInfo.GetUpsertStatement(conn)) {
             item.SetParams(ps);
             ps.executeUpdate();

@@ -36,16 +36,13 @@ class RSSParser {
             var air_datetime_str = item.getPubDate().orElse(null);
             OffsetDateTime air_datetime = null;
             if (air_datetime_str != null) {
-                try {
-                    var rssFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", java.util.Locale.ENGLISH);
-                    var dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+                // 2026-05-31T23:01:07.56 -> OffsetDateTime.parse("2026-05-31T23:01:07.56+00:00")
+                // var rssFormat      = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+                // var dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
-                    // 解析字符串为 Date 转成标准格式字符串
-                    var air_datetime_std_str = dateTimeFormat.format(rssFormat.parse(air_datetime_str));
-                    air_datetime = OffsetDateTime.parse(air_datetime_std_str);
-                } catch (ParseException _) {
-                    // 如果解析失败，就保持 air_datetime 为 null
-                }
+                // 解析字符串为 Date 转成标准格式字符串
+                var air_datetime_std_str = air_datetime_str + "+08:00";
+                air_datetime = OffsetDateTime.parse(air_datetime_std_str);
             }
             var url_download   = enclosure.getUrl();
             var url_page       = item.getLink().orElse(null);

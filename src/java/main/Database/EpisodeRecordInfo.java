@@ -120,6 +120,7 @@ public class EpisodeRecordInfo {
         // 获取列索引
         var epi_id_index         = data.GetHeaderIndex("EPI_ID");
         var view_datetime_index  = data.GetHeaderIndex("view_datetime");
+        var timezone_index       = data.GetHeaderIndex("timezone");
         var rating_index         = data.GetHeaderIndex("rating");
         var comment_index        = data.GetHeaderIndex("comment");
 
@@ -127,6 +128,7 @@ public class EpisodeRecordInfo {
         for(var row : data.GetData()) {
 
             Integer        epi_id = null;
+            String         timezone = null;
             OffsetDateTime view_datetime = null;
             Integer        rating = null;
             String         comment = null;
@@ -136,8 +138,12 @@ public class EpisodeRecordInfo {
                 catch(NumberFormatException _) {}
             }
 
+            if(timezone_index != -1) {
+                timezone = row[timezone_index];
+            }
+
             if(view_datetime_index != -1) {
-                try { view_datetime = OffsetDateTime.parse(row[view_datetime_index]); }
+                try { view_datetime = OffsetDateTime.parse(row[view_datetime_index] + timezone); }
                 catch(Exception _) {}
             }
 
