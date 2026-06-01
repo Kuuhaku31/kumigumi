@@ -94,7 +94,7 @@ public class ExcelReader {
 
         // 遍历表格每一行
         // 根据类型创建表格数据对象
-        var data = new BlockData(blockMeta.blockName, headers);
+        var data = new TableData(headers);
         for(var sheet_row_idx = blockMeta.startRow; sheet_row_idx < blockMeta.endRow; sheet_row_idx++) {
             var recode = data.new Record();
 

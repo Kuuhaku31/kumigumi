@@ -69,7 +69,7 @@ public class SQLiteAccess implements Closeable {
     }
 
 
-    void UpsertAnime(AnimeInfo item){
+    public void UpsertAnime(AnimeInfo item){
         try(var ps = AnimeInfo.GetUpsertStatement(conn)) {
             item.SetParams(ps);
             ps.executeUpdate();
@@ -78,7 +78,7 @@ public class SQLiteAccess implements Closeable {
         }
     }
 
-    void UpsertEpisode(EpisodeInfo item){
+    public void UpsertEpisode(EpisodeInfo item){
         try(var ps = EpisodeInfo.GetUpsertStatement(conn)) {
             item.SetParams(ps);
             ps.executeUpdate();
@@ -87,7 +87,7 @@ public class SQLiteAccess implements Closeable {
         }
     }
 
-    void UpsertTorrentPageInfo(TorrentPageInfo item){
+    public void UpsertTorrentPageInfo(TorrentPageInfo item){
         try(var ps = TorrentPageInfo.GetUpsertStatement(conn)) {
             item.SetParams(ps);
             ps.executeUpdate();
@@ -96,7 +96,7 @@ public class SQLiteAccess implements Closeable {
         }
     }
 
-    void UpsertRSS(RSSInfo item){
+    public void UpsertRSSInfo(RSSInfo item){
         try(var ps = RSSInfo.GetUpsertStatement(conn)) {
             item.SetParams(ps);
             ps.executeUpdate();
@@ -105,7 +105,7 @@ public class SQLiteAccess implements Closeable {
         }
     }
 
-    void UpsertEpisodeRecord(EpisodeRecordInfo item){
+    public void UpsertEpisodeRecord(EpisodeRecordInfo item){
         try(var ps = EpisodeRecordInfo.GetUpsertStatement(conn)) {
             item.SetParams(ps);
             ps.executeUpdate();
@@ -114,7 +114,7 @@ public class SQLiteAccess implements Closeable {
         }
     }
 
-    void UpsertTorrent(TorrentInfo item){
+    public void UpsertTorrent(TorrentInfo item){
         try(var ps = TorrentInfo.GetUpsertStatement(conn)) {
             item.SetParams(ps);
             ps.executeUpdate();
@@ -164,7 +164,7 @@ public class SQLiteAccess implements Closeable {
     }
 
     // 获取不在 torrent 表中的 hash 列表
-    Set<String> GetTorrentHashNotExist(Set<String> hashList) throws SQLException {
+    public Set<String> GetTorrentHashNotExist(Set<String> hashList) throws SQLException {
 
         // 如果输入列表为空或 null，则直接返回一个空列表
         if(hashList == null || hashList.isEmpty()) return Set.of();
@@ -216,7 +216,7 @@ public class SQLiteAccess implements Closeable {
         return notExistSet;
     }
 
-    Set<TorrentDownloader> GetDownloaderByHash(Set<String> hash_list) {
+    public Set<TorrentDownloader> GetDownloaderByHash(Set<String> hash_list) {
 
         // 如果输入列表为空或 null，则直接返回一个空列表
         if(hash_list == null || hash_list.isEmpty()) return Set.of();

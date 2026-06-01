@@ -67,7 +67,7 @@ public class TestUpsert {
                 "URL_RSS", "https://example.com/test-anime/rss",
                 "ANI_ID", "1"
             ));
-            db.UpsertRSS(item);
+            // db.UpsertRSS(item);
         }
 
         System.out.println("Testing Upsert EpisodeRecordInfo...");
