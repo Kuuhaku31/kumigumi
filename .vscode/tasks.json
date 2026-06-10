@@ -2,10 +2,10 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Java Build Test",
+      "label": "Java Build",
       "type": "shell",
-      "command": "make",
-      "args": ["build-test"],
+      "command": "mvn",
+      "args": ["test"],
       "group": {
         "kind": "build",
         "isDefault": true
