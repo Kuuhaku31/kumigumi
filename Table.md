@@ -1,138 +1,115 @@
-# 表格结构
+# 表结构
 
-SQLite 数据库包含的表格结构如下：
+本文档描述当前 SQLite schema。字段、主键和外键关系应与 `src/java/main/Database/SQLiteInit.java` 以及 `Database.*Info` 类保持一致。
 
-### `anime` 表
+统一约定：
 
-| 键名                | 数据类型 | 解释            | 备注             |
-| ------------------- | -------- | --------------- | ---------------- |
-| `ANI_ID`            | integer  | 番组 bangumi ID | 主键             |
-| `air_date`          | text     | 放送开始日期    | 格式: YYYY-MM-DD |
-| `title`             | text     | 番组原名        |                  |
-| `title_cn`          | text     | 番组译名        |                  |
-| `aliases`           | text     | 番组别名        |                  |
-| `description`       | text     | 番组介绍        |                  |
-| `episode_count`     | integer  | 番组话数        |                  |
-| `url_official_site` | text     | 番组官网链接    |                  |
-| `url_cover`         | text     | 番组封面链接    |                  |
+- 表名、字段名和 Java `Database.*Info` 类型保持一致。
+- `date` 使用 `YYYY-MM-DD` 文本格式。
+- `datetime` 使用带时区的 ISO-8601 文本格式，例如 `2026-06-10T12:34:56+09:00`。
+- `TOR_HASH` 表示 torrent 的 info hash，是 `torrent` 表主键，也是 `torrent_page` 与下载结果的关联键。
 
-### `episode` 表
+## `anime`
 
-| 键名              | 数据类型 | 解释            | 备注                            |
-| ----------------- | -------- | --------------- | ------------------------------- |
-| `EPI_ID`          | integer  | 话 bangumi ID   | 主键                            |
-| `ANI_ID`          | integer  | 番组 bangumi ID | 外键                            |
-| `ep`              | integer  | 话索引          |                                 |
-| `sort`            | real     | 话排序索引      |                                 |
-| `air_date`        | text     | 放送日期        |                                 |
-| `duration`        | integer  | 话时长          | 单位（秒）                      |
-| `title`           | text     | 话标题          |                                 |
-| `title_cn`        | text     | 话标题译名      |                                 |
-| `description`     | text     | 单集介绍        |                                 |
-| `update_datetime` | text     | 数据更新时间    | 格式: YYYY-MM-DDThh:mm:ss+hh:mm |
+| 字段                | 类型      | 说明            |
+| ------------------- | --------- | --------------- |
+| `ANI_ID`            | `integer` | Bangumi 番剧 ID |
+| `air_date`          | `date`    | 放送开始日期    |
+| `title`             | `text`    | 原标题          |
+| `title_cn`          | `text`    | 中文标题        |
+| `aliases`           | `text`    | 别名            |
+| `description`       | `text`    | 简介            |
+| `episode_count`     | `integer` | 总集数          |
+| `url_official_site` | `text`    | 官方站点链接    |
+| `url_cover`         | `text`    | 封面链接        |
 
-`status_download`: 0 : `未下载`, 1 : `已下载`, 2 : `不下载`
+主键：`ANI_ID DESC`
 
-`status_view`: 0 : `未观看`, 1 : `已观看`, 2 : `不观看`
+## `episode`
 
----
+| 字段              | 类型       | 说明            |
+| ----------------- | ---------- | --------------- |
+| `EPI_ID`          | `integer`  | Bangumi 分集 ID |
+| `ANI_ID`          | `integer`  | Bangumi 番剧 ID |
+| `ep`              | `integer`  | 话数            |
+| `sort`            | `real`     | 排序值          |
+| `air_date`        | `date`     | 放送日期        |
+| `duration`        | `text`     | 时长            |
+| `title`           | `text`     | 标题            |
+| `title_cn`        | `text`     | 中文标题        |
+| `description`     | `text`     | 简介            |
+| `update_datetime` | `datetime` | 更新时间        |
 
-特殊说明：
+主键：`EPI_ID DESC`
 
-bgm 提供两个字段标记各个话的索引：`ep` 和 `sort`
+外键：`ANI_ID` -> `anime.ANI_ID`
 
-- `ep`：一个不小于 0 的整数：
-  - 当大于 0 时，表示该话是**正片**，该整数值即表示本话是从 1 开始计数的第几话
-  - 当等于 0 时，表示该话非正片（可能是特别篇、总集篇、OVA、SP 等）
+Bangumi 同时提供 `ep` 和 `sort` 两个分集编号字段：
 
-- `sort`：一个浮点数，用于对话进行直观的编号
-  - 无论是不是正片，均可使用该字段进行编号
+- `ep` 是非负整数，大于 0 时通常表示正片话数，等于 0 时通常表示特别篇、总集篇、OVA、SP 等非正片。
+- `sort` 是浮点排序值，可用于更直观地表示 `0`、`12.5` 等分集位置。
 
-例如：
+观看状态不保存在 `episode` 表中，应通过 `episode_record` 推导。下载状态不保存在 `episode` 表中，应通过 `rss`、`torrent_page` 和 `torrent` 推导。
 
-《永久的黄昏》的第 0 话：
+## `episode_record`
 
-- `ep` = 1：表示该话是正片的第 1 话
-- `sort` = 0：表示该话在正片里编号为 0
+| 字段            | 类型       | 说明            |
+| --------------- | ---------- | --------------- |
+| `EPI_ID`        | `integer`  | Bangumi 分集 ID |
+| `view_datetime` | `datetime` | 观看日期时间    |
+| `rating`        | `integer`  | 评分            |
+| `comment`       | `text`     | 评论            |
 
-《千岁同学》的特别篇：
+主键：`(EPI_ID DESC, view_datetime DESC)`
 
-- `ep` = 0：表示该话非正片
-- `sort` = 1：表示该话非正片的编号为 1
+外键：`EPI_ID` -> `episode.EPI_ID`
 
-《公主的管弦乐》的总集篇：
+## `rss`
 
-- `ep` = 0：表示该话非正片
-- `sort` = 12.5：表示该话非正片的编号为 12.5
+| 字段      | 类型      | 说明            |
+| --------- | --------- | --------------- |
+| `URL_RSS` | `text`    | RSS 订阅链接    |
+| `ANI_ID`  | `integer` | Bangumi 番剧 ID |
 
----
+主键：`URL_RSS DESC`
 
-### `episode_record` 表
+外键：`ANI_ID` -> `anime.ANI_ID ON DELETE SET NULL`
 
-| 键名            | 数据类型 | 解释          | 备注                                 |
-| --------------- | -------- | ------------- | ------------------------------------ |
-| `EPI_ID`        | integer  | 话 bangumi ID | 主键                                 |
-| `view_datetime` | text     | 观看日期时间  | 主键 格式: YYYY-MM-DDThh:mm:ss+hh:mm |
-| `rating`        | integer  | 话评分        |                                      |
-| `comment`       | text     | 话评论        |                                      |
+## `torrent_page`
 
-### `rss` 表
+| 字段              | 类型       | 说明              |
+| ----------------- | ---------- | ----------------- |
+| `URL_RSS`         | `text`     | RSS 订阅链接      |
+| `TOR_HASH`        | `text`     | torrent info hash |
+| `air_datetime`    | `datetime` | 发布日期时间      |
+| `url_download`    | `text`     | 下载链接          |
+| `url_page`        | `text`     | 页面链接          |
+| `title`           | `text`     | 标题              |
+| `subtitle_group`  | `text`     | 字幕组            |
+| `description`     | `text`     | 简介              |
+| `update_datetime` | `datetime` | 更新时间          |
 
-| 键名      | 数据类型 | 解释            | 备注 |
-| --------- | -------- | --------------- | ---- |
-| `URL_RSS` | text     | RSS 订阅链接    | 主键 |
-| `ANI_ID`  | integer  | 番组 bangumi ID | 外键 |
+主键：`(URL_RSS DESC, TOR_HASH DESC)`
 
-### `torrent_page` 表
+外键：`URL_RSS` -> `rss.URL_RSS`
 
-| 键名              | 数据类型 | 解释           | 备注                                |
-| ----------------- | -------- | -------------- | ----------------------------------- |
-| `URL_RSS`         | text     | RSS 订阅链接   | 主键                                |
-| `TOR_HASH`        | text     | 种子 info_hash | 主键                                |
-| `air_datetime`    | text     | 发布日期时间   | 格式: YYYY-MM-DDThh:mm:ss.SSS+hh:mm |
-| `url_download`    | text     | 种子下载链接   |                                     |
-| `url_page`        | text     | 种子页面链接   |                                     |
-| `title`           | text     | 种子标题       |                                     |
-| `subtitle_group`  | text     | 种子字幕组     |                                     |
-| `description`     | text     | 种子描述       |                                     |
-| `update_datetime` | text     | 数据更新时间   | 格式: YYYY-MM-DDThh:mm:ss+hh:mm     |
+当前建表语句不强制 `TOR_HASH` 到 `torrent.TOR_HASH` 的外键约束。这样 RSS 抓取结果可以先入库，torrent 文件可以在后续 `_download_torrent` 步骤中补齐。
 
-### `torrent` 表
+## `torrent`
 
-| 键名           | 数据类型 | 解释           | 备注       |
-| -------------- | -------- | -------------- | ---------- |
-| `TOR_HASH`     | text     | 种子 info_hash | 主键       |
-| `file_name`    | text     | 文件名称       |            |
-| `file_size`    | integer  | 文件大小       | （字节）   |
-| `torrent_file` | blob     | 种子文件       | 二进制数据 |
+| 字段           | 类型      | 说明                   |
+| -------------- | --------- | ---------------------- |
+| `TOR_HASH`     | `text`    | torrent info hash      |
+| `file_name`    | `text`    | 文件名                 |
+| `file_size`    | `integer` | 文件大小，单位为字节   |
+| `torrent_file` | `blob`    | torrent 文件二进制内容 |
 
-## 表格间关系
+主键：`TOR_HASH DESC`
+
+## 表关系
 
 ```text
-episode_record
-  0*
-  |
-  |
-  1
-episode
-  0*
-  |
-  |
-  1
-anime
-  1
-  |
-  |
-  0*
-rss
-  1
-  |
-  |
-  0*
-torrent_page
-  0*
-  |
-  |
-  0,1
-torrent
+anime 1 ---- 0..* episode 1 ---- 0..* episode_record
+anime 1 ---- 0..* rss 1 ---- 0..* torrent_page
+torrent_page 0..* ---- 0..1 torrent
 ```
