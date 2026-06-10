@@ -1,13 +1,6 @@
 package Main;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.sql.SQLException;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import Database.AnimeInfo;
 import Database.EpisodeInfo;
@@ -17,10 +10,14 @@ import Database.SQLiteAccess;
 import Database.TorrentDownloader;
 import Database.TorrentInfo;
 import Database.TorrentPageInfo;
-import NetAccess.NetAccess;
+import Task.FetchAnimeInfoTask;
+import Task.FetchEpisodeInfoTask;
+import Task.FetchTorrentInfoTask;
+import Task.FetchTorrentPageTask;
+import Task.Task;
 
 public class TestMain {
-    public static void main(String[] args) throws IOException, SQLException, URISyntaxException {
+    public static void main(String[] args) throws Exception {
         System.out.println("TestExcel...");
 
         var e_reader = new Excel.ExcelReader();
@@ -53,48 +50,46 @@ public class TestMain {
             }
         }
 
-        // 获取 torrent page 信息
+        // 获取信息
+        System.out.println("开始获取 torrent page, anime 和 episode 信息...");
+        Set<Task>            fetch_task_set        = new java.util.HashSet<>();
         Set<TorrentPageInfo> torrent_page_info_set = new java.util.HashSet<>();
+        Set<AnimeInfo>       anime_info_set        = new java.util.HashSet<>();
+        Set<EpisodeInfo>     episode_info_set      = new java.util.HashSet<>();
         {
-            var total_count   = rss_info_set.size();
-            var current_count = 0;
+
+            // 创建任务
             for(var rss_info : rss_info_set) {
-                var new_torrent_page_info_set = NetAccess.FetchTorrentPageInfoSet(rss_info.URL_RSS);
-
-                // 添加新获取的 Torrent Page 信息到集合中
-                if(new_torrent_page_info_set != null && !new_torrent_page_info_set.isEmpty()) {
-                    torrent_page_info_set.addAll(new_torrent_page_info_set);
-                }
-
-                System.out.print("\r当前已处理 " + (++current_count) + " / " + total_count + " 个 RSS 链接");
+                var anime_id = rss_info.ANI_ID;
+                fetch_task_set.add(new FetchAnimeInfoTask(anime_id));
+                fetch_task_set.add(new FetchEpisodeInfoTask(anime_id));
+                fetch_task_set.add(new FetchTorrentPageTask(rss_info.URL_RSS));
             }
-            System.out.println("\n总共获取了 " + torrent_page_info_set.size() + " 条 Torrent Page 信息。");
-        }
 
-        // 获取 AnimeInfo 和 EpisodeInfo 实例
-        Set<AnimeInfo> anime_info_set   = new java.util.HashSet<>();
-        Set<EpisodeInfo> episode_info_set = new java.util.HashSet<>();
-        {
-            var total_count   = rss_info_set.size();
-            var current_count = 0;
-            for(var rss_info : rss_info_set) {
-                var anime_id             = rss_info.ANI_ID;
-                var new_anime_info       = NetAccess.FetchAnimeInfo(anime_id);
-                var new_episode_info_set = NetAccess.FetchEpisodeInfoSet(anime_id);
+            // 并行执行任务
+            Task.ParallelExecution(fetch_task_set);
 
-                // 添加新获取的 AnimeInfo 和 EpisodeInfo 到集合中
-                if(new_anime_info != null) {
-                    anime_info_set.add(new_anime_info);
+            // 收集结果
+            for(var task : fetch_task_set) {
+                if(task instanceof FetchAnimeInfoTask) {
+
+                    var result = ((FetchAnimeInfoTask)task).getResult();
+                    if(result != null) anime_info_set.add(result);
+
+                } else if(task instanceof FetchEpisodeInfoTask) {
+
+                    var result = ((FetchEpisodeInfoTask)task).getResult();
+                    if(result != null) episode_info_set.addAll(result);
+
+                } else if(task instanceof FetchTorrentPageTask) {
+
+                    var result_set = ((FetchTorrentPageTask)task).getResultSet();
+                    if(result_set != null) torrent_page_info_set.addAll(result_set);
                 }
-                if(new_episode_info_set != null) {
-                    episode_info_set.addAll(new_episode_info_set);
-                }
-
-                System.out.print("\r当前已处理 " + (++current_count) + " / " + total_count + " 个 RSS 链接");
             }
         }
 
-        // 测试导入数据库
+        // 导入数据库
         try(var db = new SQLiteAccess("db/test.db")) {
             for(var epi_record_info : epi_recode_info_set) {
                 db.UpsertEpisodeRecord(epi_record_info);
@@ -114,15 +109,15 @@ public class TestMain {
         }
 
         // 获取不在 torrent 表内的 TorrentPageInfo hash_set
-        Set<String> torrent_hash_set = null;
-        Set<TorrentDownloader> dt_set = null; // 获取下载链接
+        Set<String>            torrent_hash_set = null;
+        Set<TorrentDownloader> dt_set           = null; // 获取下载链接
         {
             Set<String> hash = new java.util.HashSet<>();
-            for(var torrent_page_info : torrent_page_info_set) 
+            for(var torrent_page_info : torrent_page_info_set)
                 hash.add(torrent_page_info.TOR_HASH);
             try(var db = new SQLiteAccess("db/test.db")) {
                 torrent_hash_set = db.GetTorrentHashNotExist(hash);
-                dt_set = db.GetDownloaderByHash(torrent_hash_set);
+                dt_set           = db.GetDownloaderByHash(torrent_hash_set);
             }
         }
 
@@ -130,37 +125,20 @@ public class TestMain {
         // 全部下载完成前阻塞
         // 等待下载完成后再继续执行后续代码
         System.out.println("开始下载种子文件...");
-        Set<TorrentInfo> torrent_file_set = new java.util.HashSet<>();
+        Set<FetchTorrentInfoTask> fetch_torrent_task_set = new java.util.HashSet<>();
+        Set<TorrentInfo>          torrent_file_set       = new java.util.HashSet<>();
         {
-            var total_count   = dt_set.size();
-            var current_count = new AtomicInteger(0);
-            var executor      = Executors.newFixedThreadPool(5); // 创建一个固定线程池
-            var futures       = new java.util.ArrayList<java.util.concurrent.Future<TorrentInfo>>();
+            // 初始化任务集合
+            for(var dt : dt_set) fetch_torrent_task_set.add(new FetchTorrentInfoTask(dt));
 
-            for(var dt : dt_set) {
-                // 提交下载任务到线程池
-                futures.add(executor.submit(() -> {
-                    try {
-                        var torrent_data = NetAccess.DownloadFile(dt.url_download_list().get(0));
-                        return new TorrentInfo(torrent_data);
-                    } catch (Exception e) {
-                        System.err.println("下载失败: " + dt.TOR_HASH());
-                        return null;
-                    } finally {
-                        System.out.print("\r当前已下载 " + current_count.incrementAndGet() + " / " + total_count + " 个种子文件");
-                    }
-                }));
-            }
+            // 并行执行任务
+            Task.ParallelExecution(fetch_torrent_task_set);
 
-            // 等待所有下载任务完成并收集结果
-            for(var future : futures) {
-                try {
-                    var torrent_info = future.get(); // 阻塞直到下载完成
-                    if(torrent_info != null) {
-                        torrent_file_set.add(torrent_info);
-                    }
-                } catch (InterruptedException | ExecutionException e) {
-                    System.err.println("下载任务执行失败: " + e.getMessage());
+            // 收集结果
+            for(var task : fetch_torrent_task_set) {
+                var result = task.getResult();
+                if(result != null) {
+                    torrent_file_set.add(new TorrentInfo(result));
                 }
             }
         }
@@ -175,6 +153,17 @@ public class TestMain {
                     System.out.print("\r当前已保存 " + (++count) + " / " + torrent_file_set.size() + " 个种子文件");
                 }
             }
+        }
+
+        System.out.println("打印所有任务状态");
+        {
+            System.out.println("FetchTask1: ");
+            for(var task : fetch_task_set) System.out.println(task);
+            System.out.println();
+
+            System.out.println("FetchTorrentInfoTask: ");
+            for(var task : fetch_torrent_task_set) System.out.println(task);
+            System.out.println();
         }
 
         System.out.println("完成");

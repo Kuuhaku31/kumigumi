@@ -72,7 +72,7 @@ public abstract class Task {
 
 
     // 并行执行任务集合
-    public static void ParallelExecution(Set<Task> tasks) {
+    public static void ParallelExecution(Set<? extends Task> tasks) {
 
         // 如果任务集合为空，直接返回
         if(tasks == null || tasks.isEmpty()) return;
