@@ -1,5 +1,6 @@
 package Main;
 
+import java.util.Map;
 import java.util.Set;
 
 import Database.AnimeInfo;
@@ -15,19 +16,25 @@ import Task.FetchEpisodeInfoTask;
 import Task.FetchTorrentInfoTask;
 import Task.FetchTorrentPageTask;
 import Task.Task;
+import Util.TableData;
+
 
 public class TestMain {
     public static void main(String[] args) throws Exception {
         System.out.println("TestExcel...");
 
-        var e_reader = new Excel.ExcelReader();
-        var res      = e_reader.Read("./db/test_exc.xlsx");
+        // 从Excel读取数据
+        Map<String, TableData> blockDataList = new java.util.HashMap<>();
+        {
+            var e_reader = new Excel.ExcelReader();
+            var res      = e_reader.Read("./db/test_exc.xlsx");
 
-        System.out.println("从Excel读取的数据:");
-        var blockDataList = res.blockDataList();
-        for(var entry : blockDataList.entrySet()) {
-            System.out.println("Block Name: " + entry.getKey());
-            System.out.println("Block Data:\n" + entry.getValue().toString());
+            System.out.println("从Excel读取的数据:");
+            blockDataList = res.blockDataList();
+            for(var entry : blockDataList.entrySet()) {
+                System.out.println("Block Name: " + entry.getKey());
+                System.out.println("Block Data:\n" + entry.getValue().toString());
+            }
         }
 
         // 获取 EpisodeRecordInfo 实例
