@@ -2,7 +2,6 @@ package Database;
 
 import java.sql.*;
 import java.text.ParseException;
-import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -23,8 +22,6 @@ public class AnimeInfo {
     public final String         url_official_site;
     public final String         url_cover;
 
-    public final OffsetDateTime update_datetime;
-
 
     static PreparedStatement GetUpsertStatement(Connection conn) throws SQLException {
         String upsertSqlFetch =
@@ -38,10 +35,9 @@ public class AnimeInfo {
             description,
             episode_count,
             url_official_site,
-            url_cover,
-            update_datetime
+            url_cover
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(ANI_ID) DO UPDATE SET
             air_date            = excluded.air_date,
             title               = excluded.title,
@@ -50,8 +46,7 @@ public class AnimeInfo {
             description         = excluded.description,
             episode_count       = excluded.episode_count,
             url_official_site   = excluded.url_official_site,
-            url_cover           = excluded.url_cover,
-            update_datetime     = excluded.update_datetime;
+            url_cover           = excluded.url_cover;
         """;
         return conn.prepareStatement(upsertSqlFetch);
     }
@@ -66,7 +61,6 @@ public class AnimeInfo {
         Utils.safeSetInt            (ps,  7, episode_count    );
         Utils.safeSetString         (ps,  8, url_official_site);
         Utils.safeSetString         (ps,  9, url_cover        );
-        Utils.safeSetOffsetDateTime (ps, 10, update_datetime  );
     }
 
     public AnimeInfo(
@@ -92,7 +86,6 @@ public class AnimeInfo {
         this.episode_count     = episode_count;
         this.url_official_site = url_official_site;
         this.url_cover         = url_cover;
-        this.update_datetime   = OffsetDateTime.now();
     }
 
     /**
@@ -155,8 +148,6 @@ public class AnimeInfo {
 
         url_official_site = data.getOrDefault("url_official_site", null);
         url_cover         = data.getOrDefault("url_cover", null);
-
-        update_datetime = OffsetDateTime.now(); // 设置更新时间为当前时间
     }
 
     /**

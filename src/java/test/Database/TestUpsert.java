@@ -79,7 +79,7 @@ public class TestUpsert {
                 "rating", "5",
                 "comment", "这是一个测试剧集记录。"
             ));
-            db.UpsertEpisodeRecord(item);
+            db.UpsertEpisodeRecordInfo(item);
         }
 
         System.out.println("Testing Upsert TorrentInfo...");

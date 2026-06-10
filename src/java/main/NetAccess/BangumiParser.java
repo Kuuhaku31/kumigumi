@@ -94,7 +94,7 @@ class BangumiParser {
 
 
         // 解析集数
-        var ep = episode_info_json.getNumber("ep").toString();
+        var ep = episode_info_json.getInt("ep");
         var sort_str = episode_info_json.getNumber("sort").toString();
         var sort = Double.parseDouble(sort_str);
         // var index = ep.equals("0") ? "SP: " + sort : sort;

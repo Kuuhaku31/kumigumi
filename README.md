@@ -54,25 +54,27 @@ kumigumi all
 
 ## 关键类
 
-`InfoItem`
+`Database.AnimeInfo`
 
-`InfoAni`
+`Database.EpisodeInfo`
 
-`InfoAniFetch`
+`Database.EpisodeRecordInfo`
 
-`InfoAniStore`
+`Database.RSSInfo`
 
-`InfoEpi`
+`Database.TorrentPageInfo`
 
-`InfoEpiFetch`
+`Database.TorrentInfo`
 
-`InfoEpiStore`
+`Task.FetchAnimeInfoTask`
 
-`InfoTor`
+`Task.FetchEpisodeInfoTask`
 
-`InfoTorFetch`
+`Task.FetchTorrentPageTask`
 
-`InfoTorStore`
+`Task.FetchTorrentInfoTask`
+
+`Database.SQLiteAccess`
 
 ---
 
@@ -108,45 +110,61 @@ _block_end
 
 ---
 
-2. 创建 `UpdateItemName` 信息项
+2. 创建数据库信息项
 
 ```
-_item_ani_store <UpdateItemName> <BlockName1> <BlockName2> ...
-_item_epi_store <UpdateItemName> <BlockName1> <BlockName2> ...
-_item_tor_store <UpdateItemName> <BlockName1> <BlockName2> ...
+_item_anime          <ItemName> <BlockName1> <BlockName2> ...
+_item_episode        <ItemName> <BlockName1> <BlockName2> ...
+_item_episode_record <ItemName> <BlockName1> <BlockName2> ...
+_item_rss            <ItemName> <BlockName1> <BlockName2> ...
+_item_torrent_page   <ItemName> <BlockName1> <BlockName2> ...
 ```
 
-- 创建一个名为 `<UpdateItemName>` 的信息项，信息项类型为 `List<InfoAniStore>` / `List<InfoEpiStore>` / `List<InfoTorStore>`
+- 创建一个名为 `<ItemName>` 的信息项，信息项类型为 `Database.*Info` 集合
 - 信息项内容来源于数据块 `<BlockName1>`、`<BlockName2>` 等
 
 ---
 
-3. 创建 `FetchTask` 抓取任务
+3. 创建 `Task.*` 抓取任务
 
 ```
-_fetch_task_ani <FetchTaskName> <BlockName1> <BlockName2> ...
-_fetch_task_epi <FetchTaskName> <BlockName1> <BlockName2> ...
-_fetch_task_tor <FetchTaskName> <BlockName1> <BlockName2> ...
+_fetch_task_ani <TaskName> <BlockName1> <BlockName2> ...
+_fetch_task_epi <TaskName> <BlockName1> <BlockName2> ...
+_fetch_task_tor <TaskName> <BlockName1> <BlockName2> ...
 ```
 
-- 创建一个名为 `<FetchTaskName>` 的抓取任务，抓取任务类型为 `List<FetchTask>`
-- 抓取任务内容来源于数据块 `<BlockName1>`、`<BlockName2>` 等
+- 创建一个名为 `<TaskName>` 的任务集合
+- `_fetch_task_ani` 和 `_fetch_task_epi` 从 `ANI_ID` 列创建任务
+- `_fetch_task_tor` 从 `URL_RSS` 列创建 `FetchTorrentPageTask`
 
 ---
 
-4. 运行 `FetchTask` 抓取任务
+4. 运行 `Task.*` 抓取任务
 
 ```
-_run_fetch_task <UpsertItemName> <UpdateItemName> <FetchTaskName1> <FetchTaskName2> ...
+_run_fetch_task <ItemName> <TaskName1> <TaskName2> ...
 ```
 
-- 运行名为 `<FetchTaskName>` 的抓取任务
-- 生成 `<UpsertItemName>` 和 `<UpdateItemName>` 信息项，分别用于插入和更新数据库
+- 运行名为 `<TaskName>` 的抓取任务集合
+- 生成 `<ItemName>` 信息项，用于写入数据库
 
 ---
 
-5. 用 `UpsertItemName` 和 `UpdateItemName` 信息项更新数据库
+5. 下载缺失的种子文件
 
 ```
-_to_db <UpsertItemName> <UpdateItemName>
+_download_torrent <ItemName> <TorrentPageItemName1> <TorrentPageItemName2> ...
 ```
+
+- 根据 `torrent_page` 信息查询数据库中尚未保存文件的 `TOR_HASH`
+- 使用 `Task.FetchTorrentInfoTask` 下载种子文件并生成 `TorrentInfo`
+
+---
+
+6. 将信息项写入数据库
+
+```
+_to_db <ItemName1> <ItemName2> ...
+```
+
+- 使用 `SQLiteAccess.UpsertXxxInfo` 系列方法写入数据库

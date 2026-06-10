@@ -43,7 +43,7 @@ public class TestExcel {
         // 测试导入数据库
         try(var db = new SQLiteAccess("db/test.db")) {
             for(var epi_record_info : epi_recode_info_set) {
-                db.UpsertEpisodeRecord(epi_record_info);
+                db.UpsertEpisodeRecordInfo(epi_record_info);
             }
             for(var rss_info : rss_info_set) {
                 db.UpsertRSSInfo(rss_info);

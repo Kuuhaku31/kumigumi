@@ -13,7 +13,7 @@ public class EpisodeInfo {
     public final Integer        EPI_ID;
     public final Integer        ANI_ID;
 
-    public final String         ep;
+    public final Integer        ep;
     public final Double         sort;
     public final Date           air_date;
     public final Integer        duration;
@@ -57,7 +57,7 @@ public class EpisodeInfo {
     void SetParams(PreparedStatement ps) throws SQLException {
         Utils.safeSetInt            (ps,  1, EPI_ID         );
         Utils.safeSetInt            (ps,  2, ANI_ID         );
-        Utils.safeSetString         (ps,  3, ep             );
+        Utils.safeSetInt            (ps,  3, ep             );
         Utils.safeSetDouble         (ps,  4, sort           );
         Utils.safeSetDate           (ps,  5, air_date       );
         Utils.safeSetInt            (ps,  6, duration       );
@@ -71,7 +71,7 @@ public class EpisodeInfo {
     public EpisodeInfo(
         Integer EPI_ID,
         Integer ANI_ID,
-        String  ep,
+        Integer ep,
         Double  sort,
         Date    air_date,
         Integer duration,
@@ -141,7 +141,16 @@ public class EpisodeInfo {
             ANI_ID = parsedAniId;
         }
 
-        ep = data.getOrDefault("ep", null);
+        {
+            Integer parsedEp = null;
+            if(data.containsKey("ep")) {
+                var epStr = data.get("ep");
+                if(epStr != null) try {
+                    parsedEp = Integer.parseInt(epStr);
+                } catch(NumberFormatException _) {}
+            }
+            ep = parsedEp;
+        }
 
         {
             Double parsedSort = null;

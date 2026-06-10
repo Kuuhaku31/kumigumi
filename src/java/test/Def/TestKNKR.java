@@ -44,7 +44,6 @@ public class TestKNKR {
         // }
         //
         // KG_SQLiteAccess.Open();
-        // new TaskUpsert(KG_SQLiteAccess.TableName.anime, ani_upsert).run();
         // KG_SQLiteAccess.Close();
 
     }

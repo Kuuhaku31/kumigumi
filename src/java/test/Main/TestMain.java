@@ -99,7 +99,7 @@ public class TestMain {
         // 导入数据库
         try(var db = new SQLiteAccess("db/test.db")) {
             for(var epi_record_info : epi_recode_info_set) {
-                db.UpsertEpisodeRecord(epi_record_info);
+                db.UpsertEpisodeRecordInfo(epi_record_info);
             }
             for(var rss_info : rss_info_set) {
                 db.UpsertRSSInfo(rss_info);
@@ -164,7 +164,7 @@ public class TestMain {
 
         System.out.println("打印所有任务状态");
         {
-            System.out.println("FetchTask1: ");
+            System.out.println("Task fetch:");
             for(var task : fetch_task_set) System.out.println(task);
             System.out.println();
 

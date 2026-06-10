@@ -21,8 +21,6 @@ class SQLiteInit {
     "url_official_site" text,
     "url_cover"         text,
 
-    "update_datetime" text NOT NULL,
-
     PRIMARY KEY ("ANI_ID" DESC)
     );
     """;
@@ -34,7 +32,7 @@ class SQLiteInit {
     "EPI_ID"          integer NOT NULL,
     "ANI_ID"          integer NOT NULL,
 
-    "ep"              text,
+    "ep"              integer,
     "sort"            real,
     "air_date"        text,
     "duration"        integer,
@@ -135,10 +133,10 @@ class SQLiteInit {
         try(var conn = DriverManager.getConnection(db_url)) {
             conn.prepareStatement(sqlCreateAnimeTable).execute();
             conn.prepareStatement(sqlCreateEpisodeTable).execute();
+            conn.prepareStatement(sqlCreateEpisodeRecordTable).execute();
+            conn.prepareStatement(sqlCreateRSSTable).execute();
             conn.prepareStatement(sqlCreateTorrentTable).execute();
             conn.prepareStatement(sqlCreateTorrentPageTable).execute();
-            conn.prepareStatement(sqlCreateRSSTable).execute();
-            conn.prepareStatement(sqlCreateEpisodeRecordTable).execute();
         }
         System.out.println("数据库创建完成");
     }
