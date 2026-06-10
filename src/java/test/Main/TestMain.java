@@ -4,12 +4,18 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import Database.AnimeInfo;
 import Database.EpisodeInfo;
 import Database.EpisodeRecordInfo;
 import Database.RSSInfo;
 import Database.SQLiteAccess;
+import Database.TorrentDownloader;
+import Database.TorrentInfo;
 import Database.TorrentPageInfo;
 import NetAccess.NetAccess;
 
@@ -106,5 +112,71 @@ public class TestMain {
                 db.UpsertEpisodeInfo(episode_info);
             }
         }
+
+        // 获取不在 torrent 表内的 TorrentPageInfo hash_set
+        Set<String> torrent_hash_set = null;
+        Set<TorrentDownloader> dt_set = null; // 获取下载链接
+        {
+            Set<String> hash = new java.util.HashSet<>();
+            for(var torrent_page_info : torrent_page_info_set) 
+                hash.add(torrent_page_info.TOR_HASH);
+            try(var db = new SQLiteAccess("db/test.db")) {
+                torrent_hash_set = db.GetTorrentHashNotExist(hash);
+                dt_set = db.GetDownloaderByHash(torrent_hash_set);
+            }
+        }
+
+        // 多线程下载种子
+        // 全部下载完成前阻塞
+        // 等待下载完成后再继续执行后续代码
+        System.out.println("开始下载种子文件...");
+        Set<TorrentInfo> torrent_file_set = new java.util.HashSet<>();
+        {
+            var total_count   = dt_set.size();
+            var current_count = new AtomicInteger(0);
+            var executor      = Executors.newFixedThreadPool(5); // 创建一个固定线程池
+            var futures       = new java.util.ArrayList<java.util.concurrent.Future<TorrentInfo>>();
+
+            for(var dt : dt_set) {
+                // 提交下载任务到线程池
+                futures.add(executor.submit(() -> {
+                    try {
+                        var torrent_data = NetAccess.DownloadFile(dt.url_download_list().get(0));
+                        return new TorrentInfo(torrent_data);
+                    } catch (Exception e) {
+                        System.err.println("下载失败: " + dt.TOR_HASH());
+                        return null;
+                    } finally {
+                        System.out.print("\r当前已下载 " + current_count.incrementAndGet() + " / " + total_count + " 个种子文件");
+                    }
+                }));
+            }
+
+            // 等待所有下载任务完成并收集结果
+            for(var future : futures) {
+                try {
+                    var torrent_info = future.get(); // 阻塞直到下载完成
+                    if(torrent_info != null) {
+                        torrent_file_set.add(torrent_info);
+                    }
+                } catch (InterruptedException | ExecutionException e) {
+                    System.err.println("下载任务执行失败: " + e.getMessage());
+                }
+            }
+        }
+
+        // 把下载的种子保存到数据库
+        System.out.println("\n正在保存下载的种子文件到数据库...");
+        {
+            var count = 0;
+            try(var db = new SQLiteAccess("db/test.db")) {
+                for(var torrent_file : torrent_file_set) {
+                    db.UpsertTorrentInfo(torrent_file);
+                    System.out.print("\r当前已保存 " + (++count) + " / " + torrent_file_set.size() + " 个种子文件");
+                }
+            }
+        }
+
+        System.out.println("完成");
     }
 }

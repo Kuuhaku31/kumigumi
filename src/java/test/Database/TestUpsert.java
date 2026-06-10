@@ -90,7 +90,7 @@ public class TestUpsert {
             byte[] data = java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(tor_path));
 
             var item = new TorrentInfo(data);
-            db.UpsertTorrent(item);
+            db.UpsertTorrentInfo(item);
         }
 
         System.out.println("Testing Export Torrent Files...");

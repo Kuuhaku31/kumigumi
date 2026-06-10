@@ -114,7 +114,7 @@ public class SQLiteAccess implements Closeable {
         }
     }
 
-    public void UpsertTorrent(TorrentInfo item){
+    public void UpsertTorrentInfo(TorrentInfo item){
         try(var ps = TorrentInfo.GetUpsertStatement(conn)) {
             item.SetParams(ps);
             ps.executeUpdate();
