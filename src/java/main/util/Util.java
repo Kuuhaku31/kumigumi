@@ -134,4 +134,21 @@ public class Util {
             return null;
         }
     }
+
+    public static String getInfoString(Map<String, Object> info) {
+        var sb = new StringBuilder();
+        sb.append("{");
+        info.forEach((key, value) -> sb.append(key).append(": ").append(value).append(", "));
+        if(!info.isEmpty()) {
+            sb.setLength(sb.length() - 2); // 去掉最后的逗号和空格
+        }
+        sb.append("}");
+        return sb.toString();
+    }
+
+    public static String color(String str, ColorCode colorCode) {
+        var res = str.replace("\033[0m", colorCode.getCode()); // 先替换掉字符串中已有的重置代码，避免颜色被重置
+        res     = colorCode.getCode() + res + "\033[0m";
+        return res;
+    }
 }

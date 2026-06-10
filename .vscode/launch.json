@@ -4,6 +4,13 @@
   "configurations": [
     {
         "type": "java",
+        "name": "TestTaskManager",
+        "request": "launch",
+        "mainClass": "Task.TestTaskManager",
+        "projectName": "kumigumi"
+    },
+    {
+        "type": "java",
         "name": "TestDT",
         "request": "launch",
         "mainClass": "Main.TestDT",
