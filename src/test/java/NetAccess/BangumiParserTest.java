@@ -59,11 +59,14 @@ class BangumiParserTest {
         var anime = BangumiParser.parseAnimeInfo(json);
 
         assertEquals(100, anime.ANI_ID);
+        assertNotNull(anime.air_date);
         assertEquals("Original", anime.title);
         assertEquals("中文标题", anime.title_cn);
         assertEquals("Alias A;Alias B", anime.aliases);
+        assertEquals("Summary", anime.description);
         assertEquals(12, anime.episode_count);
         assertEquals("https://example.com", anime.url_official_site);
+        assertEquals("https://example.com/cover.jpg", anime.url_cover);
     }
 
     @Test
@@ -80,5 +83,77 @@ class BangumiParserTest {
         assertEquals("Episode", episode.title);
         assertEquals("第一话", episode.title_cn);
         assertEquals("Description", episode.description);
+    }
+
+    @Test
+    void parsesAnimeJsonWithMissingOrBlankOptionalFieldsAsNull() {
+
+        var json = new JSONObject(
+        """
+        {
+            "id": 101,
+            "date": "invalid-date",
+            "name": "",
+            "name_cn": " ",
+            "summary": "",
+            "infobox": [
+                {
+                    "key": "别名",
+                    "value": "Alias Only"
+                },
+                {
+                    "key": "官方网站",
+                    "value": " "
+                }
+            ]
+        }
+        """);
+
+        var anime = BangumiParser.parseAnimeInfo(json);
+
+        assertEquals(101, anime.ANI_ID);
+        assertNull(anime.air_date);
+        assertNull(anime.title);
+        assertNull(anime.title_cn);
+        assertEquals("Alias Only", anime.aliases);
+        assertNull(anime.description);
+        assertNull(anime.episode_count);
+        assertNull(anime.url_official_site);
+        assertNull(anime.url_cover);
+    }
+
+    @Test
+    void parsesEpisodeJsonWithMissingOptionalFieldsAsNull() {
+
+        var json = new JSONObject(
+        """
+        {
+            "subject_id": 100,
+            "id": 201,
+            "airdate": "2026-13-40",
+            "name": "",
+            "name_cn": " ",
+            "duration_seconds": 0,
+            "desc": ""
+        }
+        """);
+
+        var episode = BangumiParser.parseEpisodeInfo(json);
+
+        assertEquals(201, episode.EPI_ID);
+        assertEquals(100, episode.ANI_ID);
+        assertNull(episode.ep);
+        assertNull(episode.sort);
+        assertNull(episode.air_date);
+        assertNull(episode.duration);
+        assertNull(episode.title);
+        assertNull(episode.title_cn);
+        assertNull(episode.description);
+    }
+
+    @Test
+    void rejectsNullBangumiJson() {
+        assertThrows(IllegalArgumentException.class, () -> BangumiParser.parseAnimeInfo(null));
+        assertThrows(IllegalArgumentException.class, () -> BangumiParser.parseEpisodeInfo(null));
     }
 }

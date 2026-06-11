@@ -3,6 +3,13 @@
   "configurations": [
     {
       "type": "java",
+      "name": "NetAccessTest",
+      "request": "launch",
+      "mainClass": "Main.NetAccessTest",
+      "projectName": "kumigumi"
+    },
+    {
+      "type": "java",
       "name": "Kumigumi: Main (MetaData defaults)",
       "request": "launch",
       "mainClass": "Main.Main",
