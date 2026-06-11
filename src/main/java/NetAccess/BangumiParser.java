@@ -1,10 +1,12 @@
 package NetAccess;
 
+import java.time.format.DateTimeFormatter;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.SignStyle;
 import java.time.temporal.ChronoField;
+import java.util.ArrayList;
 
 import Database.AnimeInfo;
 import Database.EpisodeInfo;
@@ -13,160 +15,125 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 
-class BangumiParser {
+final class BangumiParser {
 
-    static AnimeInfo ParseAnimeInfo(JSONObject anime_info_json) {
+    private static final DateTimeFormatter BANGUMI_DATE_FORMATTER = new DateTimeFormatterBuilder()
+        .appendValue(ChronoField.YEAR, 4)
+        .appendLiteral('-')
+        .appendValue(ChronoField.MONTH_OF_YEAR, 1, 2, SignStyle.NOT_NEGATIVE)
+        .appendLiteral('-')
+        .appendValue(ChronoField.DAY_OF_MONTH, 1, 2, SignStyle.NOT_NEGATIVE)
+        .toFormatter();
 
-        // 解析 ANI_ID
-        var ANI_ID = anime_info_json.getInt("id");
+    private BangumiParser() {}
 
-        // 解析放送日期
-        var air_date_str = ValidateDate(anime_info_json.optString("date")); 
-        var air_date = Util.parseDate(air_date_str);
+    static AnimeInfo parseAnimeInfo(JSONObject anime_info_json) {
+        if(anime_info_json == null) throw new IllegalArgumentException("Bangumi 番剧 JSON 不能为空");
 
-        var title = anime_info_json.optString("name"); // 解析标题
-        var title_cn = anime_info_json.optString("name_cn");
-        if (title.isBlank())
-            title = null;
-        if (title_cn.isBlank())
-            title_cn = null;
-
-        // 解析别名
-        var aliases_json = parse_info_box(anime_info_json, "别名");
-        String aliases;
-        if (aliases_json instanceof JSONArray aliases_array) {
-            var sb = new StringBuilder();
-            for (var i = 0; i < aliases_array.length(); i++) {
-                if (i > 0)
-                    sb.append(";");
-                sb.append(aliases_array.getJSONObject(i).getString("v"));
-            }
-            aliases = sb.toString();
-        } else if (aliases_json != null) {
-            var str = aliases_json.toString();
-            if (str.isBlank())
-                aliases = null;
-            else
-                aliases = aliases_json.toString();
-        } else
-            aliases = null;
-
-        // 解析 description
-        var description = anime_info_json.optString("summary");
-        if (description.isBlank())
-            description = null;
-
-        // 解析集数
-        var count = anime_info_json.optInt("eps", -1);
-        var episode_count = count == -1 ? null : count;
-
-        // 解析官方网站
-        var official_site_json = parse_info_box(anime_info_json, "官方网站");
-        var url_official_site = official_site_json == null ? null : official_site_json.toString();
-        url_official_site = (url_official_site != null && url_official_site.isBlank()) ? null : url_official_site;
-
-        // 解析封面图片
-        var url_cover = anime_info_json.getJSONObject("images").getString("large");
-        if(url_cover.isBlank()) url_cover = null;
-
-        // 返回
-        var res = new AnimeInfo(
-            ANI_ID,
-            air_date,
-            title,
-            title_cn,
-            aliases,
-            description,
-            episode_count,
-            url_official_site,
-            url_cover
-        );
-        return res;
+        return new AnimeInfo(
+            nullableInt(anime_info_json, "id"),
+            parseBangumiDate(nullableString(anime_info_json, "date")),
+            nullableString(anime_info_json, "name"),
+            nullableString(anime_info_json, "name_cn"),
+            parseAliases(anime_info_json),
+            nullableString(anime_info_json, "summary"),
+            nullableInt(anime_info_json, "eps"),
+            parseOfficialSite(anime_info_json),
+            parseCoverUrl(anime_info_json));
     }
 
-    static EpisodeInfo ParseEpisodeInfo(JSONObject episode_info_json) {
+    static EpisodeInfo parseEpisodeInfo(JSONObject episode_info_json) {
+        if(episode_info_json == null) throw new IllegalArgumentException("Bangumi 分集 JSON 不能为空");
 
-        var ANI_ID = episode_info_json.getInt("subject_id");
-        var EPI_ID = episode_info_json.getInt("id");
-        var air_date_str = ValidateDate(episode_info_json.getString("airdate"));
-        var air_date = Util.parseDate(air_date_str);
-
-
-
-        // 解析集数
-        var ep = episode_info_json.getInt("ep");
-        var sort_str = episode_info_json.getNumber("sort").toString();
-        var sort = Double.parseDouble(sort_str);
-        // var index = ep.equals("0") ? "SP: " + sort : sort;
-
-        // 解析标题
-        var title = episode_info_json.getString("name");
-        var title_cn = episode_info_json.getString("name_cn");
-        if (title.isBlank())
-            title = null;
-        if (title_cn.isBlank())
-            title_cn = null;
-
-        // 解析时长
+        // duration_seconds 小于等于 0 时视为缺省值。
         var duration_seconds = episode_info_json.optInt("duration_seconds", 0);
-        var duration = duration_seconds <= 0 ? null : duration_seconds;
+        var duration         = duration_seconds <= 0 ? null : duration_seconds;
 
-        // 解析概述
-        var description = episode_info_json.optString("desc");
-        if (description.isBlank())
-            description = null;
-
-        // 返回
-        var res = new EpisodeInfo(
-            EPI_ID,
-            ANI_ID,
-            ep,
-            sort,
-            air_date,
+        return new EpisodeInfo(
+            nullableInt(episode_info_json, "id"),
+            nullableInt(episode_info_json, "subject_id"),
+            nullableInt(episode_info_json, "ep"),
+            nullableDouble(episode_info_json, "sort"),
+            parseBangumiDate(nullableString(episode_info_json, "airdate")),
             duration,
-            title,
-            title_cn,
-            description
-        );
-        return res;
+            nullableString(episode_info_json, "name"),
+            nullableString(episode_info_json, "name_cn"),
+            nullableString(episode_info_json, "desc"));
     }
 
-    private static String ValidateDate(String str) {
-        if (str == null || str.isBlank())
-            return null;
 
-        // 尝试解析为日期
-        var formatter = new DateTimeFormatterBuilder()
-                .appendValue(ChronoField.YEAR, 4)
-                .appendLiteral('-')
-                .appendValue(ChronoField.MONTH_OF_YEAR, 1, 2, SignStyle.NOT_NEGATIVE)
-                .appendLiteral('-')
-                .appendValue(ChronoField.DAY_OF_MONTH, 1, 2, SignStyle.NOT_NEGATIVE)
-                .toFormatter();
+    private static Integer nullableInt(JSONObject json, String key) {
+        var number = json.optNumber(key, null);
+        return number == null ? null : number.intValue();
+    }
+
+    private static Double nullableDouble(JSONObject json, String key) {
+        var number = json.optNumber(key, null);
+        return number == null ? null : number.doubleValue();
+    }
+
+    private static String nullableString(JSONObject json, String key) {
+        if(!json.has(key) || json.isNull(key)) return null;
+        return blankToNull(json.optString(key, null));
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
+    }
+
+    // Bangumi 日期可能省略月份或日期的前导 0；这里校验后统一转成 yyyy-MM-dd。
+    private static java.util.Date parseBangumiDate(String date_str) {
+        if(date_str == null) return null;
+
         try {
-            LocalDate.parse(str, formatter);
-            return str; // ✅ 合法，原样返回
-        } catch (DateTimeParseException _) {
+            var normalized_date = LocalDate.parse(date_str, BANGUMI_DATE_FORMATTER).toString();
+            return Util.parseDate(normalized_date);
+        } catch(DateTimeParseException ignored) {
             return null;
-        } // ❌ 非法格式或日期
+        }
     }
 
-    // 获取 info_box 中指定 key 的项
-    private static Object parse_info_box(JSONObject anime_info_json, String key) {
-        if (anime_info_json == null || !anime_info_json.has("infobox"))
-            return null;
+    private static String parseAliases(JSONObject anime_info_json) {
+        var aliases_json = infoBoxValue(anime_info_json, "别名");
 
-        JSONArray infobox = anime_info_json.optJSONArray("infobox");
-        if (infobox == null)
-            return null;
-
-        for (int i = 0; i < infobox.length(); i++) {
-            JSONObject item = infobox.getJSONObject(i);
-            if (item != null && key.equals(item.getString("key"))) {
-                // 用 opt() 返回一个通用的 Object，先取出它，再判断类型
-                return item.opt("value");
+        if(aliases_json instanceof JSONArray aliases_array) {
+            var aliases = new ArrayList<String>();
+            for(var i = 0; i < aliases_array.length(); i++) {
+                var alias_item = aliases_array.optJSONObject(i);
+                if(alias_item != null) {
+                    var alias = nullableString(alias_item, "v");
+                    if(alias != null) aliases.add(alias);
+                }
             }
+            return aliases.isEmpty() ? null : String.join(";", aliases);
+        }
+
+        return jsonValueToNullableString(aliases_json);
+    }
+
+    private static String parseOfficialSite(JSONObject anime_info_json) {
+        return jsonValueToNullableString(infoBoxValue(anime_info_json, "官方网站"));
+    }
+
+    private static String parseCoverUrl(JSONObject anime_info_json) {
+        var images_json = anime_info_json.optJSONObject("images");
+        return images_json == null ? null : nullableString(images_json, "large");
+    }
+
+    // Bangumi 的 infobox 是 key/value 数组；调用方再按 value 的具体类型解析。
+    private static Object infoBoxValue(JSONObject anime_info_json, String key) {
+        var infobox = anime_info_json.optJSONArray("infobox");
+        if(infobox == null) return null;
+
+        for(var i = 0; i < infobox.length(); i++) {
+            var item = infobox.optJSONObject(i);
+            if(item != null && key.equals(item.optString("key"))) return item.opt("value");
         }
         return null;
+    }
+
+    private static String jsonValueToNullableString(Object value) {
+        if(value == null || JSONObject.NULL.equals(value)) return null;
+        return blankToNull(value.toString());
     }
 }

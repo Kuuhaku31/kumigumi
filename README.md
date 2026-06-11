@@ -91,3 +91,21 @@ Excel 通过命令和数据块驱动程序运行。常用命令如下：
 - 新数据对象应放在 `Database.*Info` 中，并与 `Table.md` 保持一致。
 - 数据库写入只新增或复用 `UpsertXxxInfo`，不要恢复 `UpsertItem/UpdateItem` 抽象。
 - schema 变更需要同步更新 `Table.md`、对应 `*Info` 类、`SQLiteInit` 和 Excel 文档。
+
+## 网络访问模块 `NetAccess`
+
+NetAccess 模块对外保留以下静态入口，内部负责 HTTP 请求、Bangumi JSON 解析和 RSS 源分流：
+
+```java
+// 下载指定 URL 的内容，返回原始字节数组，适用于 torrent 等二进制文件
+byte[] DownloadFile(String url_str)
+
+// 根据 Bangumi 番剧 ID 获取番剧基本信息
+AnimeInfo FetchAnimeInfo(Integer anime_id)
+
+// 根据 Bangumi 番剧 ID 获取分集信息集合
+Set<EpisodeInfo> FetchEpisodeInfoSet(Integer anime_id)
+
+// 根据 RSS URL 获取种子页信息集合
+Set<TorrentPageInfo> FetchTorrentPageInfoSet(String rss_url)
+```

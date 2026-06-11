@@ -1,144 +1,172 @@
 package NetAccess;
 
-import static NetAccess.BangumiParser.ParseAnimeInfo;
-import static NetAccess.BangumiParser.ParseEpisodeInfo;
-import static NetAccess.RSSParser.parseMikanRSS;
-import static NetAccess.RSSParser.parseNyaaRSS;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.json.JSONObject;
-
-import com.apptasticsoftware.rssreader.RssReader;
-
 import Database.AnimeInfo;
 import Database.EpisodeInfo;
 import Database.TorrentPageInfo;
+import com.apptasticsoftware.rssreader.RssReader;
+import org.json.JSONObject;
 
-public class NetAccess {
-    // 复用 HttpClient 实例
-    private static final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(30))
-            .build();
 
-    public static byte[] DownloadFile(String url_str) throws URISyntaxException, IOException {
-        var url = new URI(url_str).toURL(); // 创建URL对象
-        var conn = (HttpURLConnection) url.openConnection(); // 打开连接
-        conn.setRequestMethod("GET"); // 设置请求方法
-        conn.setRequestProperty("User-Agent", "Mozilla/5.0"); // 添加 User-Agent
+public final class NetAccess {
 
-        // 直接读取原始字节流（适用于二进制文件如 torrent）
-        try (var in = conn.getInputStream()) {
-            return in.readAllBytes();
-        }
+    private static final String   USER_AGENT   = "Mozilla/5.0";          // 模拟浏览器的 User-Agent，避免被部分服务器拒绝访问
+    private static final Duration HTTP_TIMEOUT = Duration.ofSeconds(30); // HTTP 请求超时时间，单位秒
+
+    // RssReader 支持注入 HttpClient
+    // 整个模块共享一个实例，避免重复创建连接资源
+    private static final HttpClient
+    httpClient = HttpClient.newBuilder().connectTimeout(HTTP_TIMEOUT).build();
+
+    // 工具类，禁止实例化。
+    private NetAccess() {}
+
+    /**
+     * 下载指定 URL 的内容，返回原始字节。
+     * <p>
+     * 该方法用于 torrent 等二进制资源，不做字符编码转换。
+     */
+    public static byte[]
+    DownloadFile(String url_str)  throws URISyntaxException, IOException {
+
+        var conn = open_get_connection(url_str);
+
+        try(var in = conn.getInputStream()) { return in.readAllBytes(); }
+        finally { conn.disconnect(); }
     }
 
-    public static AnimeInfo
-    FetchAnimeInfo(Integer anime_id)
-    throws URISyntaxException, IOException
-    {
-        // 解析 anime 信息
-        var info_json = GetInfo(QueryType.anime_info, anime_id);
+    /**
+     * 根据 Bangumi 番剧 ID 获取番剧信息。
+     */
+    public static AnimeInfo 
+    FetchAnimeInfo(Integer anime_id) throws URISyntaxException, IOException {
 
-        return ParseAnimeInfo(info_json);
+        var info_json = fetch_bgm_json(BangumiQueryType.ANIME_INFO, anime_id);
+        return BangumiParser.parseAnimeInfo(info_json);
     }
 
-    public static Set<EpisodeInfo>
-    FetchEpisodeInfoSet(int anime_id)
-    throws URISyntaxException, IOException
-    {
-        // 解析 episode 信息
-        var ep_list = GetInfo(QueryType.episode_list, anime_id).getJSONArray("data");
+    /**
+     * 根据 Bangumi 番剧 ID 获取分集信息集合。
+     */
+    public static Set<EpisodeInfo> 
+    FetchEpisodeInfoSet(Integer anime_id) throws URISyntaxException, IOException {
+
+        var info_json = fetch_bgm_json(BangumiQueryType.EPISODE_LIST, anime_id);
+        if(info_json == null || !info_json.has("data")) return null;
+
+        var ep_list = info_json.getJSONArray("data");
+        if(ep_list == null) return null;
 
         Set<EpisodeInfo> res = new HashSet<>();
-        for(var item : ep_list) res.add(ParseEpisodeInfo((JSONObject) item));
+        for(var item : ep_list) res.add(BangumiParser.parseEpisodeInfo((JSONObject)item));
 
         return res.isEmpty() ? null : res;
     }
 
+    /**
+     * 根据 RSS URL 获取种子页信息集合。
+     * <p>
+     * 内部会根据 URL 前缀选择 Mikan 或 Nyaa 的 RSS 解析器。
+     */
     public static Set<TorrentPageInfo>
-    FetchTorrentPageInfoSet(String rss_url)
-    throws IOException
-    {
-        var reader = new RssReader(httpClient);
+    FetchTorrentPageInfoSet(String rss_url) throws IOException {
 
-        return switch(detectRSSSourceType(rss_url))
-        {
-            case MIKAN   -> parseMikanRSS(reader, rss_url);
-            case NYAA    -> parseNyaaRSS(reader, rss_url);
+        return switch(RSSSourceType.detectRSSSourceType(rss_url)) {
+            case MIKAN   -> parse_mikan_rss(rss_url);
+            case NYAA    -> parse_nyaa_rss(rss_url);
             case UNKNOWN -> throw new IOException("不支持的RSS源: " + rss_url);
         };
     }
 
-    // public static List<Map<String, String>> FetchAnimeTorrentInfo(String rss_url, int anime_id) throws IOException {
-    //     return FetchAnimeTorrentInfo(rss_url).stream()
-    //             .peek(tor -> tor.put("ANI_ID", String.valueOf(anime_id)))
-    //             .toList();
-    // }
 
-    private static JSONObject GetInfo(QueryType type, int anime_id) throws URISyntaxException, IOException {
-        var bangumi_server = "https://api.bgm.tv";
+    // 以下是内部实现细节，外部调用不需要关心。
 
-        String format_str;
-        switch (type) {
-            case anime_info -> format_str = "%s/v0/subjects/%d";
-            case episode_list -> format_str = "%s/v0/episodes?subject_id=%d";
-            default -> throw new UnsupportedOperationException("BangumiAPI GetInfo: 未知的查询类型");
+    private static JSONObject
+    fetch_bgm_json(BangumiQueryType type, Integer anime_id) throws URISyntaxException, IOException {
+
+        if(anime_id == null) throw new IllegalArgumentException("Bangumi 番剧 ID 不能为空");
+
+        var url_str = type.formatUrl(anime_id);
+
+        var conn = open_get_connection(url_str); // 打开连接，设置请求参数
+        try(var in     = conn.getInputStream();
+            var reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+
+            var    response = new StringBuilder();
+            String input_line;
+            while((input_line = reader.readLine()) != null) response.append(input_line);
+            return new JSONObject(response.toString());
+
+        } finally {
+            conn.disconnect();
         }
-        String url_str = String.format(format_str, bangumi_server, anime_id);
-        String res_str = Get(url_str);
-
-        return new JSONObject(res_str);
-    }
-
-    private static String Get(String url_str) throws URISyntaxException, IOException {
-        var url = new URI(url_str).toURL(); // 创建URL对象
-        var conn = (HttpURLConnection) url.openConnection(); // 打开连接
-        conn.setRequestMethod("GET"); // 设置请求方法
-        conn.setRequestProperty("User-Agent", "Mozilla/5.0"); // 添加 User-Agent
-
-        // 读取响应
-        var in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        var response = new StringBuilder();
-
-        // 逐行读取响应内容
-        String input_line;
-        while ((input_line = in.readLine()) != null) response.append(input_line);
-
-        in.close();
-
-        return response.toString();
     }
 
     /**
-     * 检测 RSS 源类型
+     * 解析 Mikan RSS。
+     * <p>
+     * Mikan 的下载地址在 enclosure 中，种子 hash 从 enclosure URL 末尾提取。
      */
-    private static RSSSourceType detectRSSSourceType(String rss_url) {
-        if (rss_url.startsWith("https://mikanani.me") || rss_url.startsWith("https://mikan.tangbai.cc")) {
-            return RSSSourceType.MIKAN;
-        } else if (rss_url.startsWith("https://nyaa")) {
-            return RSSSourceType.NYAA;
-        }
-        return RSSSourceType.UNKNOWN;
+    private static Set<TorrentPageInfo>
+    parse_mikan_rss(String rss_url) throws IOException {
+
+        var reader = new RssReader(httpClient);
+        var items  = reader.read(rss_url).toList();
+
+        Set<TorrentPageInfo> res = new HashSet<>();
+        for(var item : items) res.add(RSSParser.parseMikanItem(rss_url, item));
+
+        return res;
     }
 
-    // RSS 源类型
-    private enum RSSSourceType {
-        MIKAN, NYAA, UNKNOWN
+     /**
+     * 解析 Nyaa RSS。
+     * <p>
+     * Nyaa 的 infoHash 是扩展字段，需要在读取 RSS 前注册扩展解析器。
+     */
+    private static Set<TorrentPageInfo>
+    parse_nyaa_rss(String rss_url) throws IOException {
+
+        var reader          = new RssReader(httpClient);
+        var item_extensions = RSSParser.registerNyaaExtensions(reader);
+
+        var items = reader.read(rss_url).toList();
+
+        Set<TorrentPageInfo> res = new HashSet<>();
+        for(var item : items) res.add(RSSParser.parseNyaaItem(rss_url, item, item_extensions));
+
+        return res;
     }
 
-    // 请求类型
-    private enum QueryType {
-        anime_info,
-        episode_list,
+    /**
+     * 打开一个 HTTP GET 连接，设置 User-Agent 和超时等参数。
+     */
+    private static HttpURLConnection
+    open_get_connection(String url_str)
+    throws URISyntaxException, MalformedURLException, IOException {
+
+        if(url_str == null) throw new IllegalArgumentException("URL 不能为 null");
+
+        var url  = new URI(url_str).toURL();                // 验证 URL 格式
+        var conn = (HttpURLConnection)url.openConnection(); // 获取连接对象
+
+        conn.setRequestMethod("GET");                         // 设置请求方法为 GET
+        conn.setRequestProperty("User-Agent", USER_AGENT);    // 设置 User-Agent 模拟浏览器
+        conn.setConnectTimeout((int)HTTP_TIMEOUT.toMillis()); // 设置连接超时时间
+        conn.setReadTimeout((int)HTTP_TIMEOUT.toMillis());    // 设置读取超时时间
+
+        return conn;
     }
 }
