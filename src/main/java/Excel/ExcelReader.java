@@ -10,6 +10,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,45 +33,31 @@ public class ExcelReader {
      * @param filePath Excel 文件路径
      * @throws IOException 如果文件读取失败
      */
-    public static ExcelResult Read(String filePath) {
+    public static ExcelResult Read(String filePath) throws IOException {
 
-        Path temp_file;
-
+        // 创建临时文件（系统自动放在临时目录）
+        var temp_file = Files.createTempFile("Temp_", ".xlsx");
         try {
-            // 创建临时文件（系统自动放在临时目录）
-            temp_file = Files.createTempFile("Temp_", ".txt");
             var source_path = Path.of(filePath);
             if(!Files.exists(source_path)) {
-                var msg = "Excel file not found: " + filePath;
-                System.out.println(color(msg, ColorCode.RED));
-                return null;
+                throw new IOException("Excel file not found: " + filePath);
             }
 
             // 复制 Excel 文件到临时文件
-            var is = Files.newInputStream(source_path);
-            Files.copy(is, temp_file, StandardCopyOption.REPLACE_EXISTING);
+            try(var is = Files.newInputStream(source_path)) {
+                Files.copy(is, temp_file, StandardCopyOption.REPLACE_EXISTING);
+            }
             var msg = "ExcelReader: 复制文件到: " + temp_file.toAbsolutePath().toString();
             System.out.println(color(msg, ColorCode.GREEN));
 
-        } catch (IOException e) {
-            var msg = "Failed to create temporary file: " + e.getMessage();
-            System.out.println(color(msg, ColorCode.RED));
-            return null;
-        }
-
-        // 创建工作簿并读取数据
-        ExcelResult result;
-        try(
-            var fis = new FileInputStream(temp_file.toFile());
-            var workbook = new XSSFWorkbook(fis)
-        ) {
-
-            result = new ExcelReadContext(workbook).read();
-
-        } catch(Exception e) {
-            result = null;
-            var msg = "ExcelReader Error: " + e.getMessage();
-            System.out.println(color(msg, ColorCode.RED));
+            // 创建工作簿，一次性读取全部 sheet 数据
+            try(
+                var fis = new FileInputStream(temp_file.toFile());
+                var workbook = new XSSFWorkbook(fis)
+            ) {
+                var excelData = readExcelData(workbook);
+                return new ExcelReadContext(excelData).read();
+            }
         }
         finally {
             // 删除临时文件
@@ -80,12 +67,59 @@ public class ExcelReader {
                 System.out.println(color(msg, ColorCode.RED));
             }
         }
-        return result;
+    }
+
+    private static Map<String, List<List<String>>> readExcelData(XSSFWorkbook workbook) {
+
+        var evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+        var excelData = new LinkedHashMap<String, List<List<String>>>();
+
+        for(var sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
+            var sheet = workbook.getSheetAt(sheetIndex);
+            var sheetData = new ArrayList<List<String>>();
+
+            for(var rowIndex = 0; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+                var row = sheet.getRow(rowIndex);
+                var rowData = new ArrayList<String>();
+                var lastCellNum = row == null ? 0 : Math.max(row.getLastCellNum(), (short)0);
+                for(var colIndex = 0; colIndex < lastCellNum; colIndex++) {
+                    rowData.add(GetCellValue(evaluator, row.getCell(colIndex)));
+                }
+                sheetData.add(rowData);
+            }
+
+            excelData.put(sheet.getSheetName(), sheetData);
+        }
+
+        return excelData;
+    }
+
+    private static String GetCellValue(FormulaEvaluator evaluator, Cell cell) {
+
+        if(cell == null || cell.getCellType() == CellType.BLANK) return null;
+
+        CellValue value = null;
+        try {
+            value = evaluator.evaluate(cell);
+        } catch(Exception e) {
+            var msg = "GetCellValue Error: " + e.getMessage();
+            System.out.println(color(msg, ColorCode.RED));
+            System.out.println(cell);
+            System.exit(1);
+        }
+        if(value == null)
+            return null;
+
+        return switch(value.getCellType()) {
+            case BOOLEAN -> value.getBooleanValue() ? "1" : "0";
+            case NUMERIC -> Double.toString(value.getNumberValue());
+            case STRING -> value.getStringValue();
+            default -> null;
+        };
     }
 
     private static final class ExcelReadContext {
-        private XSSFWorkbook     workbook;  // Excel 工作簿
-        private FormulaEvaluator evaluator; // 公式计算器
+        private Map<String, List<List<String>>> excelData; // sheet名 -> 二维字符串数据
 
         private ExcelCursor cursor; // 光标位置
 
@@ -93,10 +127,9 @@ public class ExcelReader {
         private List<List<String>>     commands;      // 保存命令列表
         private Map<String, TableData> blockDataList; // 保存块信息
 
-        ExcelReadContext(XSSFWorkbook workbook) {
+        ExcelReadContext(Map<String, List<List<String>>> excelData) {
 
-            this.workbook      = workbook;
-            this.evaluator     = workbook.getCreationHelper().createFormulaEvaluator();
+            this.excelData     = excelData;
             this.cursor        = new ExcelCursor(0, 0, "main");
             this.variables     = new HashMap<>();
             this.commands      = new ArrayList<>();
@@ -110,18 +143,17 @@ public class ExcelReader {
             while(isReading) {
 
                 // 依次读取每一个单元格
-                cursor.dx = 0;
+                cursor.carriageReturn(); // 回车，重置列偏移量
                 List<String> row_data = new ArrayList<>(); // 保存该行数据
                 while(true) {
 
                     // 如果遇到空单元格，结束该行读取
-                    var cell = getCell(cursor.dx++);
-                    if(cell == null || cell.getCellType() == CellType.BLANK) {
+                    var cellData = getCell(cursor.dx++);
+                    if(cellData == null) {
                         cursor.gotoNextRow();
                         break;
                     }
                     else {
-                        var cellData = GetCellValue(cell); // 读取单元格数据
                         if(cellData != null && cellData.startsWith("#")) isReading = 特殊标记处理(cellData);
                         else row_data.add(cellData); // 保存单元格数据
                     }
@@ -139,7 +171,7 @@ public class ExcelReader {
         private void createBlocks(BlockMetaData blockMeta) {
 
             // 获取工作表
-            var sheet = workbook.getSheet(blockMeta.sheetName);
+            var sheet = excelData.get(blockMeta.sheetName);
             if(sheet == null) {
                 var msg = "Sheet not found: " + blockMeta.sheetName;
                 System.out.println(color(msg, ColorCode.RED));
@@ -157,13 +189,11 @@ public class ExcelReader {
             // 遍历表格每一行
             for(var sheet_row_idx = blockMeta.startRow; sheet_row_idx < blockMeta.endRow; sheet_row_idx++) {
                 // 遍历每一列（仅考虑 column_list 中定义的列）
-                var row = sheet.getRow(sheet_row_idx);
                 for(var columnIndex = 0; columnIndex < headerMetaList.size(); columnIndex++) {
                     var column_map = headerMetaList.get(columnIndex);
-                    var cell = row == null ? null : row.getCell(column_map.getValue().col());
 
                     String cell_value;
-                    cell_value = GetCellValue(cell);                                                       // 提取单元格值
+                    cell_value = getCell(blockMeta.sheetName, sheet_row_idx, column_map.getValue().col()); // 提取单元格值
                     cell_value = ParseString(cell_value, StringType.FromString(column_map.getValue().type())); // 解析出显示值
 
                     tableValues.add(cell_value);
@@ -188,8 +218,8 @@ public class ExcelReader {
             // 定义变量
             else if(cellData.equalsIgnoreCase("#define")) {
                 // 读取变量名和值（但不处理）
-                var var_name  = GetCellValue(getCell(1));
-                var var_value = GetCellValue(getCell(2));
+                var var_name  = getCell(1);
+                var var_value = getCell(2);
                 if(var_name != null) {
                     var_name = var_name.trim();
                     if(var_value != null) var_value = var_value.trim();
@@ -202,24 +232,24 @@ public class ExcelReader {
 
             // 创建 TableData
             else if(cellData.equalsIgnoreCase("#block")) {
-                var blockMeta = new BlockMetaData(GetCellValue(getCell(1))); // 读取块名称
+                var blockMeta = new BlockMetaData(getCell(1)); // 读取块名称
 
                     // 读取列信息
                     while(true) {
                         cursor.gotoNextRow();
 
-                        if(getCell(0) == null || getCell(0).getCellType() == CellType.BLANK) continue; // 跳过空行
+                        if(getCell(0) == null) continue; // 跳过空行
 
-                        var fist = GetCellValue(getCell(0));
+                        var fist = getCell(0);
                         if     (fist.equals("#block_end")) break;
-                        else if(fist.equals("#from"     )) blockMeta.startRow  = (int)Double.parseDouble(GetCellValue(getCell(1))) - 1;
-                        else if(fist.equals("#to"       )) blockMeta.endRow    = (int)Double.parseDouble(GetCellValue(getCell(1))) - 1;
-                        else if(fist.equals("#sheet"    )) blockMeta.sheetName = GetCellValue(getCell(1));
+                        else if(fist.equals("#from"     )) blockMeta.startRow  = (int)Double.parseDouble(getCell(1)) - 1;
+                        else if(fist.equals("#to"       )) blockMeta.endRow    = (int)Double.parseDouble(getCell(1)) - 1;
+                        else if(fist.equals("#sheet"    )) blockMeta.sheetName = getCell(1);
                         else {
                             // 添加列
-                            var header = GetCellValue(getCell(0));
-                            var colIdx = (int)Double.parseDouble(GetCellValue(getCell(1))) - 1;
-                            var type   = GetCellValue(getCell(2));
+                            var header = getCell(0);
+                            var colIdx = (int)Double.parseDouble(getCell(1)) - 1;
+                            var type   = getCell(2);
                             blockMeta.addColumn(header, type, colIdx);
                         }
                     }
@@ -229,7 +259,7 @@ public class ExcelReader {
 
             // 条件跳转
             else if(cellData.equalsIgnoreCase("#goto_if")) {
-                var var_name = GetCellValue(getCell(1));
+                var var_name = getCell(1);
                 if(variables.containsKey(var_name)) jump(1);
                 else cursor.gotoNextRow();
             }
@@ -241,63 +271,35 @@ public class ExcelReader {
             return true;
         }
 
-        private String GetCellValue(Cell cell) {
-
-            if(cell == null) return null;
-
-            CellValue value = null;
-            try {
-                value = evaluator.evaluate(cell);
-            } catch(Exception e) {
-                var msg = "GetCellValue Error: " + e.getMessage();
-                System.out.println(color(msg, ColorCode.RED));
-                System.out.println(cell);
-                System.exit(1);
-            }
-            if(value == null)
-                return null;
-
-            return switch(value.getCellType()) {
-                case BOOLEAN -> value.getBooleanValue() ? "1" : "0";
-                case NUMERIC -> Double.toString(value.getNumberValue());
-                case STRING -> value.getStringValue();
-                default -> null;
-            };
-        }
-
         private void jump(int dx) {
             // 读取目标位置
-            var target_row = GetCellValue(getCell(dx + 1));
-            var target_col = GetCellValue(getCell(dx + 2));
+            var target_row = getCell(dx + 1);
+            var target_col = getCell(dx + 2);
             var r          = (int)Double.parseDouble(target_row) - 1;
             var c          = (int)Double.parseDouble(target_col) - 1;
-            var newSheet   = GetCellValue(getCell(dx + 3));
+            var newSheet   = getCell(dx + 3);
 
             cursor.gotoPosition(r, c, newSheet);
             cursor.dx = 0; // 重置列偏移量
             System.out.println(color("#Goto Position: (" + r + ", " + c + ") in Sheet: " + newSheet, ColorCode.GREEN));
         }
 
-        private Cell getCell(int dx) {
-            // 保证工作表存在
-            var sheet = workbook.getSheet(cursor.sheetName);
-            if(sheet == null)
-                return null;
+        private String getCell(int dx) {
+            return getCell(cursor.sheetName, cursor.row, cursor.col + dx);
+        }
 
-            // 判断行是否越界
-            if(cursor.row > sheet.getLastRowNum())
-                return null;
+        private String getCell(String sheetName, int rowIndex, int colIndex) {
+            var sheet = excelData.get(sheetName);
+            if(sheet == null) return null;
 
-            // 保证行存在
-            var row = sheet.getRow(cursor.row);
-            if(row == null)
-                return null;
+            if(rowIndex < 0 || rowIndex >= sheet.size()) return null;
 
-            // 判断列是否越界
-            if(cursor.col + dx > row.getLastCellNum())
-                return null;
+            var row = sheet.get(rowIndex);
+            if(row == null) return null;
 
-            return row.getCell(cursor.col + dx);
+            if(colIndex < 0 || colIndex >= row.size()) return null;
+
+            return row.get(colIndex);
         }
 
         // 解析字符串
@@ -366,6 +368,10 @@ public class ExcelReader {
             row       = r;
             col       = c;
             sheetName = name;
+        }
+
+        void carriageReturn() {
+            dx = 0;
         }
 
         void gotoPosition(int r, int c, String name) {
