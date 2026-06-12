@@ -20,8 +20,6 @@ import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import Util.TableData;
-
 
 public class ExcelReader {
     private XSSFWorkbook     workbook;  // Excel 工作簿
@@ -92,25 +90,25 @@ public class ExcelReader {
         var headers        = new String[headerMetaList.size()];
         for(var i = 0; i < headerMetaList.size(); i++) headers[i] = headerMetaList.get(i).getKey();
 
-        // 遍历表格每一行
-        // 根据类型创建表格数据对象
-        var data = new TableData(headers);
-        for(var sheet_row_idx = blockMeta.startRow; sheet_row_idx < blockMeta.endRow; sheet_row_idx++) {
-            var recode = data.new Record();
+        var tableValues = new ArrayList<String>();
+        for(var header : headers) tableValues.add(header);
 
+        // 遍历表格每一行
+        for(var sheet_row_idx = blockMeta.startRow; sheet_row_idx < blockMeta.endRow; sheet_row_idx++) {
             // 遍历每一列（仅考虑 column_list 中定义的列）
             var row = sheet.getRow(sheet_row_idx);
-            for(var column_map : headerMetaList) {
-                var cell = row.getCell(column_map.getValue().col());
+            for(var columnIndex = 0; columnIndex < headerMetaList.size(); columnIndex++) {
+                var column_map = headerMetaList.get(columnIndex);
+                var cell = row == null ? null : row.getCell(column_map.getValue().col());
 
                 String cell_value;
                 cell_value = GetCellValue(cell);                                                           // 提取单元格值
                 cell_value = ParseString(cell_value, StringType.FromString(column_map.getValue().type())); // 解析出显示值
 
-                recode.Set(column_map.getKey(), cell_value);
+                tableValues.add(cell_value);
             }
         }
-        blockDataList.put(blockMeta.blockName, data);
+        blockDataList.put(blockMeta.blockName, new TableData(tableValues.toArray(String[]::new), headers.length));
     }
 
     private boolean 特殊标记处理(String cellData) {
@@ -135,6 +133,7 @@ public class ExcelReader {
                 var_name = var_name.trim();
                 if(var_value != null) var_value = var_value.trim();
                 variables.put(var_name, var_value);
+                cursor.dx = 0;
                 System.out.println("#Define Variable: " + var_name + " = " + var_value);
             }
             cursor.gotoNextRow();
@@ -182,6 +181,8 @@ public class ExcelReader {
     }
 
     private String GetCellValue(Cell cell) {
+
+        if(cell == null) return null;
 
         CellValue value = null;
         try {
