@@ -1,4 +1,4 @@
-package Util;
+package Utils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.nio.file.Path;
 
+import Excel.ExcelResult;
 import Excel.TableData;
 
 public class UtilityFunctions {

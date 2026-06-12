@@ -1,4 +1,4 @@
-package Util;
+package Utils;
 
 public enum ColorCode {
     RED("\033[0;31m"),
