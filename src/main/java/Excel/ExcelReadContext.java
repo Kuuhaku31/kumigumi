@@ -24,6 +24,10 @@ final class ExcelReadContext {
     private List<List<String>>     commands;      // 保存命令列表
     private Map<String, TableData> blockDataList; // 保存块信息
 
+    private String                     blockName    = null;            // 当前块名称
+    private BlockMetaData              tmpMetaData  = null;            // 解析过程中使用的元数据
+    private Map<String, BlockMetaData> metaDataList = new HashMap<>(); // 解析过程中使用的元数据列表
+
     private boolean isReading = true;
 
     ExcelReadContext(Map<String, List<List<String>>> excelData) {
@@ -38,6 +42,7 @@ final class ExcelReadContext {
     ExcelResult parse() throws IOException {
 
         // 遍历所有行
+        System.out.println(color("#Start Reading Data.", ColorCode.GREEN));
         while(isReading) {
 
             // 获取当前行第一个单元格数据
@@ -48,6 +53,15 @@ final class ExcelReadContext {
 
             // 如果单元格数据以 "#" 开头，则进行预处理
             else if(cellData.startsWith("#")) preprocessing(cellData);
+
+            // 如果正在解析块，添加列信息到块元数据中
+            else if(tmpMetaData != null) {
+                var header = cellData;
+                var colIdx = (int)Double.parseDouble(getCell(1)) - 1;
+                var type   = getCell(2);
+                tmpMetaData.addColumn(header, type, colIdx);
+                cursor.gotoNextRow();
+            }
 
             // 否则将该行数据作为命令保存到 commands 中
             else {
@@ -62,6 +76,29 @@ final class ExcelReadContext {
                     row_data.add(cell_value);
                 }
                 if(row_data.size() != 0) commands.add(row_data);
+                System.out.println(color("Read Command: " + row_data, ColorCode.GREEN));
+            }
+        }
+
+        System.out.println();
+
+        // 创建块数据
+        System.out.println(color("开始通过解析的元数据创建表", ColorCode.GREEN));
+        for(var entry : metaDataList.entrySet()) {
+
+            var blockName = color(entry.getKey(), ColorCode.BOLD_MAGENTA);
+            var blockMeta = entry.getValue();
+            System.out.println(color("Creating block: " + blockName + " with metadata:", ColorCode.GREEN));
+            System.out.println(blockMeta.toPrintString("  "));
+
+            try {
+                create_table_data(blockName, blockMeta);
+                System.out.println(color("Success", ColorCode.GREEN));
+                System.out.println();
+            }
+            catch(CreateTableException e) {
+                System.out.println(color("Failed with error:", ColorCode.BOLD_RED));
+                System.out.println(e.getMessage());
             }
         }
 
@@ -72,18 +109,28 @@ final class ExcelReadContext {
     /**
      * 创建表格数据对象
      */
-    private void createBlocks(BlockMetaData blockMeta) {
+    private void create_table_data(String tableName, BlockMetaData tableMeta) throws CreateTableException {
 
-        // 获取工作表
-        var sheet = excelData.get(blockMeta.sheetName);
+        // 参数检查
+        if(tableMeta.sheetName == null || tableMeta.startRow == null || tableMeta.endRow == null) {
+
+            var msg = color("Missing required metadata for block: \n", ColorCode.BOLD_RED);
+            if(tableMeta.sheetName == null) msg += color("sheet_name  ", ColorCode.RED);
+            if(tableMeta.startRow  == null) msg += color("start_row  ", ColorCode.RED);
+            if(tableMeta.endRow    == null) msg += color("end_row", ColorCode.RED);
+
+            throw new CreateTableException(msg);
+        }
+
+        // 获取工作表数据
+        var sheet = excelData.get(tableMeta.sheetName);
         if(sheet == null) {
-            var msg = "Sheet not found: " + blockMeta.sheetName;
-            System.out.println(color(msg, ColorCode.RED));
-            return;
+            var msg = "Sheet not found: " + tableMeta.sheetName + " for table: " + tableName;
+            throw new CreateTableException(msg);
         }
 
         // 获取表头
-        var headerMetaList = new ArrayList<>(blockMeta.headerToColIndex.entrySet()); // 获取表头元数据列表
+        var headerMetaList = new ArrayList<>(tableMeta.headerToColIndex.entrySet()); // 获取表头元数据列表
         var headers        = new String[headerMetaList.size()];
         for(var i = 0; i < headerMetaList.size(); i++) headers[i] = headerMetaList.get(i).getKey();
 
@@ -91,37 +138,38 @@ final class ExcelReadContext {
         for(var header : headers) tableValues.add(header);
 
         // 遍历表格每一行
-        for(var sheet_row_idx = blockMeta.startRow; sheet_row_idx < blockMeta.endRow; sheet_row_idx++) {
+        for(var sheet_row_idx = tableMeta.startRow; sheet_row_idx < tableMeta.endRow; sheet_row_idx++) {
             // 遍历每一列（仅考虑 column_list 中定义的列）
             for(var columnIndex = 0; columnIndex < headerMetaList.size(); columnIndex++) {
                 var column_map = headerMetaList.get(columnIndex);
 
                 String cell_value;
-                cell_value = getCell(blockMeta.sheetName, sheet_row_idx, column_map.getValue().col()); // 提取单元格值
+                cell_value = getCell(tableMeta.sheetName, sheet_row_idx, column_map.getValue().col()); // 提取单元格值
                 cell_value = parse_string(cell_value, StringType.FromString(column_map.getValue().type())); // 解析出显示值
 
                 tableValues.add(cell_value);
             }
         }
-        blockDataList.put(blockMeta.blockName, new TableData(tableValues.toArray(String[]::new), headers.length));
+        blockDataList.put(tableName, new TableData(tableValues.toArray(String[]::new), headers.length));
     }
 
     private void preprocessing(String cellData) {
 
+        switch(cellData) {
+
         // 结束读取
-        if(cellData.equalsIgnoreCase("#end")) {
+        case "#end" -> {
             System.out.println(color("#End of Data.", ColorCode.GREEN));
             isReading = false;
-            return;
+            break;
         }
 
         // 跳转到指定位置
-        else if(cellData.equalsIgnoreCase("#goto")) {
-            jump(0);
-        }
+        case "#goto" -> { jump(0); break; }
 
         // 定义变量
-        else if(cellData.equalsIgnoreCase("#define")) {
+        case "#define" -> {
+
             // 读取变量名和值（但不处理）
             var var_name  = getCell(1);
             var var_value = getCell(2);
@@ -131,45 +179,86 @@ final class ExcelReadContext {
                 variables.put(var_name, var_value);
                 System.out.println(color("#Define Variable: " + var_name + " = " + var_value, ColorCode.YELLOW));
             }
+
             cursor.gotoNextRow();
+            break;
         }
 
         // 创建 TableData
-        else if(cellData.equalsIgnoreCase("#block")) {
-            var blockMeta = new BlockMetaData(getCell(1)); // 读取块名称
+        case "#block" -> {
 
-            // 读取列信息
-            while(true) {
-                cursor.gotoNextRow();
+            var blockName = getCell(1);
+            if(blockName == null) {
+                var msg = "Block name is required after #block directive";
+                msg += " at " + cursor;
+                System.out.println(color(msg, ColorCode.RED));
+            }
+            else {
+                this.blockName = blockName;
+                tmpMetaData    = new BlockMetaData();
+            }
 
-                if(getCell(0) == null) continue; // 跳过空行
+            cursor.gotoNextRow();
+            break;
+        }
 
-                var fist = getCell(0);
-                if     (fist.equals("#block_end")) break;
-                else if(fist.equals("#from"     )) blockMeta.startRow  = (int)Double.parseDouble(getCell(1)) - 1;
-                else if(fist.equals("#to"       )) blockMeta.endRow    = (int)Double.parseDouble(getCell(1)) - 1;
-                else if(fist.equals("#sheet"    )) blockMeta.sheetName = getCell(1);
-                else {
-                    // 添加列
-                    var header = getCell(0);
-                    var colIdx = (int)Double.parseDouble(getCell(1)) - 1;
-                    var type   = getCell(2);
-                    blockMeta.addColumn(header, type, colIdx);
+        case "#block_end" -> {
+
+            if(tmpMetaData == null) {
+                var msg = "No block metadata found for #block_end directive";
+                msg += " at " + cursor;
+                System.out.println(color(msg, ColorCode.RED));
+            }
+            else {
+                metaDataList.put(blockName, tmpMetaData);
+                blockName  = null;
+                tmpMetaData = null;
+            }
+
+            cursor.gotoNextRow();
+            break;
+        }
+
+        case "#from", "#to", "#sheet" -> {
+
+            if(tmpMetaData == null) {
+                var msg = "No block metadata found for " + cellData + " directive";
+                msg += " at " + cursor;
+                System.out.println(color(msg, ColorCode.RED));
+            }
+            else {
+                var value = getCell(1);
+                if(value == null) {
+                    var msg = "Value is required after " + cellData + " directive";
+                    msg += " at " + cursor;
+                    System.out.println(color(msg, ColorCode.RED));
+                }
+                else switch(cellData) {
+                case "#from"  -> tmpMetaData.startRow = (int)Double.parseDouble(value) - 1;
+                case "#to"    -> tmpMetaData.endRow   = (int)Double.parseDouble(value) - 1;
+                case "#sheet" -> tmpMetaData.sheetName = value;
                 }
             }
-            createBlocks(blockMeta); // 创建块数据
-            System.out.println(color("Parsed Block: " + blockMeta, ColorCode.BLUE));
+
+            cursor.gotoNextRow();
+            break;
         }
 
         // 条件跳转
-        else if(cellData.equalsIgnoreCase("#goto_if")) {
+        case "#goto_if" -> {
             var var_name = getCell(1);
             if(variables.containsKey(var_name)) jump(1);
             else cursor.gotoNextRow();
         }
 
         // 其他情况继续读取下一行
-        else cursor.gotoNextRow();
+        default -> {
+            var msg = "Unknown directive: " + cellData + ". Skipping.";
+            System.out.println(color(msg, ColorCode.YELLOW));
+            cursor.gotoNextRow();
+        }
+
+        }
     }
 
     private void jump(int dx) {
@@ -276,31 +365,80 @@ final class ExcelReadContext {
         void gotoNextRow() {
             row++;
         }
+
+
+        // 返回类似 main!C9
+        @Override
+        public String toString() {
+            return sheetName + "!" + (char)('A' + col) + (row + 1);
+        }
     }
 
-    class BlockMetaData {
-        String  blockName; // 块名称
-        String  sheetName; // 工作表名称
-        Integer startRow;  // 起始行
-        Integer endRow;    // 结束行
+    private static final class BlockMetaData {
 
-        Map<String, pair> headerToColIndex = new HashMap<>();
+        String  sheetName = null; // 工作表名称
+        Integer startRow  = null; // 起始行
+        Integer endRow    = null; // 结束行
+
+        private final Map<String, pair> headerToColIndex = new HashMap<>();
 
         void addColumn(String header, String type, Integer col) {
             headerToColIndex.put(header, new pair(type, col));
         }
 
-        BlockMetaData(String blockName) {
-            this.blockName = blockName;
+        public String toPrintString(String indent) {
+
+            final var this_indent = "  ";
+
+            var sb = new StringBuilder();
+
+            sb.append(indent);
+            sb.append(color("Sheet Name: ", ColorCode.BOLD_GREEN));
+            sb.append(color(String.valueOf(sheetName), ColorCode.GREEN));
+            sb.append("\n");
+
+            sb.append(indent);
+            sb.append(color("Start Row: ", ColorCode.BOLD_GREEN));
+            sb.append(color(String.valueOf(startRow), ColorCode.GREEN));
+            sb.append("\n");
+
+            sb.append(indent);
+            sb.append(color("End Row: ", ColorCode.BOLD_GREEN));
+            sb.append(color(String.valueOf(endRow), ColorCode.GREEN));
+            sb.append("\n");
+
+            sb.append(indent);
+            sb.append(color("Columns:", ColorCode.BOLD_CYAN));
+            if(headerToColIndex.isEmpty()) return sb.toString();
+
+            sb.append("\n");
+            var it = headerToColIndex.entrySet().iterator();
+            while(it.hasNext()) {
+                var entry = it.next();
+                var meta  = entry.getValue();
+
+                sb.append(indent).append(this_indent);
+                sb.append(color(entry.getKey(), ColorCode.CYAN));
+                sb.append(color(" -> Type: ", ColorCode.BOLD_CYAN));
+                sb.append(color(String.valueOf(meta.type()), ColorCode.CYAN));
+                sb.append(color(", Col: ", ColorCode.BOLD_CYAN));
+                sb.append(color(String.valueOf(meta.col()), ColorCode.CYAN));
+                if(it.hasNext()) sb.append("\n");
+            }
+
+            return sb.toString();
+        }
+
+        @SuppressWarnings("unused")
+        public String toPrintString() {
+            return toPrintString("");
         }
 
         @Override
         public String toString() {
-            var           title = "===" + this.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(this))
-                                  + "===";
-            StringBuilder sb    = new StringBuilder();
+            var title = "===" + this.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(this)) + "===";
+            StringBuilder sb = new StringBuilder();
             sb.append(title).append("\n");
-            sb.append("Block Name: ").append(blockName).append("\n");
             sb.append("Start Row: ").append(startRow).append("\n");
             sb.append("End Row: ").append(endRow).append("\n");
             sb.append("Columns: ").append("\n");

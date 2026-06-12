@@ -55,6 +55,7 @@ public class ExcelReader {
                 System.out.println(color("ExcelReader: 成功加载工作簿，开始读取数据...", ColorCode.GREEN));
                 var excel_data = read_excel_data(workbook);
                 System.out.println(color("ExcelReader: 成功读取数据，开始解析...", ColorCode.GREEN));
+                System.out.println();
                 var context = new ExcelReadContext(excel_data);
                 return context.parse();
             }
