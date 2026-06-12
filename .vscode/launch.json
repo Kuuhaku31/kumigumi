@@ -1,213 +1,54 @@
 {
   "version": "0.2.0",
-
   "configurations": [
     {
         "type": "java",
-        "name": "TestTaskManager",
+        "name": "ExcelReaderBenchmark",
         "request": "launch",
-        "mainClass": "Task.TestTaskManager",
+        "mainClass": "Main.ExcelReaderBenchmark",
         "projectName": "kumigumi"
     },
     {
         "type": "java",
-        "name": "TestDT",
+        "name": "ExcelReaderTest",
         "request": "launch",
-        "mainClass": "Main.TestDT",
-        "projectName": "kumigumi",
-        "vmArgs": [
-            "--enable-native-access=ALL-UNNAMED"
-        ]
-    },
-    {
-        "type": "java",
-        "name": "TestMain",
-        "request": "launch",
-        "mainClass": "Main.TestMain",
-        "projectName": "kumigumi",
-        "vmArgs": [
-            "--enable-native-access=ALL-UNNAMED"
-        ]
-    },
-    {
-        "type": "java",
-        "name": "TestGetInfo",
-        "request": "launch",
-        "mainClass": "NetAccess.TestGetInfo",
+        "mainClass": "Main.ExcelReaderTest",
         "projectName": "kumigumi"
     },
     {
         "type": "java",
-        "name": "ExcelToDB",
+        "name": "NetAccessTest",
         "request": "launch",
-        "mainClass": "Main.ExcelToDB",
+        "mainClass": "Main.NetAccessTest",
         "projectName": "kumigumi"
     },
     {
         "type": "java",
-        "name": "TestUpsert",
-        "request": "launch",
-        "mainClass": "Database.TestUpsert",
-        "projectName": "kumigumi",
-        "vmArgs": [
-            "--enable-native-access=ALL-UNNAMED"
-        ]
-    },
-    {
-        "type": "java",
-        "name": "TestInitDB",
-        "request": "launch",
-        "mainClass": "Database.TestInitDB",
-        "projectName": "kumigumi",
-        "vmArgs": [
-            "--enable-native-access=ALL-UNNAMED"
-        ]
-    },
-    {
-        "type": "java",
-        "name": "TestDownloadTorrent",
-        "request": "launch",
-        "mainClass": "FetchTask.TestDownloadTorrent",
-        "projectName": "kumigumi"
-    },
-    {
-        "type": "java",
-        "name": "Main.ExportTorrent",
-        "request": "launch",
-        "mainClass": "Main.ExportTorrent",
-        "projectName": "kumigumi",
-        "args": "D:/Downloads/dt.txt D:/OneDrive/db/kumigumi/kumigumi.db D:/Downloads/dt/",
-        "vmArgs": [
-            "--enable-native-access=ALL-UNNAMED"
-        ]
-    },
-    {
-        "type": "java",
-        "name": "SaveTorrentFile",
-        "request": "launch",
-        "mainClass": "Database.SaveTorrentFile",
-        "projectName": "kumigumi"
-    },
-    {
-        "type": "java",
-        "name": "Main",
-        "request": "launch",
-        "mainClass": "FetchTask.Main",
-        "projectName": "kumigumi"
-    },
-    {
-        "type": "java",
-        "name": "TestTorrentDownload",
-        "request": "launch",
-        "mainClass": "NetAccess.TestTorrentDownload",
-        "projectName": "kumigumi"
-    },
-    {
-        "type": "java",
-        "name": "TestA",
-        "request": "launch",
-        "mainClass": "Def.TestA",
-        "projectName": "kumigumi"
-    },
-    {
-        "type": "java",
-        "name": "GetTorrentHashNotExist",
-        "request": "launch",
-        "mainClass": "TestDatabase.GetTorrentHashNotExist",
-        "projectName": "kumigumi"
-    },
-    {
-        "type": "java",
-        "name": "Main",
-        "request": "launch",
-        "mainClass": "TestTorrent.Main",
-        "projectName": "kumigumi"
-    },
-    {
-        "type": "java",
-        "name": "TestDatabase.Update",
-        "request": "launch",
-        "mainClass": "TestDatabase.Update",
-        "projectName": "kumigumi",
-        "vmArgs": [
-            "--enable-native-access=ALL-UNNAMED"
-        ]
-    },
-    {
-        "type": "java",
-        "name": "TestDatabase.Upsert",
-        "request": "launch",
-        "mainClass": "TestDatabase.Upsert",
-        "projectName": "kumigumi",
-        "vmArgs": [
-            "--enable-native-access=ALL-UNNAMED"
-        ]
-    },
-    {
-        "type": "java",
-        "name": "TestDatabase.CreateDB",
-        "request": "launch",
-        "mainClass": "TestDatabase.CreateDB",
-        "projectName": "kumigumi",
-        "vmArgs": [
-            "--enable-native-access=ALL-UNNAMED"
-        ]
-    },
-    {
-        "type": "java",
-        "name": "TestDatabase.Main",
-        "request": "launch",
-        "mainClass": "TestDatabase.Main",
-        "projectName": "kumigumi"
-    },
-    {
-        "type": "java",
-        "name": "Test Main",
-        "request": "launch",
-        "mainClass": "TestMain.TestMain",
-        "projectName": "kumigumi"
-    },
-    {
-        "type": "debugpy",
-        "name": "py_main",
-        "request": "launch",
-        "cwd": "${workspaceFolder}/src/python/",
-        "program": "${workspaceFolder}/src/python/main.py"
-    },
-    {
-        "type": "java",
-        "name": "BuildTable",
-        "request": "launch",
-        "mainClass": "Excel.BuildTable",
-        "projectName": "kumigumi"
-    },
-    {
-        "type": "java",
-        "name": "TestNetAccess",
-        "request": "launch",
-        "mainClass": "NetAccess.TestNetAccess",
-        "projectName": "kumigumi"
-    },
-    {
-        "type": "java",
-        "name": "TestExcelCmd",
-        "request": "launch",
-        "mainClass": "testExcel.TestExcelCmd",
-        "projectName": "kumigumi"
-    },
-    {
-        "type": "java",
-        "name": "Main.Main",
+        "name": "Kumigumi: Main (MetaData defaults)",
         "request": "launch",
         "mainClass": "Main.Main",
         "projectName": "kumigumi",
+        "cwd": "${workspaceFolder}",
+        "console": "integratedTerminal",
+        "vmArgs": [
+            "--enable-native-access=ALL-UNNAMED"
+        ]
+    },
+    {
+        "type": "java",
+        "name": "Kumigumi: Main (custom paths)",
+        "request": "launch",
+        "mainClass": "Main.Main",
+        "projectName": "kumigumi",
+        "cwd": "${workspaceFolder}",
+        "console": "integratedTerminal",
         "args": [
             "--excel_file_path",
-            "D:/OneDrive/db/kumigumi/test.xlsx",
+            "${input:excelFilePath}",
             "--database_path",
-            "D:/OneDrive/db/kumigumi/kumigumi.db",
+            "${input:databasePath}",
             "--log_path",
-            "D:/OneDrive/db/kumigumi/logs/"
+            "${input:logPath}"
         ],
         "vmArgs": [
             "--enable-native-access=ALL-UNNAMED"
@@ -215,88 +56,58 @@
     },
     {
         "type": "java",
-        "name": "TestExcelDataBlock",
+        "name": "Kumigumi: Export Torrent",
         "request": "launch",
-        "mainClass": "Excel.TestExcelDataBlock",
-        "projectName": "kumigumi"
-    },
-    {
-        "type": "java",
-        "name": "BatchDownloader",
-        "request": "launch",
-        "mainClass": "net.BatchDownloader",
+        "mainClass": "Main.ExportTorrent",
         "projectName": "kumigumi",
+        "cwd": "${workspaceFolder}",
+        "console": "integratedTerminal",
         "args": [
-            "./resources/urls.txt",
-            "./resources/failed_urls.txt"
-        ]
-    },
-    {
-        "type": "java",
-        "name": "TestNet",
-        "request": "launch",
-        "mainClass": "net.TestNet",
-        "projectName": "kumigumi"
-    },
-    {
-        "type": "java",
-        "name": "TestFetchTask",
-        "request": "launch",
-        "mainClass": "Task.TestFetchTask",
-        "projectName": "kumigumi"
-    },
-    {
-        "type": "java",
-        "name": "TestNetAccess",
-        "request": "launch",
-        "mainClass": "net.TestNetAccess",
-        "projectName": "kumigumi"
-    },
-    {
-        "type": "java",
-        "name": "TestTableToInfo",
-        "request": "launch",
-        "mainClass": "Def.TestTableToInfo",
-        "projectName": "kumigumi"
-    },
-    {
-        "type": "java",
-        "name": "TestExcel",
-        "request": "launch",
-        "mainClass": "Excel.TestExcel",
-        "projectName": "kumigumi"
-    },
-    {
-        "type": "java",
-        "name": "TestDB",
-        "request": "launch",
-        "mainClass": "db.TestDB",
-        "projectName": "kumigumi",
+            "${input:torrentHashListPath}",
+            "${input:exportDatabasePath}",
+            "${input:torrentOutputDir}"
+        ],
         "vmArgs": [
             "--enable-native-access=ALL-UNNAMED"
         ]
-    },
-    {
-        "type": "java",
-        "name": "TestInfo",
-        "request": "launch",
-        "mainClass": "Def.TestInfo",
-        "projectName": "kumigumi"
-    },
-    {
-        "type": "java",
-        "name": "Test",
-        "request": "launch",
-        "mainClass": "Def.Test",
-        "projectName": "kumigumi",
-        "args": "123"
-    },
-    {
-        "type": "java",
-        "name": "Main",
-        "request": "launch",
-        "mainClass": "Main.Main",
-        "projectName": "kumigumi"
     }
-]
+],
+  "inputs": [
+    {
+      "id": "excelFilePath",
+      "type": "promptString",
+      "description": "Excel workbook path",
+      "default": "${workspaceFolder}/ignore/input.xlsx"
+    },
+    {
+      "id": "databasePath",
+      "type": "promptString",
+      "description": "SQLite database path",
+      "default": "${workspaceFolder}/ignore/kumigumi.db"
+    },
+    {
+      "id": "logPath",
+      "type": "promptString",
+      "description": "Log output directory",
+      "default": "${workspaceFolder}/ignore/logs/"
+    },
+    {
+      "id": "torrentHashListPath",
+      "type": "promptString",
+      "description": "Text file containing torrent hashes to export",
+      "default": "${workspaceFolder}/ignore/torrent_hashes.txt"
+    },
+    {
+      "id": "exportDatabasePath",
+      "type": "promptString",
+      "description": "SQLite database path for torrent export",
+      "default": "${workspaceFolder}/ignore/kumigumi.db"
+    },
+    {
+      "id": "torrentOutputDir",
+      "type": "promptString",
+      "description": "Directory for exported torrent files",
+      "default": "${workspaceFolder}/ignore/torrents/"
+    }
+  ]
 }
