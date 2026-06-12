@@ -16,7 +16,8 @@ public enum ColorCode {
     BOLD_BLUE("\033[1;34m"),
     BOLD_PURPLE("\033[1;35m"),
     BOLD_CYAN("\033[1;36m"),
-    BOLD_WHITE("\033[1;37m");
+    BOLD_WHITE("\033[1;37m"),
+    BOLD_MAGENTA("\033[1;35m");
 
     private final String code;
 

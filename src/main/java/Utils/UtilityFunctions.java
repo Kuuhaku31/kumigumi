@@ -157,23 +157,4 @@ public class UtilityFunctions {
         res     = colorCode.getCode() + res + "\033[0m";
         return res;
     }
-
-    public static void PrintTableData(TableData tableData) {
-        var header = tableData.GetHeader();
-        System.out.print(color("Header:\t", ColorCode.BOLD_GREEN));
-        for(var h : header) {
-            System.out.print(color(h + "\t", ColorCode.GREEN));
-        }
-        System.out.println();
-
-        var data_row_size = tableData.GetRowSize();
-        for(var i = 0; i < data_row_size; i++) {
-            var row = tableData.GetRow(i);
-            System.out.print(color("Row " + i + ":\t", ColorCode.BOLD_CYAN));
-            for(var cell : row) {
-                System.out.print(color(cell + "\t", ColorCode.CYAN));
-            }
-            System.out.println();
-        }
-    }
 }

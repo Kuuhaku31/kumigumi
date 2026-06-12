@@ -1,6 +1,13 @@
 package Excel;
 
 
+import static Utils.ColorCode.BOLD_CYAN;
+import static Utils.ColorCode.BOLD_GREEN;
+import static Utils.ColorCode.CYAN;
+import static Utils.ColorCode.GREEN;
+import static Utils.UtilityFunctions.color;
+
+
 public class TableData {
 
     private final int header_size;
@@ -67,6 +74,35 @@ public class TableData {
         return row;
     }
 
+
+    public String toPrintString(String indent) {
+
+        var sb = new StringBuilder();
+
+        var header = GetHeader();
+        sb.append(indent + color("Header:\t", BOLD_GREEN));
+        for(var h : header) {
+            sb.append(color(h + "\t", GREEN));
+        }
+        sb.append("\n" + indent);
+
+        var data_row_size = GetRowSize();
+        for(var i = 0; i < data_row_size; i++) {
+            var row = GetRow(i);
+            sb.append(color("Row " + i + ":\t", BOLD_CYAN));
+            for(var cell : row) {
+                sb.append(color(cell + "\t", CYAN));
+            }
+            sb.append("\n");
+            if(i < data_row_size - 1) sb.append(indent);
+        }
+
+        return sb.toString();
+    }
+
+    public String toPrintString() {
+        return toPrintString("");
+    }
 
     /**
      * TableData{header_size=3, row_size=2, header=[Header1, Header2, Header3], data=[[Data11, Data12, Data13], [Data21, Data22, Data23]]}

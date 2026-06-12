@@ -7,16 +7,14 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import Util.TableData;
-
 class ExcelResultTest {
 
     @Test
     void exposesCommandsVariablesAndBlockData() {
-        var table = new TableData(new String[] { "ANI_ID", "title" });
-        var row = table.new Record();
-        row.Set("ANI_ID", "100");
-        row.Set("title", "Anime");
+        var table = new TableData(
+            new String[] { "ANI_ID", "title", "100", "Anime" },
+            2
+        );
 
         var result = new ExcelResult(
             Map.of("name", "value"),
@@ -26,7 +24,7 @@ class ExcelResultTest {
 
         assertEquals("value", result.variables().get("name"));
         assertEquals(List.of("run", "arg"), result.commands().get(0));
-        assertSame(table, result.blockDataList().get("AnimeRows"));
+        assertSame(table, result.tableDataList().get("AnimeRows"));
         assertTrue(result.getCommandsInfo().contains("run"));
         assertTrue(result.getVariables().contains("name"));
         assertTrue(result.getBlocksInfo().contains("AnimeRows"));

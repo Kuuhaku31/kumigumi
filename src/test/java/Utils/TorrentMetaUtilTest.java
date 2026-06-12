@@ -1,4 +1,4 @@
-package Util;
+package Utils;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -7,6 +7,8 @@ import java.security.MessageDigest;
 import java.util.HexFormat;
 
 import org.junit.jupiter.api.Test;
+
+import Utils.TorrentMetaUtil;
 
 class TorrentMetaUtilTest {
 
