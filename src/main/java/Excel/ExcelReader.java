@@ -22,6 +22,9 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 
 public class ExcelReader {
+
+    private ExcelReader() {} // 私有构造函数，禁止实例化
+
     private XSSFWorkbook     workbook;  // Excel 工作簿
     private FormulaEvaluator evaluator; // 公式计算器
 
@@ -36,14 +39,23 @@ public class ExcelReader {
      * @param filePath Excel 文件路径
      * @throws IOException 如果文件读取失败
      */
-    public ExcelResult Read(String filePath) throws IOException {
+    public static ExcelResult Read(String filePath) throws IOException {
 
         // 创建临时文件（系统自动放在临时目录）
         var temp_file = Files.createTempFile("Temp_", ".txt");
-        System.out.println("ExcelReader: 复制文件到: " + temp_file.toAbsolutePath().toString());
         Files.copy(Files.newInputStream(Path.of(filePath)), temp_file, StandardCopyOption.REPLACE_EXISTING);
-        workbook  = new XSSFWorkbook(new FileInputStream(temp_file.toFile()));
-        evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+        System.out.println("ExcelReader: 复制文件到: " + temp_file.toAbsolutePath().toString());
+
+        // 创建工作簿
+        var workbook  = new XSSFWorkbook(new FileInputStream(temp_file.toFile()));
+
+        return new ExcelReader().read(workbook);
+    }
+
+    private ExcelResult read(XSSFWorkbook workbook) throws IOException {
+
+        this.workbook  = workbook;
+        this.evaluator = workbook.getCreationHelper().createFormulaEvaluator();
 
         // 遍历所有行，读取命令到 commands 列表
         var isReading = true;
