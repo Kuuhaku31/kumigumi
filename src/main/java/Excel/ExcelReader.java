@@ -24,6 +24,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import static Utils.UtilityFunctions.color;
 
+
 public class ExcelReader {
 
     private ExcelReader() {} // 私有构造函数，禁止实例化
@@ -55,8 +56,9 @@ public class ExcelReader {
                 var fis = new FileInputStream(temp_file.toFile());
                 var workbook = new XSSFWorkbook(fis)
             ) {
-                var excelData = readExcelData(workbook);
-                return new ExcelReadContext(excelData).read();
+                var excel_data = read_excel_data(workbook);
+                var context = new ExcelReadContext(excel_data);
+                return context.parse();
             }
         }
         finally {
@@ -69,56 +71,77 @@ public class ExcelReader {
         }
     }
 
-    private static Map<String, List<List<String>>> readExcelData(XSSFWorkbook workbook) {
+    private static Map<String, List<List<String>>> read_excel_data(XSSFWorkbook workbook) {
 
-        var evaluator = workbook.getCreationHelper().createFormulaEvaluator();
-        var excelData = new LinkedHashMap<String, List<List<String>>>();
+        var evaluator = workbook.getCreationHelper().createFormulaEvaluator(); // 创建公式求值器
 
+        // 读取所有 sheet 数据到 excel_data 中
+        var excel_data = new LinkedHashMap<String, List<List<String>>>();
         for(var sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
+
+            // 读取该 sheet 的所有数据到 sheet_data 中
             var sheet = workbook.getSheetAt(sheetIndex);
-            var sheetData = new ArrayList<List<String>>();
-
+            var sheet_data = new ArrayList<List<String>>();
             for(var rowIndex = 0; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+
+                // 读取该行数据，如果该行不存在，则添加一个空行
                 var row = sheet.getRow(rowIndex);
-                var rowData = new ArrayList<String>();
-                var lastCellNum = row == null ? 0 : Math.max(row.getLastCellNum(), (short)0);
-                for(var colIndex = 0; colIndex < lastCellNum; colIndex++) {
-                    rowData.add(GetCellValue(evaluator, row.getCell(colIndex)));
+                if(row == null) {
+                    sheet_data.add(new ArrayList<>());
+                    continue; // 跳过空行
                 }
-                sheetData.add(rowData);
+
+                // 读取该行的所有单元格数据到 row_data 中
+                var row_data = new ArrayList<String>();
+                var last_cell_num = row.getLastCellNum();
+                for(var col_index = 0; col_index < last_cell_num; col_index++)
+                    row_data.add(get_cell_value(evaluator, row.getCell(col_index)));
+                sheet_data.add(row_data);
             }
-
-            excelData.put(sheet.getSheetName(), sheetData);
+            excel_data.put(sheet.getSheetName(), sheet_data);
         }
-
-        return excelData;
+        return excel_data;
     }
 
-    private static String GetCellValue(FormulaEvaluator evaluator, Cell cell) {
+    private static String get_cell_value(FormulaEvaluator evaluator, Cell cell) {
 
+        // 如果单元格不存在或为空白，则返回 null
         if(cell == null || cell.getCellType() == CellType.BLANK) return null;
 
         CellValue value = null;
-        try {
-            value = evaluator.evaluate(cell);
-        } catch(Exception e) {
-            var msg = "GetCellValue Error: " + e.getMessage();
-            System.out.println(color(msg, ColorCode.RED));
-            System.out.println(cell);
-            System.exit(1);
-        }
-        if(value == null)
-            return null;
 
-        return switch(value.getCellType()) {
-            case BOOLEAN -> value.getBooleanValue() ? "1" : "0";
-            case NUMERIC -> Double.toString(value.getNumberValue());
-            case STRING -> value.getStringValue();
-            default -> null;
+        // 如果是公式单元格，则求值；否则直接获取值
+        if(cell.getCellType() == CellType.FORMULA) {
+
+            // 公式求值失败时，捕获异常并打印错误信息
+            try { value = evaluator.evaluate(cell); }
+            catch(Exception e) {
+                var title = color("GetCellValue Error:", ColorCode.BOLD_RED);
+                var msg = title + "\n  msg:  " + e.getMessage() + "\n  cell: " + cell;
+                System.out.println(color(msg, ColorCode.RED));
+            }
+
+            // 如果求值结果为 null，则返回 null；否则根据求值结果的类型返回对应的字符串
+            if(value == null) return null;
+            else return switch(value.getCellType()) {
+                case BOOLEAN -> value.getBooleanValue() ? "1" : "0";
+                case NUMERIC -> Double.toString(value.getNumberValue());
+                case STRING  -> value.getStringValue();
+                default      -> null;
+            };
+        }
+
+        // 如果不是公式单元格，则根据单元格类型返回对应的字符串
+        else return switch(cell.getCellType()) {
+            case BOOLEAN -> cell.getBooleanCellValue() ? "1" : "0";
+            case NUMERIC -> Double.toString(cell.getNumericCellValue());
+            case STRING  -> cell.getStringCellValue();
+            default      -> null;
         };
     }
 
     private static final class ExcelReadContext {
+
         private Map<String, List<List<String>>> excelData; // sheet名 -> 二维字符串数据
 
         private ExcelCursor cursor; // 光标位置
@@ -126,6 +149,8 @@ public class ExcelReader {
         private Map<String, String>    variables;     // 定义的变量
         private List<List<String>>     commands;      // 保存命令列表
         private Map<String, TableData> blockDataList; // 保存块信息
+
+        private boolean isReading = true;
 
         ExcelReadContext(Map<String, List<List<String>>> excelData) {
 
@@ -136,10 +161,9 @@ public class ExcelReader {
             this.blockDataList = new HashMap<>();
         }
 
-        ExcelResult read() throws IOException {
+        ExcelResult parse() throws IOException {
 
             // 遍历所有行，读取命令到 commands 列表
-            var isReading = true;
             while(isReading) {
 
                 // 依次读取每一个单元格
@@ -154,7 +178,7 @@ public class ExcelReader {
                         break;
                     }
                     else {
-                        if(cellData != null && cellData.startsWith("#")) isReading = 特殊标记处理(cellData);
+                        if(cellData != null && cellData.startsWith("#")) preprocessing(cellData);
                         else row_data.add(cellData); // 保存单元格数据
                     }
                 }
@@ -194,7 +218,7 @@ public class ExcelReader {
 
                     String cell_value;
                     cell_value = getCell(blockMeta.sheetName, sheet_row_idx, column_map.getValue().col()); // 提取单元格值
-                    cell_value = ParseString(cell_value, StringType.FromString(column_map.getValue().type())); // 解析出显示值
+                    cell_value = parse_string(cell_value, StringType.FromString(column_map.getValue().type())); // 解析出显示值
 
                     tableValues.add(cell_value);
                 }
@@ -202,12 +226,13 @@ public class ExcelReader {
             blockDataList.put(blockMeta.blockName, new TableData(tableValues.toArray(String[]::new), headers.length));
         }
 
-        private boolean 特殊标记处理(String cellData) {
+        private void preprocessing(String cellData) {
 
             // 结束读取
             if(cellData.equalsIgnoreCase("#end")) {
                 System.out.println(color("#End of Data.", ColorCode.GREEN));
-                return false;
+                isReading = false;
+                return;
             }
 
             // 跳转到指定位置
@@ -266,9 +291,6 @@ public class ExcelReader {
 
             // 其他情况继续读取下一行
             else cursor.gotoNextRow();
-
-            // 继续读取
-            return true;
         }
 
         private void jump(int dx) {
@@ -289,6 +311,7 @@ public class ExcelReader {
         }
 
         private String getCell(String sheetName, int rowIndex, int colIndex) {
+
             var sheet = excelData.get(sheetName);
             if(sheet == null) return null;
 
@@ -303,10 +326,9 @@ public class ExcelReader {
         }
 
         // 解析字符串
-        private static String ParseString(String value, StringType type) {
+        private static String parse_string(String value, StringType type) {
             // 如果为空白串，则返回 null
-            if(value == null || value.isEmpty())
-                return null;
+            if(value == null || value.isEmpty()) return null;
             return switch(type) {
                 case Bool -> value.equals("0") ? "FALSE" : "TRUE";
                 case Text -> value;
@@ -357,7 +379,7 @@ public class ExcelReader {
         }
     }
 
-    private static class ExcelCursor {
+    private final static class ExcelCursor {
         String sheetName = "main";
         int    row       = 0;
         int    col       = 0;
