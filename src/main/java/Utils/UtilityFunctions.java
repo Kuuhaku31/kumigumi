@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.nio.file.Path;
 
-import Excel.ExcelResult;
 import Excel.TableData;
 
 public class UtilityFunctions {
