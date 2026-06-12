@@ -11,7 +11,12 @@ import java.util.List;
 import java.util.Map;
 import java.nio.file.Path;
 
-public class Util {
+import Excel.TableData;
+
+public class UtilityFunctions {
+
+    // 私有构造函数，防止实例化
+    private UtilityFunctions() {}
 
     /**
      * 以 yyyy-MM-dd 格式显示 date
@@ -150,5 +155,24 @@ public class Util {
         var res = str.replace("\033[0m", colorCode.getCode()); // 先替换掉字符串中已有的重置代码，避免颜色被重置
         res     = colorCode.getCode() + res + "\033[0m";
         return res;
+    }
+
+    public static void PrintTableData(TableData tableData) {
+        var header = tableData.GetHeader();
+        System.out.print(color("Header:\t", ColorCode.BOLD_GREEN));
+        for(var h : header) {
+            System.out.print(color(h + "\t", ColorCode.GREEN));
+        }
+        System.out.println();
+
+        var data_row_size = tableData.GetRowSize();
+        for(var i = 0; i < data_row_size; i++) {
+            var row = tableData.GetRow(i);
+            System.out.print(color("Row " + i + ":\t", ColorCode.BOLD_CYAN));
+            for(var cell : row) {
+                System.out.print(color(cell + "\t", ColorCode.CYAN));
+            }
+            System.out.println();
+        }
     }
 }
