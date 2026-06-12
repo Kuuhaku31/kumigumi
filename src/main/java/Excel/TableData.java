@@ -93,8 +93,7 @@ public class TableData {
             for(var cell : row) {
                 sb.append(color(cell + "\t", CYAN));
             }
-            sb.append("\n");
-            if(i < data_row_size - 1) sb.append(indent);
+            if(i < data_row_size - 1) sb.append("\n" + indent);
         }
 
         return sb.toString();

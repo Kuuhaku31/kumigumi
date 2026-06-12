@@ -107,9 +107,12 @@ public record ExcelResult(
         sb.append("\n" + indent);
         sb.append(color("Block Data List:", ColorCode.BOLD_MAGENTA));
         sb.append("\n");
-        for(var entry : tableDataList().entrySet()) {
-            sb.append(indent + color(this_indent + entry.getKey() + ":\n", ColorCode.BOLD_MAGENTA));
+        var it = tableDataList().entrySet().iterator();
+        while(it.hasNext()) {
+            var entry = it.next();
+            sb.append(indent).append(color(this_indent + entry.getKey() + ":\n", ColorCode.BOLD_MAGENTA));
             sb.append(entry.getValue().toPrintString(indent + this_indent.repeat(2)));
+            if(it.hasNext()) sb.append("\n");
         }
 
         return sb.toString();
