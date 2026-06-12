@@ -8,7 +8,8 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 
 import Database.TorrentPageInfo;
-import Util.Util;
+import Utils.UtilityFunctions;
+
 import com.apptasticsoftware.rssreader.Item;
 import com.apptasticsoftware.rssreader.RssReader;
 
@@ -46,7 +47,7 @@ final class RSSParser {
         return new TorrentPageInfo(
             rss_url,
             ext.getOrDefault(INFO_HASH_KEY, null),
-            Util.parseOffsetDateTime(item.getPubDate().orElse(null)),
+            UtilityFunctions.parseOffsetDateTime(item.getPubDate().orElse(null)),
             item.getLink().orElse(null),
             item.getGuid().orElse(null),
             title,

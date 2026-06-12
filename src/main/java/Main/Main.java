@@ -18,7 +18,7 @@ public class Main {
     // 读取 Excel 文件并返回结果
     public static ExcelResult ReadExcel(String excelFilePath) throws IOException {
         System.out.println("Reading excel file...");
-        var result = new ExcelReader().Read(excelFilePath);
+        var result = ExcelReader.Read(excelFilePath);
 
         System.out.println("Saving commands to file...");
         try(var writer = Files.newBufferedWriter(Path.of(ARGS.LOG_PATH + "00.commands.txt"))) {

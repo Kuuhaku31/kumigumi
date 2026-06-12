@@ -23,7 +23,7 @@ import Task.FetchEpisodeInfoTask;
 import Task.FetchTorrentInfoTask;
 import Task.FetchTorrentPageTask;
 import Task.Task;
-import Util.Util;
+import Utils.UtilityFunctions;
 
 
 final class CommandRunner {
@@ -89,8 +89,8 @@ final class CommandRunner {
     private DatabaseBatch buildBatchFromBlocks(List<String> blockNames, RowMapper mapper) {
         var batch = new DatabaseBatch();
         for(var blockData : excelResult.getBlockDataByNames(blockNames)) {
-            for(var row : blockData.GetData()) {
-                mapper.map(TableDataRows.rowToMap(blockData, row), batch);
+            for(var rowIndex = 0; rowIndex < blockData.GetRowSize(); rowIndex++) {
+                mapper.map(TableDataRows.rowToMap(blockData, rowIndex), batch);
             }
         }
         return batch;
@@ -156,11 +156,11 @@ final class CommandRunner {
             System.out.println("Running Task Set: " + taskName);
             Task.ParallelExecution(tasks);
             collectTaskResults(tasks, batch);
-            Util.WriteItemListToFile(new ArrayList<>(tasks), ARGS.LOG_PATH + taskName + "_task_log.txt");
+            UtilityFunctions.WriteItemListToFile(new ArrayList<>(tasks), ARGS.LOG_PATH + taskName + "_task_log.txt");
         }
 
         putBatch(varName, batch);
-        Util.WriteItemListToFile(batch.allItems(), ARGS.LOG_PATH + varName + "_fetch_result.txt");
+        UtilityFunctions.WriteItemListToFile(batch.allItems(), ARGS.LOG_PATH + varName + "_fetch_result.txt");
     }
 
     private void downloadTorrent(List<String> cmd) {
@@ -192,7 +192,7 @@ final class CommandRunner {
             var batch = new DatabaseBatch();
             collectTaskResults(tasks, batch);
             putBatch(varName, batch);
-            Util.WriteItemListToFile(batch.torrentItems, ARGS.LOG_PATH + varName + "_torrent_result.txt");
+            UtilityFunctions.WriteItemListToFile(batch.torrentItems, ARGS.LOG_PATH + varName + "_torrent_result.txt");
         } catch(SQLException e) {
             System.err.println("数据库操作失败: " + e.getMessage());
         }
@@ -216,7 +216,7 @@ final class CommandRunner {
             System.err.println("Database operation error: " + e.getMessage());
         }
 
-        Util.WriteItemListToFile(batch.allItems(), ARGS.LOG_PATH + "db_upsert.txt");
+        UtilityFunctions.WriteItemListToFile(batch.allItems(), ARGS.LOG_PATH + "db_upsert.txt");
         System.out.println("数据库同步完成");
     }
 

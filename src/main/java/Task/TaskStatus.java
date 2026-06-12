@@ -1,10 +1,10 @@
 package Task;
 
-import Util.Util;
+import static Utils.ColorCode.BOLD_RED;
+import static Utils.ColorCode.GRAY;
+import static Utils.ColorCode.GREEN;
 
-import static Util.ColorCode.BOLD_RED;
-import static Util.ColorCode.GRAY;
-import static Util.ColorCode.GREEN;
+import Utils.UtilityFunctions;
 
 
 public enum TaskStatus {
@@ -15,9 +15,9 @@ public enum TaskStatus {
     @Override
     public String toString() {
         return switch(this) {
-            case NOT_STARTED -> Util.color("NOT_STARTED", GRAY);
-            case SUCCEEDED -> Util.color("SUCCEED", GREEN);
-            case FAILED -> Util.color("FAILED", BOLD_RED);
+            case NOT_STARTED -> UtilityFunctions.color("NOT_STARTED", GRAY);
+            case SUCCEEDED -> UtilityFunctions.color("SUCCEED", GREEN);
+            case FAILED -> UtilityFunctions.color("FAILED", BOLD_RED);
         };
     }
 }

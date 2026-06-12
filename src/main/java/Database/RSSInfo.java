@@ -4,7 +4,7 @@ import java.sql.*;
 import java.util.Map;
 import java.util.Set;
 
-import Util.TableData;
+import Excel.TableData;
 
 
 public class RSSInfo {
@@ -75,16 +75,17 @@ public class RSSInfo {
     public static Set<RSSInfo> ParseRSSInfoByTableData(TableData data) {
 
         // 获取列索引
-        var url_rss_index = data.GetHeaderIndex("URL_RSS");
-        var ani_id_index  = data.GetHeaderIndex("ANI_ID");
+        var url_rss_index = data.GetColumnIndex("URL_RSS");
+        var ani_id_index  = data.GetColumnIndex("ANI_ID");
 
         // 构造RSSInfo对象并添加到集合
         Set<RSSInfo> infoSet = new java.util.HashSet<>();
-        for (var row : data.GetData()) {
+        for (var rowIndex = 0; rowIndex < data.GetRowSize(); rowIndex++) {
 
             // 解析 URL_RSS 和 ANI_ID
             String url_rss = null;
             Integer ani_id = null;
+            var     row = data.GetRow(rowIndex);
 
             if(url_rss_index != -1) url_rss = row[url_rss_index];
             if(ani_id_index != -1) {

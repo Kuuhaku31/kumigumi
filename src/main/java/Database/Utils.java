@@ -1,10 +1,10 @@
 package Database;
 
+import static Utils.UtilityFunctions.getDateString;
+
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
-
-import static Util.Util.getDateString;
 
 class Utils {
 

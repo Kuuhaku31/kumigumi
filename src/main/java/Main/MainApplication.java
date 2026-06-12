@@ -6,7 +6,7 @@ import java.nio.file.Path;
 
 import Excel.ExcelReader;
 import MetaData.ARGS;
-import Util.Util;
+import Utils.UtilityFunctions;
 
 
 final class MainApplication {
@@ -23,8 +23,8 @@ final class MainApplication {
 
         Files.createDirectories(Path.of(ARGS.LOG_PATH));
 
-        var excelResult = new ExcelReader().Read(ARGS.EXCEL_FILE_PATH);
-        Util.WriteStringToFile(excelResult.toString(), ARGS.LOG_PATH + "01.excel_result.txt");
+        var excelResult = ExcelReader.Read(ARGS.EXCEL_FILE_PATH);
+        UtilityFunctions.WriteStringToFile(excelResult.toString(), ARGS.LOG_PATH + "01.excel_result.txt");
 
         var commandRunner = new CommandRunner(excelResult);
         for(var cmd : excelResult.commands()) {

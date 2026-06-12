@@ -6,7 +6,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import Util.TableData;
+import Excel.TableData;
+import Utils.UtilityFunctions;
 
 
 public class AnimeInfo {
@@ -155,7 +156,7 @@ public class AnimeInfo {
      */
     public static List<AnimeInfo> convertAnimeInfo(TableData tableData) {
 
-        // var aniIdIndex = tableData.GetHeaderIndex("ANI_ID");
+        // var aniIdIndex = tableData.GetColumnIndex("ANI_ID");
         // if(aniIdIndex == -1) return null;
 
         // var rows     = tableData.GetData();
@@ -173,7 +174,7 @@ public class AnimeInfo {
         return 
         "AnimeInfo{"
         + "ANI_ID=" + ANI_ID
-        + ", air_date=" + Util.Util.getDateString(air_date)
+        + ", air_date=" + UtilityFunctions.getDateString(air_date)
         + ", title='" + title + '\''
         + ", title_cn='" + title_cn + '\''
         + ", aliases='" + aliases + '\''

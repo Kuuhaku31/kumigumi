@@ -5,7 +5,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import Util.TableData;
+import Excel.TableData;
 
 
 final class TableDataRows {
@@ -14,11 +14,11 @@ final class TableDataRows {
 
     static Set<Integer> getAnimeIds(TableData tableData) {
         var result = new LinkedHashSet<Integer>();
-        var index  = tableData.GetHeaderIndex("ANI_ID");
+        var index  = tableData.GetColumnIndex("ANI_ID");
         if(index == -1) return result;
 
-        for(var row : tableData.GetData()) {
-            var parsed = parseInt(getCell(row, index));
+        for(var rowIndex = 0; rowIndex < tableData.GetRowSize(); rowIndex++) {
+            var parsed = parseInt(getCell(tableData.GetRow(rowIndex), index));
             if(parsed != null) result.add(parsed);
         }
         return result;
@@ -26,12 +26,12 @@ final class TableDataRows {
 
     static Set<String> getRSSUrls(TableData tableData) {
         var result = new LinkedHashSet<String>();
-        var index  = tableData.GetHeaderIndex("URL_RSS");
-        if(index == -1) index = tableData.GetHeaderIndex("url_rss");
+        var index  = tableData.GetColumnIndex("URL_RSS");
+        if(index == -1) index = tableData.GetColumnIndex("url_rss");
         if(index == -1) return result;
 
-        for(var row : tableData.GetData()) {
-            var value = getCell(row, index);
+        for(var rowIndex = 0; rowIndex < tableData.GetRowSize(); rowIndex++) {
+            var value = getCell(tableData.GetRow(rowIndex), index);
             if(value == null || value.isBlank()) continue;
             for(var item : value.split(";")) {
                 var rssUrl = item.trim();
@@ -41,8 +41,9 @@ final class TableDataRows {
         return result;
     }
 
-    static Map<String, String> rowToMap(TableData tableData, String[] row) {
-        var headers = tableData.GetHeaders();
+    static Map<String, String> rowToMap(TableData tableData, int rowIndex) {
+        var headers = tableData.GetHeader();
+        var row     = tableData.GetRow(rowIndex);
         var result  = new HashMap<String, String>();
         for(var i = 0; i < headers.length; i++) {
             result.put(headers[i], getCell(row, i));

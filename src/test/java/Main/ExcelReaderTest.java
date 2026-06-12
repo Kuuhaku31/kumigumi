@@ -15,7 +15,7 @@ class ExcelReaderTest {
         // 测试读取 Excel 文件
         try {
             System.out.println(color("Reading excel file...", ColorCode.GREEN));
-            var result = new ExcelReader().Read(excelFilePath);
+            var result = ExcelReader.Read(excelFilePath);
 
             System.out.println("\n" + color("ExcelReader Result:", ColorCode.BOLD_BLUE));
             System.out.println(result.toPrintString("xxx"));

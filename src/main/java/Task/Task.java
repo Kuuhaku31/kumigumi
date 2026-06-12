@@ -1,15 +1,15 @@
 package Task;
 
+import static Utils.UtilityFunctions.color;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import Util.ColorCode;
-import Util.Util;
-
-import static Util.Util.color;
+import Utils.ColorCode;
+import Utils.UtilityFunctions;
 
 
 public abstract class Task {
@@ -67,7 +67,7 @@ public abstract class Task {
     @Override
     public String toString() {
         var info = getInfo();
-        return "Task" + Util.getInfoString(info);
+        return "Task" + UtilityFunctions.getInfoString(info);
     }
 
 

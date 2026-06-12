@@ -10,7 +10,8 @@ import java.util.ArrayList;
 
 import Database.AnimeInfo;
 import Database.EpisodeInfo;
-import Util.Util;
+import Utils.UtilityFunctions;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -87,7 +88,7 @@ final class BangumiParser {
 
         try {
             var normalized_date = LocalDate.parse(date_str, BANGUMI_DATE_FORMATTER).toString();
-            return Util.parseDate(normalized_date);
+            return UtilityFunctions.parseDate(normalized_date);
         } catch(DateTimeParseException ignored) {
             return null;
         }

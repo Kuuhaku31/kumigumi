@@ -2,56 +2,69 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "java",
-      "name": "NetAccessTest",
-      "request": "launch",
-      "mainClass": "Main.NetAccessTest",
-      "projectName": "kumigumi"
+        "type": "java",
+        "name": "ExcelReaderTest",
+        "request": "launch",
+        "mainClass": "Main.ExcelReaderTest",
+        "projectName": "kumigumi"
     },
     {
-      "type": "java",
-      "name": "Kumigumi: Main (MetaData defaults)",
-      "request": "launch",
-      "mainClass": "Main.Main",
-      "projectName": "kumigumi",
-      "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "vmArgs": ["--enable-native-access=ALL-UNNAMED"]
+        "type": "java",
+        "name": "NetAccessTest",
+        "request": "launch",
+        "mainClass": "Main.NetAccessTest",
+        "projectName": "kumigumi"
     },
     {
-      "type": "java",
-      "name": "Kumigumi: Main (custom paths)",
-      "request": "launch",
-      "mainClass": "Main.Main",
-      "projectName": "kumigumi",
-      "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "args": [
-        "--excel_file_path",
-        "${input:excelFilePath}",
-        "--database_path",
-        "${input:databasePath}",
-        "--log_path",
-        "${input:logPath}"
-      ],
-      "vmArgs": ["--enable-native-access=ALL-UNNAMED"]
+        "type": "java",
+        "name": "Kumigumi: Main (MetaData defaults)",
+        "request": "launch",
+        "mainClass": "Main.Main",
+        "projectName": "kumigumi",
+        "cwd": "${workspaceFolder}",
+        "console": "integratedTerminal",
+        "vmArgs": [
+            "--enable-native-access=ALL-UNNAMED"
+        ]
     },
     {
-      "type": "java",
-      "name": "Kumigumi: Export Torrent",
-      "request": "launch",
-      "mainClass": "Main.ExportTorrent",
-      "projectName": "kumigumi",
-      "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "args": [
-        "${input:torrentHashListPath}",
-        "${input:exportDatabasePath}",
-        "${input:torrentOutputDir}"
-      ],
-      "vmArgs": ["--enable-native-access=ALL-UNNAMED"]
+        "type": "java",
+        "name": "Kumigumi: Main (custom paths)",
+        "request": "launch",
+        "mainClass": "Main.Main",
+        "projectName": "kumigumi",
+        "cwd": "${workspaceFolder}",
+        "console": "integratedTerminal",
+        "args": [
+            "--excel_file_path",
+            "${input:excelFilePath}",
+            "--database_path",
+            "${input:databasePath}",
+            "--log_path",
+            "${input:logPath}"
+        ],
+        "vmArgs": [
+            "--enable-native-access=ALL-UNNAMED"
+        ]
+    },
+    {
+        "type": "java",
+        "name": "Kumigumi: Export Torrent",
+        "request": "launch",
+        "mainClass": "Main.ExportTorrent",
+        "projectName": "kumigumi",
+        "cwd": "${workspaceFolder}",
+        "console": "integratedTerminal",
+        "args": [
+            "${input:torrentHashListPath}",
+            "${input:exportDatabasePath}",
+            "${input:torrentOutputDir}"
+        ],
+        "vmArgs": [
+            "--enable-native-access=ALL-UNNAMED"
+        ]
     }
-  ],
+],
   "inputs": [
     {
       "id": "excelFilePath",

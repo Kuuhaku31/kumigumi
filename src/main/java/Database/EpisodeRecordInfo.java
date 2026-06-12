@@ -5,7 +5,7 @@ import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Set;
 
-import Util.TableData;
+import Excel.TableData;
 
 
 public class EpisodeRecordInfo {
@@ -118,20 +118,21 @@ public class EpisodeRecordInfo {
     public static Set<EpisodeRecordInfo> ParseEpisodeRecordInfoByTableData(TableData data) {
 
         // 获取列索引
-        var epi_id_index         = data.GetHeaderIndex("EPI_ID");
-        var view_datetime_index  = data.GetHeaderIndex("view_datetime");
-        var timezone_index       = data.GetHeaderIndex("timezone");
-        var rating_index         = data.GetHeaderIndex("rating");
-        var comment_index        = data.GetHeaderIndex("comment");
+        var epi_id_index         = data.GetColumnIndex("EPI_ID");
+        var view_datetime_index  = data.GetColumnIndex("view_datetime");
+        var timezone_index       = data.GetColumnIndex("timezone");
+        var rating_index         = data.GetColumnIndex("rating");
+        var comment_index        = data.GetColumnIndex("comment");
 
         Set<EpisodeRecordInfo> infoSet = new java.util.HashSet<>();
-        for(var row : data.GetData()) {
+        for(var rowIndex = 0; rowIndex < data.GetRowSize(); rowIndex++) {
 
             Integer        epi_id = null;
             String         timezone = null;
             OffsetDateTime view_datetime = null;
             Integer        rating = null;
             String         comment = null;
+            var            row = data.GetRow(rowIndex);
 
             if(epi_id_index != -1) {
                 try { epi_id = Integer.parseInt(row[epi_id_index]); }

@@ -5,7 +5,7 @@ import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.Map;
 
-import Util.Util;
+import Utils.UtilityFunctions;
 
 
 public class EpisodeInfo {
@@ -163,7 +163,7 @@ public class EpisodeInfo {
             sort = parsedSort;
         }
 
-        air_date = Util.parseDate(data.getOrDefault("air_date", null));
+        air_date = UtilityFunctions.parseDate(data.getOrDefault("air_date", null));
 
         {
             Integer parsedDuration = null;
@@ -191,12 +191,12 @@ public class EpisodeInfo {
             ", ANI_ID=" + ANI_ID +
             ", ep='" + ep + '\'' +
             ", sort=" + sort +
-            ", air_date=" + Util.getDateString(air_date) +
+            ", air_date=" + UtilityFunctions.getDateString(air_date) +
             ", duration=" + duration +
             ", title='" + title + '\'' +
             ", title_cn='" + title_cn + '\'' +
-            ", description='" + Util.standardString(description) + '\'' +
-            ", update_datetime=" + Util.getDateString(update_datetime) +
+            ", description='" + UtilityFunctions.standardString(description) + '\'' +
+            ", update_datetime=" + UtilityFunctions.getDateString(update_datetime) +
             '}';
     }
 
@@ -229,12 +229,12 @@ public class EpisodeInfo {
             ANI_ID,
             ep,
             sort,
-            Util.getDateString(air_date),
+            UtilityFunctions.getDateString(air_date),
             duration,
             title,
             title_cn,
             description,
-            Util.getDateString(update_datetime)
+            UtilityFunctions.getDateString(update_datetime)
         );
     }
 }

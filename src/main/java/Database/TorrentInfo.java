@@ -2,7 +2,7 @@ package Database;
 
 import java.sql.*;
 
-import Util.TorrentMetaUtil;
+import Utils.TorrentMetaUtil;
 
 
 public class TorrentInfo {
