@@ -100,6 +100,7 @@ final class MainApplication {
             case PRINT_BLOCK -> Commands.printBlock(this, cmd);
             case MAKE_EPISODE_RECORD_ITEM -> Commands.makeEpisodeRecordItem(this, cmd);
             case MAKE_RSS_ITEM -> Commands.makeRSSItem(this, cmd);
+            case TO_DB -> Commands.toDB(this, cmd);
             default -> System.out.println("Unknown command: " + cmd.getFirst());
             }
         }

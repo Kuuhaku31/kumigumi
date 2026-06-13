@@ -1,14 +1,12 @@
 package Main;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import Database.SQLiteAccess;
 import Database.Info.BaseInfo;
 import Database.Info.RSSInfo;
 import Database.Info.EpisodeRecordInfo;
-import Excel.TableData;
 import Utils.ColorCode;
 
 import static Utils.UtilityFunctions.color;
@@ -88,23 +86,16 @@ final class Commands {
         var item_names = cmd.subList(1, cmd.size());
 
         Set<BaseInfo> to_db_info_set = new java.util.HashSet<>();
-
         for(var item_name : item_names) {
             var item = mainApp.variables.get(item_name);
-            if(item instanceof Set<?> itemSet) {
-                for(var obj : itemSet) {
-                    if(obj instanceof BaseInfo info) to_db_info_set.add(info);
-                }
+            if(item instanceof Set<?> itemSet) for(var obj : itemSet) {
+                if(obj instanceof BaseInfo info) to_db_info_set.add(info);
             }
         }
 
         try(var db = new SQLiteAccess(mainApp.DATABASE_PATH)) {
-            var episodeRecordCount = to_db_info_set.stream().filter(obj -> obj instanceof EpisodeRecordInfo).count();
-            var rssItemCount       = to_db_info_set.stream().filter(obj -> obj instanceof RSSInfo).count();
-
             db.UpsertInfo(to_db_info_set);
-
-            System.out.println("Database synchronization completed for " + episodeRecordCount + " episode records and " + rssItemCount + " RSS items.");
+            System.out.println("Database synchronization completed for items: " + item_names);
         } catch(Exception e) {
             System.err.println("Database operation error: " + e.getMessage());
         }
