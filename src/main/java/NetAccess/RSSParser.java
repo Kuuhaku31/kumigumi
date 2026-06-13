@@ -7,11 +7,12 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
-import Database.TorrentPageInfo;
 import Utils.UtilityFunctions;
 
 import com.apptasticsoftware.rssreader.Item;
 import com.apptasticsoftware.rssreader.RssReader;
+
+import Database.Info.TorrentPageInfo;
 
 
 final class RSSParser {

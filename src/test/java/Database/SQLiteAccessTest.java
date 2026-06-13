@@ -11,6 +11,13 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import Database.Info.RSSInfo;
+import Database.Info.TorrentInfo;
+import Database.Info.TorrentPageInfo;
+import Database.Info.AnimeInfo;
+import Database.Info.EpisodeInfo;
+import Database.Info.EpisodeRecordInfo;
+
 import java.nio.file.Path;
 
 class SQLiteAccessTest {
@@ -24,37 +31,39 @@ class SQLiteAccessTest {
         var torrent = new TorrentInfo(DatabaseInfoTest.sampleTorrent());
 
         try(var db = new SQLiteAccess(dbPath)) {
-            db.UpsertAnimeInfo(new AnimeInfo(Map.of(
-                "ANI_ID", "100",
-                "title", "Anime",
-                "episode_count", "12"
-            )));
-            db.UpsertEpisodeInfo(List.of(new EpisodeInfo(Map.of(
-                "EPI_ID", "200",
-                "ANI_ID", "100",
-                "ep", "1",
-                "sort", "1",
-                "duration", "1440",
-                "title", "Episode"
-            ))));
-            db.UpsertEpisodeRecordInfo(new EpisodeRecordInfo(
-                200,
-                OffsetDateTime.parse("2026-01-04T21:30:00+09:00"),
-                5,
-                "watched"
+            db.UpsertInfo(Set.of(
+                new AnimeInfo(Map.of(
+                    "ANI_ID", "100",
+                    "title", "Anime",
+                    "episode_count", "12"
+                )),
+                new EpisodeInfo(Map.of(
+                    "EPI_ID", "200",
+                    "ANI_ID", "100",
+                    "ep", "1",
+                    "sort", "1",
+                    "duration", "1440",
+                    "title", "Episode"
+                )),
+                new EpisodeRecordInfo(
+                    200,
+                    OffsetDateTime.parse("2026-01-04T21:30:00+09:00"),
+                    5,
+                    "watched"
+                ),
+                new RSSInfo("https://example.com/feed.xml", 100),
+                new TorrentPageInfo(
+                    "https://example.com/feed.xml",
+                    torrent.TOR_HASH,
+                    OffsetDateTime.parse("2026-01-05T12:00:00+09:00"),
+                    "https://example.com/download.torrent",
+                    "https://example.com/page",
+                    "Title",
+                    "Group",
+                    "Description"
+                ),
+                torrent
             ));
-            db.UpsertRSSInfo(new RSSInfo("https://example.com/feed.xml", 100));
-            db.UpsertTorrentPageInfo(new TorrentPageInfo(
-                "https://example.com/feed.xml",
-                torrent.TOR_HASH,
-                OffsetDateTime.parse("2026-01-05T12:00:00+09:00"),
-                "https://example.com/download.torrent",
-                "https://example.com/page",
-                "Title",
-                "Group",
-                "Description"
-            ));
-            db.UpsertTorrentInfo(torrent);
 
             assertEquals(Set.of("missing"), db.GetTorrentHashNotExist(Set.of(torrent.TOR_HASH, "missing")));
 

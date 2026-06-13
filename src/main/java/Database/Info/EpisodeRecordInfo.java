@@ -1,4 +1,4 @@
-package Database;
+package Database.Info;
 
 import java.sql.*;
 import java.time.OffsetDateTime;
@@ -6,9 +6,10 @@ import java.util.Map;
 import java.util.Set;
 
 import Excel.TableData;
+import Utils.DatabaseUtils;
 
 
-public class EpisodeRecordInfo {
+public class EpisodeRecordInfo extends BaseInfo {
 
     public final Integer        EPI_ID;
     public final OffsetDateTime view_datetime;
@@ -16,29 +17,12 @@ public class EpisodeRecordInfo {
     public final Integer        rating;
     public final String         comment;
 
-
-    static PreparedStatement GetUpsertStatement(Connection conn) throws SQLException {
-        String upsertSqlFetch =
-        """
-        INSERT INTO episode_record (
-            EPI_ID,
-            view_datetime,
-            rating,
-            comment
-        )
-        VALUES (?, ?, ?, ?)
-        ON CONFLICT(EPI_ID, view_datetime) DO UPDATE SET
-            rating      = excluded.rating,
-            comment     = excluded.comment;
-        """;
-        return conn.prepareStatement(upsertSqlFetch);
-    }
-
-    void SetParams(PreparedStatement ps) throws SQLException {
-        Utils.safeSetInt            (ps, 1, EPI_ID        );
-        Utils.safeSetOffsetDateTime (ps, 2, view_datetime );
-        Utils.safeSetInt            (ps, 3, rating       );
-        Utils.safeSetString         (ps, 4, comment      );
+    @Override
+    public void setParams(PreparedStatement ps) throws SQLException {
+        DatabaseUtils.safeSetInt            (ps, 1, EPI_ID        );
+        DatabaseUtils.safeSetOffsetDateTime (ps, 2, view_datetime );
+        DatabaseUtils.safeSetInt            (ps, 3, rating       );
+        DatabaseUtils.safeSetString         (ps, 4, comment      );
     }
 
 

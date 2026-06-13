@@ -1,10 +1,10 @@
 # 表结构
 
-本文档描述当前 SQLite schema。字段、主键和外键关系应与 `src/java/main/Database/SQLiteInit.java` 以及 `Database.*Info` 类保持一致。
+本文档描述当前 SQLite schema。字段、主键和外键关系应与 `src/main/java/Database/SQLiteSQL.java`、`src/main/java/Database/SQLiteAccess.java` 以及 `Database.Info.*Info` 类保持一致。
 
 统一约定：
 
-- 表名、字段名和 Java `Database.*Info` 类型保持一致。
+- 表名、字段名和 Java `Database.Info.*Info` 类型保持一致。
 - `date` 使用 `YYYY-MM-DD` 文本格式。
 - `datetime` 使用带时区的 ISO-8601 文本格式，例如 `2026-06-10T12:34:56+09:00`。
 - `TOR_HASH` 表示 torrent 的 info hash，是 `torrent` 表主键，也是 `torrent_page` 与下载结果的关联键。

@@ -1,14 +1,15 @@
-package Database;
+package Database.Info;
 
 import java.sql.*;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.Map;
 
+import Utils.DatabaseUtils;
 import Utils.UtilityFunctions;
 
 
-public class EpisodeInfo {
+public class EpisodeInfo extends BaseInfo {
 
     public final Integer        EPI_ID;
     public final Integer        ANI_ID;
@@ -24,49 +25,19 @@ public class EpisodeInfo {
     public final OffsetDateTime update_datetime;
 
 
-    static PreparedStatement GetUpsertStatement(Connection conn) throws SQLException {
-        String upsertSqlFetch =
-        """
-        INSERT INTO episode (
-            EPI_ID,
-            ANI_ID,
-            ep,
-            sort,
-            air_date,
-            duration,
-            title,
-            title_cn,
-            description,
-            update_datetime
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(EPI_ID) DO UPDATE SET
-            ANI_ID              = excluded.ANI_ID,
-            ep                  = excluded.ep,
-            sort                = excluded.sort,
-            air_date            = excluded.air_date,
-            duration            = excluded.duration,
-            title               = excluded.title,
-            title_cn            = excluded.title_cn,
-            description         = excluded.description,
-            update_datetime     = excluded.update_datetime;
-        """;
-        return conn.prepareStatement(upsertSqlFetch);
+    @Override
+    public void setParams(PreparedStatement ps) throws SQLException {
+        DatabaseUtils.safeSetInt            (ps,  1, EPI_ID         );
+        DatabaseUtils.safeSetInt            (ps,  2, ANI_ID         );
+        DatabaseUtils.safeSetInt            (ps,  3, ep             );
+        DatabaseUtils.safeSetDouble         (ps,  4, sort           );
+        DatabaseUtils.safeSetDate           (ps,  5, air_date       );
+        DatabaseUtils.safeSetInt            (ps,  6, duration       );
+        DatabaseUtils.safeSetString         (ps,  7, title          );
+        DatabaseUtils.safeSetString         (ps,  8, title_cn       );
+        DatabaseUtils.safeSetString         (ps,  9, description    );
+        DatabaseUtils.safeSetOffsetDateTime (ps, 10, update_datetime);
     }
-
-    void SetParams(PreparedStatement ps) throws SQLException {
-        Utils.safeSetInt            (ps,  1, EPI_ID         );
-        Utils.safeSetInt            (ps,  2, ANI_ID         );
-        Utils.safeSetInt            (ps,  3, ep             );
-        Utils.safeSetDouble         (ps,  4, sort           );
-        Utils.safeSetDate           (ps,  5, air_date       );
-        Utils.safeSetInt            (ps,  6, duration       );
-        Utils.safeSetString         (ps,  7, title          );
-        Utils.safeSetString         (ps,  8, title_cn       );
-        Utils.safeSetString         (ps,  9, description    );
-        Utils.safeSetOffsetDateTime (ps, 10, update_datetime);
-    }
-
 
     public EpisodeInfo(
         Integer EPI_ID,

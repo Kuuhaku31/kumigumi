@@ -3,7 +3,7 @@
 kumigumi 是一个以 Excel 为操作入口、SQLite 为本地数据仓库的追番辅助项目。当前版本的数据流已经统一为：
 
 ```text
-Excel 指令/数据块 -> Task.* 抓取任务 -> Database.*Info 数据对象 -> SQLiteAccess.UpsertXxxInfo -> SQLite
+Excel 指令/数据块 -> Task.* 抓取任务 -> Database.Info.*Info 数据对象 -> SQLiteAccess.UpsertInfo -> SQLite
 ```
 
 旧的 `FetchTask/`、`InfoItem/`、`Database.Item`、`UpsertItem/UpdateItem` 系列已经废弃。历史代码保留在本地忽略目录中用于参考，不再作为当前实现的一部分。
@@ -13,21 +13,22 @@ Excel 指令/数据块 -> Task.* 抓取任务 -> Database.*Info 数据对象 -> 
 - 从 Excel 读取指令表和数据块，批量导入番剧、分集、观看记录、RSS、种子页信息。
 - 通过 Bangumi API 抓取番剧与分集信息。
 - 通过 RSS 抓取种子页信息，并按缺失的 `TOR_HASH` 下载 torrent 文件。
-- 使用 SQLite 保存结构化数据，schema 以 `Table.md`、`Database.*Info` 和 `SQLiteInit` 为准。
-- 所有数据库写入统一走 `SQLiteAccess.UpsertXxxInfo` 系列方法。
+- 使用 SQLite 保存结构化数据，schema 以 `Table.md`、`Database.Info.*Info`、`SQLiteSQL` 和 `SQLiteAccess` 初始化逻辑为准。
+- 所有数据库写入统一走 `SQLiteAccess.UpsertInfo` 方法。
 
 ## 项目结构
 
 ```text
-src/java/main/
+src/main/java/
   Main/          程序入口，解析启动参数和 Excel 指令
   Excel/         Excel 读取、命令流和表格块解析
   Task/          新的抓取任务与批量任务执行器
-  Database/      SQLite 初始化、访问层和 *Info 数据对象
+  Database/      SQLite 初始化、访问层、SQL 定义和 Info 数据对象
   NetAccess/     Bangumi、RSS、torrent 下载等网络访问
-  Util/          表格数据、torrent 元信息解析等工具
+  Utils/         表格数据、torrent 元信息解析和数据库绑定工具
 
 Table.md         当前数据库 schema
+database.md      Database 模块结构和维护约定
 excel.md         Excel 指令、数据块和查询示例
 TODO.md          后续优化清单
 ```
@@ -83,14 +84,14 @@ Excel 通过命令和数据块驱动程序运行。常用命令如下：
 - `torrent_page`
 - `torrent`
 
-字段、主键和外键关系见 `Table.md`。需要注意的是，`torrent_page.TOR_HASH` 用于关联后续下载得到的 `torrent.TOR_HASH`，但当前建表语句没有强制外键约束，这样 RSS 抓取结果可以先入库，torrent 文件可以稍后下载。
+字段、主键和外键关系见 `Table.md`。Database 模块代码结构见 `database.md`。需要注意的是，`torrent_page.TOR_HASH` 用于关联后续下载得到的 `torrent.TOR_HASH`，但当前建表语句没有强制外键约束，这样 RSS 抓取结果可以先入库，torrent 文件可以稍后下载。
 
 ## 开发说明
 
 - 新代码应使用 `Task.*` 表达抓取流程。
-- 新数据对象应放在 `Database.*Info` 中，并与 `Table.md` 保持一致。
-- 数据库写入只新增或复用 `UpsertXxxInfo`，不要恢复 `UpsertItem/UpdateItem` 抽象。
-- schema 变更需要同步更新 `Table.md`、对应 `*Info` 类、`SQLiteInit` 和 Excel 文档。
+- 新数据对象应放在 `Database.Info.*Info` 中，并与 `Table.md` 保持一致。
+- 数据库写入只新增或复用 `UpsertInfo`，不要恢复 `UpsertItem/UpdateItem` 抽象。
+- schema 变更需要同步更新 `Table.md`、对应 `*Info` 类、`SQLiteSQL`、`SQLiteAccess` 初始化逻辑和 Excel 文档。
 
 ## 网络访问模块 `NetAccess`
 

@@ -2,7 +2,7 @@ package Task;
 
 import java.util.Set;
 
-import Database.TorrentPageInfo;
+import Database.Info.TorrentPageInfo;
 import NetAccess.NetAccess;
 
 

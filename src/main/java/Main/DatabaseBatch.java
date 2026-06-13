@@ -3,12 +3,13 @@ package Main;
 import java.util.ArrayList;
 import java.util.List;
 
-import Database.AnimeInfo;
-import Database.EpisodeInfo;
-import Database.EpisodeRecordInfo;
-import Database.RSSInfo;
-import Database.TorrentInfo;
-import Database.TorrentPageInfo;
+import Database.Info.BaseInfo;
+import Database.Info.RSSInfo;
+import Database.Info.TorrentInfo;
+import Database.Info.TorrentPageInfo;
+import Database.Info.AnimeInfo;
+import Database.Info.EpisodeInfo;
+import Database.Info.EpisodeRecordInfo;
 
 
 final class DatabaseBatch {
@@ -38,8 +39,8 @@ final class DatabaseBatch {
             && torrentItems.isEmpty();
     }
 
-    List<Object> allItems() {
-        var result = new ArrayList<Object>();
+    List<BaseInfo> allItems() {
+        var result = new ArrayList<BaseInfo>();
         result.addAll(animeItems);
         result.addAll(episodeItems);
         result.addAll(episodeRecords);

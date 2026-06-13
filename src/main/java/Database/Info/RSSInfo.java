@@ -1,37 +1,24 @@
-package Database;
+package Database.Info;
 
 import java.sql.*;
 import java.util.Map;
 import java.util.Set;
 
 import Excel.TableData;
+import Utils.DatabaseUtils;
 
 
-public class RSSInfo {
+public class RSSInfo extends BaseInfo {
 
     public final String  URL_RSS;
     public final Integer ANI_ID;
 
 
-    static PreparedStatement GetUpsertStatement(Connection conn) throws SQLException {
-        String upsertSqlFetch =
-        """
-        INSERT INTO rss (
-            URL_RSS,
-            ANI_ID
-        )
-        VALUES (?, ?)
-        ON CONFLICT(URL_RSS) DO UPDATE SET
-            ANI_ID = excluded.ANI_ID;
-        """;
-        return conn.prepareStatement(upsertSqlFetch);
+    @Override
+    public void setParams(PreparedStatement ps) throws SQLException {
+        DatabaseUtils.safeSetString(ps, 1, URL_RSS);
+        DatabaseUtils.safeSetInt(ps, 2, ANI_ID);
     }
-
-    void SetParams(PreparedStatement ps) throws SQLException {
-        Utils.safeSetString(ps, 1, URL_RSS);
-        Utils.safeSetInt(ps, 2, ANI_ID);
-    }
-
 
     public RSSInfo(String url_rss, Integer ani_id) {
         if(url_rss == null) {

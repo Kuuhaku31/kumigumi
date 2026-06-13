@@ -10,6 +10,13 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import Database.Info.RSSInfo;
+import Database.Info.TorrentInfo;
+import Database.Info.TorrentPageInfo;
+import Database.Info.AnimeInfo;
+import Database.Info.EpisodeInfo;
+import Database.Info.EpisodeRecordInfo;
+
 class DatabaseInfoTest {
 
     @Test

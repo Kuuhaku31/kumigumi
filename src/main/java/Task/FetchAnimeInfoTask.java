@@ -1,6 +1,6 @@
 package Task;
 
-import Database.AnimeInfo;
+import Database.Info.AnimeInfo;
 import NetAccess.NetAccess;
 
 

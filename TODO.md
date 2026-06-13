@@ -3,7 +3,7 @@
 ## 数据库与 schema
 
 - 增加 schema migration 机制，处理已有 SQLite 文件从旧结构升级到 `Table.md` 当前结构。
-- 为 `SQLiteAccess.UpsertXxxInfo` 增加覆盖真实 SQLite 的集成测试。
+- 为 `SQLiteAccess.UpsertInfo` 增加覆盖真实 SQLite 的集成测试。
 - 检查并统一所有时间字段的时区解析策略，尤其是 `EpisodeRecordInfo` 的 `view_datetime` + `timezone` 组合。
 
 ## Excel 工作流
