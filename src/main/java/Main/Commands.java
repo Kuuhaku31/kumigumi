@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import Database.EpisodeRecordInfo;
-import Database.Info;
-import Database.RSSInfo;
 import Database.SQLiteAccess;
+import Database.Info.BaseInfo;
+import Database.Info.RSSInfo;
+import Database.Info.EpisodeRecordInfo;
 import Excel.TableData;
 import Utils.ColorCode;
 
@@ -87,13 +87,13 @@ final class Commands {
 
         var item_names = cmd.subList(1, cmd.size());
 
-        Set<Info> to_db_info_set = new java.util.HashSet<>();
+        Set<BaseInfo> to_db_info_set = new java.util.HashSet<>();
 
         for(var item_name : item_names) {
             var item = mainApp.variables.get(item_name);
             if(item instanceof Set<?> itemSet) {
                 for(var obj : itemSet) {
-                    if(obj instanceof Info info) to_db_info_set.add(info);
+                    if(obj instanceof BaseInfo info) to_db_info_set.add(info);
                 }
             }
         }

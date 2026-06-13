@@ -1,11 +1,13 @@
-package Database;
+package Database.Info;
 
 import java.sql.*;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
+import Utils.DatabaseUtils;
 
-public class TorrentPageInfo extends Info {
+
+public class TorrentPageInfo extends BaseInfo {
 
     public final String         URL_RSS;
     public final String         TOR_HASH;
@@ -20,16 +22,16 @@ public class TorrentPageInfo extends Info {
     public final OffsetDateTime update_datetime;
 
     @Override
-    void setParams(PreparedStatement ps) throws SQLException {
-        Utils.safeSetString         (ps,  1, URL_RSS        );
-        Utils.safeSetString         (ps,  2, TOR_HASH       );
-        Utils.safeSetOffsetDateTime (ps,  3, air_datetime   );
-        Utils.safeSetString         (ps,  4, url_download   );
-        Utils.safeSetString         (ps,  5, url_page       );
-        Utils.safeSetString         (ps,  6, title          );
-        Utils.safeSetString         (ps,  7, subtitle_group );
-        Utils.safeSetString         (ps,  8, description    );
-        Utils.safeSetOffsetDateTime (ps,  9, update_datetime);
+    public void setParams(PreparedStatement ps) throws SQLException {
+        DatabaseUtils.safeSetString         (ps,  1, URL_RSS        );
+        DatabaseUtils.safeSetString         (ps,  2, TOR_HASH       );
+        DatabaseUtils.safeSetOffsetDateTime (ps,  3, air_datetime   );
+        DatabaseUtils.safeSetString         (ps,  4, url_download   );
+        DatabaseUtils.safeSetString         (ps,  5, url_page       );
+        DatabaseUtils.safeSetString         (ps,  6, title          );
+        DatabaseUtils.safeSetString         (ps,  7, subtitle_group );
+        DatabaseUtils.safeSetString         (ps,  8, description    );
+        DatabaseUtils.safeSetOffsetDateTime (ps,  9, update_datetime);
     }
 
 

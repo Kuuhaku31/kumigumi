@@ -1,4 +1,4 @@
-package Database;
+package Database.Info;
 
 import java.sql.*;
 import java.text.ParseException;
@@ -7,10 +7,11 @@ import java.util.List;
 import java.util.Map;
 
 import Excel.TableData;
+import Utils.DatabaseUtils;
 import Utils.UtilityFunctions;
 
 
-public class AnimeInfo extends Info {
+public class AnimeInfo extends BaseInfo {
 
     public final Integer        ANI_ID;
 
@@ -25,16 +26,16 @@ public class AnimeInfo extends Info {
 
 
     @Override
-    void setParams(PreparedStatement ps) throws SQLException {
-        Utils.safeSetInt            (ps,  1, ANI_ID           );
-        Utils.safeSetDate           (ps,  2, air_date         );
-        Utils.safeSetString         (ps,  3, title            );
-        Utils.safeSetString         (ps,  4, title_cn         );
-        Utils.safeSetString         (ps,  5, aliases          );
-        Utils.safeSetString         (ps,  6, description      );
-        Utils.safeSetInt            (ps,  7, episode_count    );
-        Utils.safeSetString         (ps,  8, url_official_site);
-        Utils.safeSetString         (ps,  9, url_cover        );
+    public void setParams(PreparedStatement ps) throws SQLException {
+        DatabaseUtils.safeSetInt            (ps,  1, ANI_ID           );
+        DatabaseUtils.safeSetDate           (ps,  2, air_date         );
+        DatabaseUtils.safeSetString         (ps,  3, title            );
+        DatabaseUtils.safeSetString         (ps,  4, title_cn         );
+        DatabaseUtils.safeSetString         (ps,  5, aliases          );
+        DatabaseUtils.safeSetString         (ps,  6, description      );
+        DatabaseUtils.safeSetInt            (ps,  7, episode_count    );
+        DatabaseUtils.safeSetString         (ps,  8, url_official_site);
+        DatabaseUtils.safeSetString         (ps,  9, url_cover        );
     }
 
     public AnimeInfo(

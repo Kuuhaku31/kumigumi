@@ -16,6 +16,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import Database.Info.BaseInfo;
+import Database.Info.RSSInfo;
+import Database.Info.TorrentInfo;
+import Database.Info.TorrentPageInfo;
+import Database.Info.AnimeInfo;
+import Database.Info.EpisodeInfo;
+import Database.Info.EpisodeRecordInfo;
+import Utils.DatabaseUtils;
+
 
 public class SQLiteAccess implements Closeable {
 
@@ -47,7 +56,7 @@ public class SQLiteAccess implements Closeable {
         }
     }
 
-    public void UpsertInfo(Set<? extends Info> info_set) throws SQLException {
+    public void UpsertInfo(Set<? extends BaseInfo> info_set) throws SQLException {
 
         // 参数检查
         if(info_set == null || info_set.isEmpty()) return;
@@ -94,11 +103,11 @@ public class SQLiteAccess implements Closeable {
 
         System.out.println("正在导出种子文件: " + torHashList.size() + " 个，保存路径: " + safePath);
 
-        for(var chunk : Utils.chunks(Utils.normalizeHashes(torHashList), SQL_PARAM_CHUNK_SIZE)) {
+        for(var chunk : DatabaseUtils.chunks(DatabaseUtils.normalizeHashes(torHashList), SQL_PARAM_CHUNK_SIZE)) {
             var sql = SQLiteSQL.selectTorrentFilesByHashCount(chunk.size());
 
             try(var ps = connect.prepareStatement(sql)) {
-                Utils.bindStrings(ps, chunk);
+                DatabaseUtils.bindStrings(ps, chunk);
                 try(var rs = ps.executeQuery()) {
                     while(rs.next()) {
                         var torHash = rs.getString("TOR_HASH");
@@ -122,15 +131,15 @@ public class SQLiteAccess implements Closeable {
     }
 
     public Set<String> GetTorrentHashNotExist(Set<String> hashList) throws SQLException {
-        var uniqueHashes = Utils.normalizeHashes(hashList);
+        var uniqueHashes = DatabaseUtils.normalizeHashes(hashList);
         if(uniqueHashes.isEmpty()) return Set.of();
 
         var hasFileSet = new HashSet<String>();
-        for(var chunk : Utils.chunks(uniqueHashes, SQL_PARAM_CHUNK_SIZE)) {
+        for(var chunk : DatabaseUtils.chunks(uniqueHashes, SQL_PARAM_CHUNK_SIZE)) {
             var sql = SQLiteSQL.selectExistingTorrentHashesByHashCount(chunk.size());
 
             try(var ps = connect.prepareStatement(sql)) {
-                Utils.bindStrings(ps, chunk);
+                DatabaseUtils.bindStrings(ps, chunk);
                 try(var rs = ps.executeQuery()) {
                     while(rs.next()) hasFileSet.add(rs.getString("TOR_HASH"));
                 }
@@ -145,17 +154,17 @@ public class SQLiteAccess implements Closeable {
     }
 
     public Set<TorrentDownloader> GetDownloaderByHash(Set<String> hashList) throws SQLException {
-        var uniqueHashes = Utils.normalizeHashes(hashList);
+        var uniqueHashes = DatabaseUtils.normalizeHashes(hashList);
         if(uniqueHashes.isEmpty()) return Set.of();
 
         var result = new LinkedHashMap<String, List<String>>();
         for(var hash : uniqueHashes) result.put(hash, new ArrayList<>());
 
-        for(var chunk : Utils.chunks(uniqueHashes, SQL_PARAM_CHUNK_SIZE)) {
+        for(var chunk : DatabaseUtils.chunks(uniqueHashes, SQL_PARAM_CHUNK_SIZE)) {
             var sql = SQLiteSQL.selectDownloadUrlsByHashCount(chunk.size());
 
             try(var ps = connect.prepareStatement(sql)) {
-                Utils.bindStrings(ps, chunk);
+                DatabaseUtils.bindStrings(ps, chunk);
                 try(var rs = ps.executeQuery()) {
                     while(rs.next()) {
                         var hash = rs.getString("TOR_HASH");
@@ -173,7 +182,7 @@ public class SQLiteAccess implements Closeable {
         return downloaderSet;
     }
 
-    private <T extends Info> void run_info_batch(Set<T> items, Class<T> info_type) throws SQLException {
+    private <T extends BaseInfo> void run_info_batch(Set<T> items, Class<T> info_type) throws SQLException {
 
         // 参数检查
         if(items.isEmpty()) return;

@@ -2,7 +2,7 @@ package Task;
 
 import java.util.Set;
 
-import Database.EpisodeInfo;
+import Database.Info.EpisodeInfo;
 import NetAccess.NetAccess;
 
 

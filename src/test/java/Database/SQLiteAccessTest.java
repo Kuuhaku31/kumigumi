@@ -11,6 +11,13 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import Database.Info.RSSInfo;
+import Database.Info.TorrentInfo;
+import Database.Info.TorrentPageInfo;
+import Database.Info.AnimeInfo;
+import Database.Info.EpisodeInfo;
+import Database.Info.EpisodeRecordInfo;
+
 import java.nio.file.Path;
 
 class SQLiteAccessTest {

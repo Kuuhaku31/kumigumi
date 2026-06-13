@@ -8,12 +8,13 @@ import java.time.format.SignStyle;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 
-import Database.AnimeInfo;
-import Database.EpisodeInfo;
 import Utils.UtilityFunctions;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import Database.Info.AnimeInfo;
+import Database.Info.EpisodeInfo;
 
 
 final class BangumiParser {

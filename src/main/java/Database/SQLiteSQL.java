@@ -3,6 +3,14 @@ package Database;
 import java.util.Collections;
 import java.util.List;
 
+import Database.Info.BaseInfo;
+import Database.Info.RSSInfo;
+import Database.Info.TorrentInfo;
+import Database.Info.TorrentPageInfo;
+import Database.Info.AnimeInfo;
+import Database.Info.EpisodeInfo;
+import Database.Info.EpisodeRecordInfo;
+
 final class SQLiteSQL {
 
     private SQLiteSQL() {}
@@ -261,7 +269,7 @@ final class SQLiteSQL {
         );
     }
 
-    static String upsertInfo(Class<? extends Info> infoType) {
+    static String upsertInfo(Class<? extends BaseInfo> infoType) {
         if(infoType == AnimeInfo.class)         return UPSERT_ANIME_INFO;
         if(infoType == EpisodeInfo.class)       return UPSERT_EPISODE_INFO;
         if(infoType == EpisodeRecordInfo.class) return UPSERT_EPISODE_RECORD_INFO;

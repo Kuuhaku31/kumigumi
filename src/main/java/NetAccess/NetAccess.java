@@ -13,9 +13,10 @@ import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 
-import Database.AnimeInfo;
-import Database.EpisodeInfo;
-import Database.TorrentPageInfo;
+import Database.Info.TorrentPageInfo;
+import Database.Info.AnimeInfo;
+import Database.Info.EpisodeInfo;
+
 import com.apptasticsoftware.rssreader.RssReader;
 import org.json.JSONObject;
 
