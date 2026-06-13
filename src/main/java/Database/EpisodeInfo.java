@@ -8,7 +8,7 @@ import java.util.Map;
 import Utils.UtilityFunctions;
 
 
-public class EpisodeInfo {
+public class EpisodeInfo extends Info {
 
     public final Integer        EPI_ID;
     public final Integer        ANI_ID;
@@ -24,37 +24,8 @@ public class EpisodeInfo {
     public final OffsetDateTime update_datetime;
 
 
-    static PreparedStatement GetUpsertStatement(Connection conn) throws SQLException {
-        String upsertSqlFetch =
-        """
-        INSERT INTO episode (
-            EPI_ID,
-            ANI_ID,
-            ep,
-            sort,
-            air_date,
-            duration,
-            title,
-            title_cn,
-            description,
-            update_datetime
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(EPI_ID) DO UPDATE SET
-            ANI_ID              = excluded.ANI_ID,
-            ep                  = excluded.ep,
-            sort                = excluded.sort,
-            air_date            = excluded.air_date,
-            duration            = excluded.duration,
-            title               = excluded.title,
-            title_cn            = excluded.title_cn,
-            description         = excluded.description,
-            update_datetime     = excluded.update_datetime;
-        """;
-        return conn.prepareStatement(upsertSqlFetch);
-    }
-
-    void SetParams(PreparedStatement ps) throws SQLException {
+    @Override
+    void setParams(PreparedStatement ps) throws SQLException {
         Utils.safeSetInt            (ps,  1, EPI_ID         );
         Utils.safeSetInt            (ps,  2, ANI_ID         );
         Utils.safeSetInt            (ps,  3, ep             );
@@ -66,7 +37,6 @@ public class EpisodeInfo {
         Utils.safeSetString         (ps,  9, description    );
         Utils.safeSetOffsetDateTime (ps, 10, update_datetime);
     }
-
 
     public EpisodeInfo(
         Integer EPI_ID,

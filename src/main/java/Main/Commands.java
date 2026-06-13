@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import Database.EpisodeRecordInfo;
+import Database.Info;
 import Database.RSSInfo;
 import Database.SQLiteAccess;
 import Excel.TableData;
@@ -86,26 +87,24 @@ final class Commands {
 
         var item_names = cmd.subList(1, cmd.size());
 
-        Set<Object> to_db_info_set = new java.util.HashSet<>();
+        Set<Info> to_db_info_set = new java.util.HashSet<>();
 
         for(var item_name : item_names) {
             var item = mainApp.variables.get(item_name);
             if(item instanceof Set<?> itemSet) {
                 for(var obj : itemSet) {
-                    if(obj instanceof EpisodeRecordInfo episodeRecordInfo) to_db_info_set.add(episodeRecordInfo);
-                    else if(obj instanceof RSSInfo rssInfo) to_db_info_set.add(rssInfo);
+                    if(obj instanceof Info info) to_db_info_set.add(info);
                 }
             }
         }
 
         try(var db = new SQLiteAccess(mainApp.DATABASE_PATH)) {
-            var episodeRecords = to_db_info_set.stream().filter(obj -> obj instanceof EpisodeRecordInfo).map(obj -> (EpisodeRecordInfo) obj).toList();
-            var rssItems       = to_db_info_set.stream().filter(obj -> obj instanceof RSSInfo).map(obj -> (RSSInfo) obj).toList();
+            var episodeRecordCount = to_db_info_set.stream().filter(obj -> obj instanceof EpisodeRecordInfo).count();
+            var rssItemCount       = to_db_info_set.stream().filter(obj -> obj instanceof RSSInfo).count();
 
-            db.UpsertEpisodeRecordInfo(episodeRecords);
-            db.UpsertRSSInfo(rssItems);
+            db.UpsertInfo(to_db_info_set);
 
-            System.out.println("Database synchronization completed for " + episodeRecords.size() + " episode records and " + rssItems.size() + " RSS items.");
+            System.out.println("Database synchronization completed for " + episodeRecordCount + " episode records and " + rssItemCount + " RSS items.");
         } catch(Exception e) {
             System.err.println("Database operation error: " + e.getMessage());
         }
@@ -280,12 +279,8 @@ final class Commands {
     //     }
 
     //     try(var db = new SQLiteAccess(ARGS.DATABASE_PATH)) {
-    //         db.UpsertAnimeInfo(batch.animeItems);
-    //         db.UpsertEpisodeInfo(batch.episodeItems);
-    //         db.UpsertEpisodeRecordInfo(batch.episodeRecords);
-    //         db.UpsertRSSInfo(batch.rssItems);
-    //         db.UpsertTorrentPageInfo(batch.torrentPageItems);
-    //         db.UpsertTorrentInfo(batch.torrentItems);
+    //         var infoSet = new java.util.HashSet<Info>(batch.allItems());
+    //         db.UpsertInfo(infoSet);
     //     } catch(SQLException e) {
     //         System.err.println("Database operation error: " + e.getMessage());
     //     }

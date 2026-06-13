@@ -5,7 +5,7 @@ import java.time.OffsetDateTime;
 import java.util.Map;
 
 
-public class TorrentPageInfo {
+public class TorrentPageInfo extends Info {
 
     public final String         URL_RSS;
     public final String         TOR_HASH;
@@ -19,35 +19,8 @@ public class TorrentPageInfo {
 
     public final OffsetDateTime update_datetime;
 
-
-    static PreparedStatement GetUpsertStatement(Connection conn) throws SQLException {
-        String upsertSqlFetch =
-        """
-        INSERT INTO torrent_page (
-            URL_RSS,
-            TOR_HASH,
-            air_datetime,
-            url_download,
-            url_page,
-            title,
-            subtitle_group,
-            description,
-            update_datetime
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(URL_RSS, TOR_HASH) DO UPDATE SET
-            air_datetime      = excluded.air_datetime,
-            url_download      = excluded.url_download,
-            url_page          = excluded.url_page,
-            title             = excluded.title,
-            subtitle_group    = excluded.subtitle_group,
-            description       = excluded.description,
-            update_datetime   = excluded.update_datetime;
-        """;
-        return conn.prepareStatement(upsertSqlFetch);
-    }
-
-    void SetParams(PreparedStatement ps) throws SQLException {
+    @Override
+    void setParams(PreparedStatement ps) throws SQLException {
         Utils.safeSetString         (ps,  1, URL_RSS        );
         Utils.safeSetString         (ps,  2, TOR_HASH       );
         Utils.safeSetOffsetDateTime (ps,  3, air_datetime   );

@@ -8,7 +8,7 @@ import java.util.Set;
 import Excel.TableData;
 
 
-public class EpisodeRecordInfo {
+public class EpisodeRecordInfo extends Info {
 
     public final Integer        EPI_ID;
     public final OffsetDateTime view_datetime;
@@ -16,25 +16,8 @@ public class EpisodeRecordInfo {
     public final Integer        rating;
     public final String         comment;
 
-
-    static PreparedStatement GetUpsertStatement(Connection conn) throws SQLException {
-        String upsertSqlFetch =
-        """
-        INSERT INTO episode_record (
-            EPI_ID,
-            view_datetime,
-            rating,
-            comment
-        )
-        VALUES (?, ?, ?, ?)
-        ON CONFLICT(EPI_ID, view_datetime) DO UPDATE SET
-            rating      = excluded.rating,
-            comment     = excluded.comment;
-        """;
-        return conn.prepareStatement(upsertSqlFetch);
-    }
-
-    void SetParams(PreparedStatement ps) throws SQLException {
+    @Override
+    void setParams(PreparedStatement ps) throws SQLException {
         Utils.safeSetInt            (ps, 1, EPI_ID        );
         Utils.safeSetOffsetDateTime (ps, 2, view_datetime );
         Utils.safeSetInt            (ps, 3, rating       );

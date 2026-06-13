@@ -1,6 +1,6 @@
 # 表结构
 
-本文档描述当前 SQLite schema。字段、主键和外键关系应与 `src/java/main/Database/SQLiteInit.java` 以及 `Database.*Info` 类保持一致。
+本文档描述当前 SQLite schema。字段、主键和外键关系应与 `src/main/java/Database/SQLiteSQL.java`、`src/main/java/Database/SQLiteAccess.java` 以及 `Database.*Info` 类保持一致。
 
 统一约定：
 

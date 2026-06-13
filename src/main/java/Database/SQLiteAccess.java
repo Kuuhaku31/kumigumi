@@ -8,10 +8,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -21,131 +19,74 @@ import java.util.Set;
 
 public class SQLiteAccess implements Closeable {
 
-    private static final int SQL_PARAM_CHUNK_SIZE = 500;
+    private final int SQL_PARAM_CHUNK_SIZE = 500;
 
-    private final Connection conn;
+    private final Connection connect;
 
     public SQLiteAccess(String dbPath) throws SQLException {
 
-        var dbUrl = "jdbc:sqlite:" + dbPath;
+        // 建立数据库连接，如果数据库文件不存在则创建新数据库并初始化表结构
+        var db_url = "jdbc:sqlite:" + dbPath;
         if(!new File(dbPath).exists()) {
             System.out.println("该数据库文件不存在: " + dbPath);
-            SQLiteInit.initDatabase(dbUrl);
+            System.out.println("创建数据库...");
+            try(var conn = DriverManager.getConnection(db_url)) {
+                for(var sql : SQLiteSQL.createTableStatements()) {
+                    conn.prepareStatement(sql).execute();
+                }
+            }
+            System.out.println("数据库创建完成");
         }
+        connect = DriverManager.getConnection(db_url);
 
-        conn = DriverManager.getConnection(dbUrl);
-        applyPragmaSettings();
-    }
-
-    private void applyPragmaSettings() {
-        try(var st = conn.createStatement()) {
-            st.execute("PRAGMA foreign_keys = ON;");
-            st.execute("PRAGMA journal_mode = WAL;");
-            st.execute("PRAGMA synchronous = NORMAL;");
-            st.execute("PRAGMA temp_store = MEMORY;");
-            st.execute("PRAGMA cache_size = 10000;");
+        // 应用PRAGMA设置以优化性能和安全性
+        try(var st = connect.createStatement()) {
+            for(var sql : SQLiteSQL.PRAGMA_SETTINGS) st.execute(sql);
         } catch(SQLException e) {
             System.err.println("Failed to apply PRAGMA settings: " + e.getMessage());
         }
     }
 
-    public void UpsertAnimeInfo(AnimeInfo item) throws SQLException {
-        if(item == null) return;
-        try(var ps = AnimeInfo.GetUpsertStatement(conn)) {
-            item.SetParams(ps);
-            ps.executeUpdate();
-        }
-    }
+    public void UpsertInfo(Set<? extends Info> info_set) throws SQLException {
 
-    public void UpsertAnimeInfo(Collection<AnimeInfo> items) throws SQLException {
-        runBatch(items, AnimeInfo.GetUpsertStatement(conn), AnimeInfo::SetParams);
-    }
+        // 参数检查
+        if(info_set == null || info_set.isEmpty()) return;
 
-    public void UpsertEpisodeInfo(EpisodeInfo item) throws SQLException {
-        if(item == null) return;
-        try(var ps = EpisodeInfo.GetUpsertStatement(conn)) {
-            item.SetParams(ps);
-            ps.executeUpdate();
-        }
-    }
+        // 一次性分类，避免按类型重复扫描原始集合
+        var animeInfoSet         = new LinkedHashSet<AnimeInfo>();
+        var episodeInfoSet       = new LinkedHashSet<EpisodeInfo>();
+        var episodeRecordInfoSet = new LinkedHashSet<EpisodeRecordInfo>();
+        var rssInfoSet           = new LinkedHashSet<RSSInfo>();
+        var torrentPageInfoSet   = new LinkedHashSet<TorrentPageInfo>();
+        var torrentInfoSet       = new LinkedHashSet<TorrentInfo>();
+        for(var info : info_set) {
 
-    public void UpsertEpisodeInfo(Collection<EpisodeInfo> items) throws SQLException {
-        runBatch(items, EpisodeInfo.GetUpsertStatement(conn), EpisodeInfo::SetParams);
-    }
+            if(info == null) continue;
 
-    public void UpsertEpisodeRecordInfo(EpisodeRecordInfo item) throws SQLException {
-        if(item == null) return;
-        try(var ps = EpisodeRecordInfo.GetUpsertStatement(conn)) {
-            item.SetParams(ps);
-            ps.executeUpdate();
-        }
-    }
+            if     (info instanceof AnimeInfo         i) animeInfoSet        .add(i);
+            else if(info instanceof EpisodeInfo       i) episodeInfoSet      .add(i);
+            else if(info instanceof EpisodeRecordInfo i) episodeRecordInfoSet.add(i);
+            else if(info instanceof RSSInfo           i) rssInfoSet          .add(i);
+            else if(info instanceof TorrentPageInfo   i) torrentPageInfoSet  .add(i);
+            else if(info instanceof TorrentInfo       i) torrentInfoSet      .add(i);
 
-    public void UpsertEpisodeRecordInfo(Collection<EpisodeRecordInfo> items) throws SQLException {
-        runBatch(items, EpisodeRecordInfo.GetUpsertStatement(conn), EpisodeRecordInfo::SetParams);
-    }
-
-    public void UpsertRSSInfo(RSSInfo item) throws SQLException {
-        if(item == null) return;
-        try(var ps = RSSInfo.GetUpsertStatement(conn)) {
-            item.SetParams(ps);
-            ps.executeUpdate();
-        }
-    }
-
-    public void UpsertRSSInfo(Collection<RSSInfo> items) throws SQLException {
-        runBatch(items, RSSInfo.GetUpsertStatement(conn), RSSInfo::SetParams);
-    }
-
-    public void UpsertTorrentPageInfo(TorrentPageInfo item) throws SQLException {
-        if(item == null) return;
-        try(var ps = TorrentPageInfo.GetUpsertStatement(conn)) {
-            item.SetParams(ps);
-            ps.executeUpdate();
-        }
-    }
-
-    public void UpsertTorrentPageInfo(Collection<TorrentPageInfo> items) throws SQLException {
-        runBatch(items, TorrentPageInfo.GetUpsertStatement(conn), TorrentPageInfo::SetParams);
-    }
-
-    public void UpsertTorrentInfo(TorrentInfo item) throws SQLException {
-        if(item == null) return;
-        try(var ps = TorrentInfo.GetUpsertStatement(conn)) {
-            item.SetParams(ps);
-            ps.executeUpdate();
-        }
-    }
-
-    public void UpsertTorrentInfo(Collection<TorrentInfo> items) throws SQLException {
-        runBatch(items, TorrentInfo.GetUpsertStatement(conn), TorrentInfo::SetParams);
-    }
-
-    private <T> void runBatch(Collection<T> items, PreparedStatement ps, SQLBinder<T> binder) throws SQLException {
-        if(items == null || items.isEmpty()) {
-            ps.close();
-            return;
+            else throw new IllegalArgumentException("Unsupported Info type: " + info.getClass().getName());
         }
 
-        var prevAuto = conn.getAutoCommit();
-        conn.setAutoCommit(false);
-        try(ps) {
-            var count = 0;
-            for(var item : items) {
-                if(item == null) continue;
-                binder.bind(item, ps);
-                ps.addBatch();
-                count++;
-                if(count % SQL_PARAM_CHUNK_SIZE == 0) ps.executeBatch();
-            }
-            if(count > 0) ps.executeBatch();
-            conn.commit();
-        } catch(SQLException e) {
-            conn.rollback();
-            throw e;
-        } finally {
-            conn.setAutoCommit(prevAuto);
+        // 事务处理，确保批量插入的原子性和性能
+        var prev_auto = connect.getAutoCommit();
+        connect.setAutoCommit(false);
+        try {
+            run_info_batch(animeInfoSet,         AnimeInfo.class        );
+            run_info_batch(episodeInfoSet,       EpisodeInfo.class      );
+            run_info_batch(episodeRecordInfoSet, EpisodeRecordInfo.class);
+            run_info_batch(rssInfoSet,           RSSInfo.class          );
+            run_info_batch(torrentPageInfoSet,   TorrentPageInfo.class  );
+            run_info_batch(torrentInfoSet,       TorrentInfo.class      );
+            connect.commit();
         }
+        catch(SQLException | RuntimeException e) { connect.rollback(); throw e; }
+        finally { connect.setAutoCommit(prev_auto); }
     }
 
     public void ExportTorrentFiles(Set<String> torHashList, String safePath) {
@@ -153,12 +94,11 @@ public class SQLiteAccess implements Closeable {
 
         System.out.println("正在导出种子文件: " + torHashList.size() + " 个，保存路径: " + safePath);
 
-        for(var chunk : chunks(normalizeHashes(torHashList))) {
-            var placeholders = String.join(",", java.util.Collections.nCopies(chunk.size(), "?"));
-            var sql = "SELECT TOR_HASH, torrent_file FROM torrent WHERE TOR_HASH IN (" + placeholders + ")";
+        for(var chunk : Utils.chunks(Utils.normalizeHashes(torHashList), SQL_PARAM_CHUNK_SIZE)) {
+            var sql = SQLiteSQL.selectTorrentFilesByHashCount(chunk.size());
 
-            try(var ps = conn.prepareStatement(sql)) {
-                bindStrings(ps, chunk);
+            try(var ps = connect.prepareStatement(sql)) {
+                Utils.bindStrings(ps, chunk);
                 try(var rs = ps.executeQuery()) {
                     while(rs.next()) {
                         var torHash = rs.getString("TOR_HASH");
@@ -182,20 +122,15 @@ public class SQLiteAccess implements Closeable {
     }
 
     public Set<String> GetTorrentHashNotExist(Set<String> hashList) throws SQLException {
-        var uniqueHashes = normalizeHashes(hashList);
+        var uniqueHashes = Utils.normalizeHashes(hashList);
         if(uniqueHashes.isEmpty()) return Set.of();
 
         var hasFileSet = new HashSet<String>();
-        for(var chunk : chunks(uniqueHashes)) {
-            var placeholders = String.join(",", java.util.Collections.nCopies(chunk.size(), "?"));
-            var sql
-            = "SELECT TOR_HASH FROM torrent "
-            + "WHERE TOR_HASH IN (" + placeholders + ") "
-            + "AND torrent_file IS NOT NULL "
-            + "AND length(torrent_file) > 0";
+        for(var chunk : Utils.chunks(uniqueHashes, SQL_PARAM_CHUNK_SIZE)) {
+            var sql = SQLiteSQL.selectExistingTorrentHashesByHashCount(chunk.size());
 
-            try(var ps = conn.prepareStatement(sql)) {
-                bindStrings(ps, chunk);
+            try(var ps = connect.prepareStatement(sql)) {
+                Utils.bindStrings(ps, chunk);
                 try(var rs = ps.executeQuery()) {
                     while(rs.next()) hasFileSet.add(rs.getString("TOR_HASH"));
                 }
@@ -210,18 +145,17 @@ public class SQLiteAccess implements Closeable {
     }
 
     public Set<TorrentDownloader> GetDownloaderByHash(Set<String> hashList) throws SQLException {
-        var uniqueHashes = normalizeHashes(hashList);
+        var uniqueHashes = Utils.normalizeHashes(hashList);
         if(uniqueHashes.isEmpty()) return Set.of();
 
         var result = new LinkedHashMap<String, List<String>>();
         for(var hash : uniqueHashes) result.put(hash, new ArrayList<>());
 
-        for(var chunk : chunks(uniqueHashes)) {
-            var placeholders = String.join(",", java.util.Collections.nCopies(chunk.size(), "?"));
-            var sql = "SELECT TOR_HASH, url_download FROM torrent_page WHERE TOR_HASH IN (" + placeholders + ")";
+        for(var chunk : Utils.chunks(uniqueHashes, SQL_PARAM_CHUNK_SIZE)) {
+            var sql = SQLiteSQL.selectDownloadUrlsByHashCount(chunk.size());
 
-            try(var ps = conn.prepareStatement(sql)) {
-                bindStrings(ps, chunk);
+            try(var ps = connect.prepareStatement(sql)) {
+                Utils.bindStrings(ps, chunk);
                 try(var rs = ps.executeQuery()) {
                     while(rs.next()) {
                         var hash = rs.getString("TOR_HASH");
@@ -239,45 +173,33 @@ public class SQLiteAccess implements Closeable {
         return downloaderSet;
     }
 
-    private static LinkedHashSet<String> normalizeHashes(Collection<String> hashes) {
-        var uniqueHashes = new LinkedHashSet<String>();
-        if(hashes == null) return uniqueHashes;
+    private <T extends Info> void run_info_batch(Set<T> items, Class<T> info_type) throws SQLException {
 
-        for(var hash : hashes) {
-            if(hash != null && !hash.isBlank()) uniqueHashes.add(hash);
-        }
-        return uniqueHashes;
-    }
+        // 参数检查
+        if(items.isEmpty()) return;
 
-    private static List<List<String>> chunks(Collection<String> values) {
-        var input = new ArrayList<>(values);
-        var res   = new ArrayList<List<String>>();
-        for(var start = 0; start < input.size(); start += SQL_PARAM_CHUNK_SIZE) {
-            var end = Math.min(start + SQL_PARAM_CHUNK_SIZE, input.size());
-            res.add(input.subList(start, end));
-        }
-        return res;
-    }
+        // 获取对应的PreparedStatement，并为每个Info对象设置参数并添加到批处理中
+        try(var ps = connect.prepareStatement(SQLiteSQL.upsertInfo(info_type))) {
 
-    private static void bindStrings(PreparedStatement ps, List<String> values) throws SQLException {
-        for(var i = 0; i < values.size(); i++) {
-            ps.setString(i + 1, values.get(i));
+            var count = 0;
+            for(var item : items) {
+                if(item == null) continue;
+                item.setParams(ps);
+                ps.addBatch();
+                count++;
+                if(count % SQL_PARAM_CHUNK_SIZE == 0) ps.executeBatch();
+            }
+
+            // 执行剩余的批处理
+            if(count > 0) ps.executeBatch();
         }
     }
+
 
     @Override
     public void close() {
-        if(conn != null) {
-            try {
-                conn.close();
-            } catch(SQLException e) {
-                System.err.println("Close failed: " + e.getMessage());
-            }
-        }
+        if(connect != null) try { connect.close(); }
+        catch(SQLException e) { System.err.println("Close failed: " + e.getMessage()); }
     }
 
-    @FunctionalInterface
-    private interface SQLBinder<T> {
-        void bind(T item, PreparedStatement ps) throws SQLException;
-    }
 }

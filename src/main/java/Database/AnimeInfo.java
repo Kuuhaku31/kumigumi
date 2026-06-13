@@ -10,7 +10,7 @@ import Excel.TableData;
 import Utils.UtilityFunctions;
 
 
-public class AnimeInfo {
+public class AnimeInfo extends Info {
 
     public final Integer        ANI_ID;
 
@@ -24,35 +24,8 @@ public class AnimeInfo {
     public final String         url_cover;
 
 
-    static PreparedStatement GetUpsertStatement(Connection conn) throws SQLException {
-        String upsertSqlFetch =
-        """
-        INSERT INTO anime (
-            ANI_ID,
-            air_date,
-            title,
-            title_cn,
-            aliases,
-            description,
-            episode_count,
-            url_official_site,
-            url_cover
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(ANI_ID) DO UPDATE SET
-            air_date            = excluded.air_date,
-            title               = excluded.title,
-            title_cn            = excluded.title_cn,
-            aliases             = excluded.aliases,
-            description         = excluded.description,
-            episode_count       = excluded.episode_count,
-            url_official_site   = excluded.url_official_site,
-            url_cover           = excluded.url_cover;
-        """;
-        return conn.prepareStatement(upsertSqlFetch);
-    }
-
-    void SetParams(PreparedStatement ps) throws SQLException {
+    @Override
+    void setParams(PreparedStatement ps) throws SQLException {
         Utils.safeSetInt            (ps,  1, ANI_ID           );
         Utils.safeSetDate           (ps,  2, air_date         );
         Utils.safeSetString         (ps,  3, title            );

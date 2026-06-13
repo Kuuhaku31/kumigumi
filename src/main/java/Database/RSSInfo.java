@@ -7,31 +7,17 @@ import java.util.Set;
 import Excel.TableData;
 
 
-public class RSSInfo {
+public class RSSInfo extends Info {
 
     public final String  URL_RSS;
     public final Integer ANI_ID;
 
 
-    static PreparedStatement GetUpsertStatement(Connection conn) throws SQLException {
-        String upsertSqlFetch =
-        """
-        INSERT INTO rss (
-            URL_RSS,
-            ANI_ID
-        )
-        VALUES (?, ?)
-        ON CONFLICT(URL_RSS) DO UPDATE SET
-            ANI_ID = excluded.ANI_ID;
-        """;
-        return conn.prepareStatement(upsertSqlFetch);
-    }
-
-    void SetParams(PreparedStatement ps) throws SQLException {
+    @Override
+    void setParams(PreparedStatement ps) throws SQLException {
         Utils.safeSetString(ps, 1, URL_RSS);
         Utils.safeSetInt(ps, 2, ANI_ID);
     }
-
 
     public RSSInfo(String url_rss, Integer ani_id) {
         if(url_rss == null) {

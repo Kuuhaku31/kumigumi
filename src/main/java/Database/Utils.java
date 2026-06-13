@@ -5,6 +5,10 @@ import static Utils.UtilityFunctions.getDateString;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
 
 class Utils {
 
@@ -69,6 +73,32 @@ class Utils {
             ps.setNull(index, java.sql.Types.BLOB);
         } else {
             ps.setBytes(index, value);
+        }
+    }
+
+    static LinkedHashSet<String> normalizeHashes(Collection<String> hashes) {
+    var uniqueHashes = new LinkedHashSet<String>();
+    if(hashes == null) return uniqueHashes;
+
+    for(var hash : hashes) {
+        if(hash != null && !hash.isBlank()) uniqueHashes.add(hash);
+    }
+    return uniqueHashes;
+    }
+
+    static List<List<String>> chunks(Collection<String> values, int chunkSize) {
+        var input = new ArrayList<>(values);
+        var res   = new ArrayList<List<String>>();
+        for(var start = 0; start < input.size(); start += chunkSize) {
+            var end = Math.min(start + chunkSize, input.size());
+            res.add(input.subList(start, end));
+        }
+        return res;
+    }
+
+    static void bindStrings(PreparedStatement ps, List<String> values) throws SQLException {
+        for(var i = 0; i < values.size(); i++) {
+            ps.setString(i + 1, values.get(i));
         }
     }
 }

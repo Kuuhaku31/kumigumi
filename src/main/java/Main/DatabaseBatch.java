@@ -6,6 +6,7 @@ import java.util.List;
 import Database.AnimeInfo;
 import Database.EpisodeInfo;
 import Database.EpisodeRecordInfo;
+import Database.Info;
 import Database.RSSInfo;
 import Database.TorrentInfo;
 import Database.TorrentPageInfo;
@@ -38,8 +39,8 @@ final class DatabaseBatch {
             && torrentItems.isEmpty();
     }
 
-    List<Object> allItems() {
-        var result = new ArrayList<Object>();
+    List<Info> allItems() {
+        var result = new ArrayList<Info>();
         result.addAll(animeItems);
         result.addAll(episodeItems);
         result.addAll(episodeRecords);
