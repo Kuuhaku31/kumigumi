@@ -25,8 +25,4 @@ public class ARGS {
     public static final String OUTPUT_FILE_0 = RESOURCES_PATH + "output0.text";
     public static final String OUTPUT_FILE_1 = RESOURCES_PATH + "output1.text";
     public static final String OUTPUT_FILE_2 = RESOURCES_PATH + "output2.text";
-
-    public static String EXCEL_FILE_PATH = "D:/OneDrive/db/kumigumi/test.xlsx";
-    public static String DATABASE_PATH   = "D:/OneDrive/db/kumigumi/kumigumi.db";
-    public static String LOG_PATH        = "ignore/logs/";
 }

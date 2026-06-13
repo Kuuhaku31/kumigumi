@@ -88,10 +88,15 @@ final class ExcelReadContext {
         System.out.println(color("开始通过解析的元数据创建表", ColorCode.GREEN));
         for(var entry : metaDataList.entrySet()) {
 
-            var blockName = color(entry.getKey(), ColorCode.BOLD_MAGENTA);
+            var blockName = entry.getKey();
             var blockMeta = entry.getValue();
-            System.out.println(color("Creating block: " + blockName + " with metadata:", ColorCode.GREEN));
-            System.out.println(blockMeta.toPrintString("  "));
+
+            {
+                var print_name = color(blockName, ColorCode.BOLD_MAGENTA);
+                var title = color("Creating block: " + print_name + " with metadata:", ColorCode.GREEN);
+                System.out.println(title);
+                System.out.println(blockMeta.toPrintString("  "));
+            }
 
             try {
                 create_table_data(blockName, blockMeta);

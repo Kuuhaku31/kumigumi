@@ -36,19 +36,14 @@
     },
     {
         "type": "java",
-        "name": "Kumigumi: Main (custom paths)",
+        "name": "Kumigumi: Main",
         "request": "launch",
         "mainClass": "Main.Main",
         "projectName": "kumigumi",
         "cwd": "${workspaceFolder}",
         "console": "integratedTerminal",
         "args": [
-            "--excel_file_path",
-            "${input:excelFilePath}",
-            "--database_path",
-            "${input:databasePath}",
-            "--log_path",
-            "${input:logPath}"
+           "--use_config",
         ],
         "vmArgs": [
             "--enable-native-access=ALL-UNNAMED"
