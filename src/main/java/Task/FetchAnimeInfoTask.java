@@ -1,5 +1,7 @@
 package Task;
 
+import java.util.Map;
+
 import Database.Info.AnimeInfo;
 import NetAccess.NetAccess;
 
@@ -27,5 +29,13 @@ public class FetchAnimeInfoTask extends Task {
 
     public AnimeInfo getResult() {
         return result;
+    }
+
+    @Override
+    public Map<String, Object> getInfo() {
+        var info = super.getInfo();
+        info.put("ANI_ID", ANI_ID);
+        info.put("Result", result);
+        return info;
     }
 }

@@ -1,5 +1,6 @@
 package Task;
 
+import java.util.Map;
 import java.util.Set;
 
 import Database.Info.TorrentPageInfo;
@@ -30,5 +31,13 @@ public class FetchTorrentPageTask extends Task {
 
     public Set<TorrentPageInfo> getResultSet() {
         return result_set;
+    }
+
+    @Override
+    public Map<String, Object> getInfo() {
+        var info = super.getInfo();
+        info.put("URL_RSS", URL_RSS);
+        info.put("ResultSize", result_set == null ? 0 : result_set.size());
+        return info;
     }
 }

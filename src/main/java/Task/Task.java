@@ -67,7 +67,7 @@ public abstract class Task {
     @Override
     public String toString() {
         var info = getInfo();
-        return "Task" + UtilityFunctions.getInfoString(info);
+        return getClass().getSimpleName() + UtilityFunctions.getInfoString(info);
     }
 
 
