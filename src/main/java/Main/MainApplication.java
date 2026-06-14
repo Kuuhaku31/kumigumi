@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Set;
 
 import Excel.ExcelReader;
-import Excel.ExcelResult;
 import Excel.TableData;
 import Utils.ColorCode;
 import Utils.UtilityFunctions;
@@ -27,8 +26,8 @@ final class MainApplication {
     public String  DATABASE_PATH;
     public String  LOG_PATH;
 
-    ExcelResult excelResult;
-    final Map<String, Object> variables = new java.util.HashMap<>();
+    final Map<String, Object> variables   = new java.util.HashMap<>();
+    final List<List<String>>  commandList = new java.util.ArrayList<>();
 
     MainApplication(String[] args) {
 
@@ -84,44 +83,65 @@ final class MainApplication {
 
         Files.createDirectories(Path.of(LOG_PATH));
 
-        excelResult = ExcelReader.Read(EXCEL_FILE_PATH);
+        // 读取 Excel 文件
+        var excelResult = ExcelReader.Read(EXCEL_FILE_PATH);
+        variables.putAll(excelResult.variables());
+        variables.putAll(excelResult.tableDataList());
+        commandList.addAll(excelResult.commands());
+
         UtilityFunctions.WriteStringToFile(excelResult.toString(), LOG_PATH + "01.excel_result.txt");
 
+        System.out.println();
+
         // 执行命令
-        for(var cmd : excelResult.commands()) {
+        var cmd_index = 0;
+        for(var cmd : commandList) {
 
             if(cmd == null || cmd.isEmpty()) continue;
 
             var cmd_enum = ExcelCommand.fromString(cmd.getFirst());
+
+            // 打印命令信息
+            var msg = "#" + (++cmd_index) + ": " + cmd_enum +
+            " -> " + color(cmd.subList(1, cmd.size()).toString(), ColorCode.BLUE);
+            System.out.println(color(msg, ColorCode.BOLD_BLUE));
+
             if(cmd_enum == null) {
                 System.out.println("Unknown command: " + cmd.getFirst());
             }
             else switch(cmd_enum) {
-            case PRINT_BLOCK -> Commands.printBlock(this, cmd);
-            case MAKE_EPISODE_RECORD_ITEM -> Commands.makeEpisodeRecordItem(this, cmd);
-            case MAKE_RSS_ITEM -> Commands.makeRSSItem(this, cmd);
-            case TO_DB -> Commands.toDB(this, cmd);
-            default -> System.out.println("Unknown command: " + cmd.getFirst());
+            case PRINT_VARIABLE               -> Commands.printVariable           (this, cmd);
+            case PRINT_MESSAGE                -> Commands.printMessage            (      cmd);
+            case MAKE_EPISODE_RECORD_ITEM     -> Commands.makeEpisodeRecordItem   (this, cmd);
+            case MAKE_RSS_ITEM                -> Commands.makeRSSItem             (this, cmd);
+            case TO_DB                        -> Commands.toDB                    (this, cmd);
+            case MAKE_FETCH_TASK_ANIME        -> Commands.makeFetchTaskAnime      (this, cmd);
+            case MAKE_FETCH_TASK_EPISODE      -> Commands.makeFetchTaskEpisode    (this, cmd);
+            case MAKE_FETCH_TASK_TORRENT_PAGE -> Commands.makeFetchTaskTorrentPage(this, cmd);
+            case RUN_TASK                     -> Commands.runTask                 (this, cmd);
+            case SAVE_LOG                     -> Commands.saveLog                 (this, cmd);
+            default                           -> System.out.println("Unknown command: " + cmd.getFirst());
             }
-        }
 
-        // 输出变量信息
-        System.out.println("Variables:");
-        for(var entry : variables.entrySet()) {
-            System.out.println("\t" + color(entry.getKey(), ColorCode.BOLD_GREEN) + ": " + entry.getValue());
+            System.out.println();
         }
 
         System.out.println("完成");
     }
 
-    Set<TableData> getBlockDataByNames(
-        List<String>           blockNames,
-        Map<String, TableData> blockDataMap
-    ) {
+    Set<TableData> getBlockDataByNames(List<String> blockNames) {
         Set<TableData> res = new java.util.HashSet<>();
         for(var blockName : blockNames) {
-            var blockData = blockDataMap.get(blockName);
-            if(blockData != null) res.add(blockData);
+            var blockData = variables.get(blockName);
+            if(blockData == null) {
+                System.out.println(color("未找到名为 " + blockName + " 的变量", ColorCode.RED));
+            }
+            else if(blockData instanceof TableData) {
+                res.add((TableData) blockData);
+            }
+            else {
+                System.out.println(color("变量 " + blockName + " 不是 TableData 类型", ColorCode.RED));
+            }
         }
         return res;
     }

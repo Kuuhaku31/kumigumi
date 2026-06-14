@@ -49,19 +49,114 @@ air_date 3 date
 
 ## 运行命令
 
-| 命令                                      | 输入                               | 输出/效果                       |
-| ----------------------------------------- | ---------------------------------- | ------------------------------- |
-| `_item_anime` / `_item_ani`               | anime 数据块                       | 生成 `AnimeInfo`                |
-| `_item_episode` / `_item_epi`             | episode 数据块                     | 生成 `EpisodeInfo`              |
-| `_item_episode_record`                    | episode_record 数据块              | 生成 `EpisodeRecordInfo`        |
-| `_item_rss`                               | rss 数据块                         | 生成 `RSSInfo`                  |
-| `_item_torrent_page`                      | torrent_page 数据块                | 生成 `TorrentPageInfo`          |
-| `_fetch_task_ani` / `_fetch_anime`        | 含 `ANI_ID` 的数据块               | 创建番剧抓取任务                |
-| `_fetch_task_epi` / `_fetch_episode`      | 含 `ANI_ID` 的数据块               | 创建分集抓取任务                |
-| `_fetch_task_tor` / `_fetch_torrent_page` | 含 `URL_RSS` 或 `url_rss` 的数据块 | 创建 RSS 种子页抓取任务         |
-| `_run_fetch_task`                         | 任务集合名                         | 执行任务并缓存结果              |
-| `_download_torrent`                       | torrent_page 结果集合              | 下载数据库中缺失的 torrent 文件 |
-| `_to_db`                                  | 已缓存的 Info 集合                 | 批量 upsert 到 SQLite           |
+当前支持的命令如下：
+
+| 命令                                       | 功能描述                                     |
+| ------------------------------------------ | -------------------------------------------- |
+| `_print_variable`                          | 打印变量内容                                 |
+| `_print_message`                           | 打印消息内容                                 |
+| `_make_info_episode_record` / `_mier`      | 根据 TableData 生成 EpisodeRecordInfo        |
+| `_make_info_rss` / `_mir`                  | 根据 TableData 生成 RSSinfo                  |
+| `_make_task_fetch_anime` / `_mtfa`         | 根据 TableData 生成 FetchAnimeInfoTask       |
+| `_make_task_fetch_episode` / `_mtfe`       | 根据 TableData 生成 FetchEpisodeInfoTask     |
+| `_make_task_fetch_torrent_page` / `_mtftp` | 根据 TableData 生成 FetchTorrentPageInfoTask |
+| `_run_task`                                | 执行任务                                     |
+| `_save_log`                                | 保存日志                                     |
+| `_to_db`                                   | 写入数据库                                   |
+
+### `_print_variable`
+
+```text
+_print_variable <variable_name> [<variable_name2> ...]
+```
+
+### `_print_message`
+
+```text
+_print_message <message>
+```
+
+### `_make_info_episode_record` / `_mier`
+
+```text
+_mier <item_name> <variable_name1> [<variable_name2> ...]
+```
+
+variable_name 必须引用一个TableData对象
+且该 TableData 对象必须包含 `EPI_ID`、`view_datetime` 和 `timezone` 字段
+
+1. 如果 `Map<String, Object> variables` 中不存在key为 `item_name` 的变量，则：
+    构建完成后，`item_name` 变量将引用一个 `Set<EpisodeRecordInfo>` 对象。
+2. 如果 `variables` 中已存在key为 `item_name` 的变量，且其值为一个 `Set<? extends BaseInfo>` 对象，则：
+    构建完成后，将合并新生成的 `Set<EpisodeRecordInfo>` 对象到原有集合中。
+3. 如果 `variables` 中已存在key为 `item_name` 的变量，但其值不是一个 `Set<? extends BaseInfo>` 对象，则：
+    输出错误信息并跳过该命令。
+
+### `_make_info_rss` / `_mir`
+
+```text
+_mir <item_name> <variable_name1> [<variable_name2> ...]
+```
+
+variable_name 必须引用一个TableData对象
+且该 TableData 对象必须包含 `URL_RSS` 字段
+
+接下来同 `_make_info_episode_record` / `_mier`
+
+### `_make_task_fetch_anime` / `_mtfa`
+
+```text
+_mtfa <item_name> <variable_name1> [<variable_name2> ...]
+```
+
+variable_name 必须引用一个TableData对象
+且该 TableData 对象必须包含 `ANI_ID` 字段
+
+1. 如果 `Map<String, Object> variables` 中不存在key为 `item_name` 的变量，则：
+    构建完成后，`item_name` 变量将引用一个 `Set<FetchAnimeInfoTask>` 对象。
+2. 如果 `variables` 中已存在key为 `item_name` 的变量，且其值为一个 `Set<? extends Task>` 对象，则：
+    构建完成后，将合并新生成的 `Set<FetchAnimeInfoTask>` 对象到原有集合中。
+3. 如果 `variables` 中已存在key为 `item_name` 的变量，但其值不是一个 `Set<? extends Task>` 对象，则：
+    输出错误信息并跳过该命令。
+
+### `_make_task_fetch_episode` / `_mtfe`
+
+同 `_make_task_fetch_anime` / `_mtfa`
+但 `variable_name` 引用的 `TableData` 必须包含 `ANI_ID` 字段，生成的对象类型为 `FetchEpisodeInfoTask`
+
+### `_make_task_fetch_torrent_page` / `_mtftp`
+
+同 `_make_task_fetch_anime` / `_mtfa`
+但 `variable_name` 引用的 `TableData` 必须包含 `URL_RSS` 字段，生成的对象类型为 `FetchTorrentPageInfoTask`
+
+### `_run_task`
+
+```text
+_run_task <result_item_name> <variable_name1> [<variable_name2> ...]
+```
+
+`variable_name` 必须引用一个 `Set<? extends Task>` 对象
+
+将所有任务集合合并到一起并丢给Task.ParallelExecution执行，获得一个结果，类型为 `Set<? extends BaseInfo>`
+
+1. 如果 `Map<String, Object> variables` 中不存在key为 `result_item_name` 的变量，则：
+    执行完成后，`result_item_name` 变量将引用一个 `Set<? extends BaseInfo>` 对象。
+2. 如果 `variables` 中已存在key为 `result_item_name` 的变量，且其值为一个 `Set<? extends BaseInfo>` 对象，则：
+    执行完成后，将合并新生成的结果集合到原有集合中。
+3. 如果 `variables` 中已存在key为 `result_item_name` 的变量，但其值不是一个 `Set<? extends BaseInfo>` 对象，则：
+    输出错误信息并跳过该命令。
+
+### `_to_db`
+
+```text
+_to_db <variable_name1> [<variable_name2> ...]
+```
+
+`variable_name` 必须引用一个 `Set<? extends BaseInfo>` 对象
+
+将所有集合合并到一起并写入 SQLite 数据库
+
+调用 `SQLiteAccess.UpsertInfo`
 
 ## 数据块字段
 

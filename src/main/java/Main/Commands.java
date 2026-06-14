@@ -5,317 +5,362 @@ import java.util.Set;
 
 import Database.SQLiteAccess;
 import Database.Info.BaseInfo;
-import Database.Info.RSSInfo;
 import Database.Info.EpisodeRecordInfo;
+import Database.Info.RSSInfo;
+import Database.Info.TorrentInfo;
+import Task.FetchAnimeInfoTask;
+import Task.FetchEpisodeInfoTask;
+import Task.FetchTorrentInfoTask;
+import Task.FetchTorrentPageTask;
+import Task.Task;
 import Utils.ColorCode;
+import Utils.UtilityFunctions;
 
 import static Utils.UtilityFunctions.color;
 
 
 final class Commands {
 
-    // private final ExcelResult excelResult;
-
-    // private final Map<String, DatabaseBatch> dbItemMap = new HashMap<>();
-    // private final Map<String, Set<Task>>     taskMap   = new HashMap<>();
-
     private Commands() {}
 
-    static void printBlock(MainApplication mainApp, List<String> cmd) {
+    static void printVariable(MainApplication mainApp, List<String> cmd) {
 
         if(cmd.size() < 2) {
-            System.out.println("Invalid command format for PRINT_BLOCK. Expected: PRINT_BLOCK <block_name1> [<block_name2> ...]");
+            System.out.println("Invalid command format for PRINT_VARIABLE. Expected: PRINT_VARIABLE <variable_name1> [<variable_name2> ...]");
             return;
         }
 
-        var block_names = cmd.subList(1, cmd.size());
-        for(var blockName : block_names) {
-            var blockData = mainApp.excelResult.getBlockDataByName(blockName);
-            if(blockData != null) {
-                System.out.println(color("Block: " + blockName, ColorCode.BOLD_BLUE));
-                System.out.println(blockData.toPrintString());
-            } else {
-                System.out.println(color("Block not found: " + blockName, ColorCode.BOLD_RED));
+        for(var variableName : cmd.subList(1, cmd.size())) {
+            if(!mainApp.variables.containsKey(variableName)) {
+                System.out.println(color("Variable not found: " + variableName, ColorCode.BOLD_RED));
+                continue;
             }
+
+            System.out.println(color("Variable: " + variableName, ColorCode.BOLD_BLUE));
+            var sb = new StringBuilder();
+            appendLogValue(sb, mainApp.variables.get(variableName));
+            System.out.print(sb);
+        }
+    }
+
+    static void printMessage(List<String> cmd) {
+
+        if(cmd.size() < 2) {
+            System.out.println("Invalid command format for PRINT_MESSAGE. Expected: PRINT_MESSAGE <message>");
+            return;
         }
 
+        System.out.println(String.join(" ", cmd.subList(1, cmd.size())));
     }
 
     static void makeEpisodeRecordItem(MainApplication mainApp, List<String> cmd) {
 
         if(cmd.size() < 3) {
-            System.out.println("Invalid command format for MAKE_EPISODE_RECORD_ITEM. Expected: MAKE_EPISODE_RECORD_ITEM <item_name> <block_name1> [<block_name2> ...]");
+            System.out.println("Invalid command format for MAKE_INFO_EPISODE_RECORD. Expected: MAKE_INFO_EPISODE_RECORD <item_name> <variable_name1> [<variable_name2> ...]");
             return;
         }
 
-        var item_name      = cmd.get(1);
-        var block_names    = cmd.subList(2, cmd.size());
-        var requiredBlocks = mainApp.getBlockDataByNames(block_names, mainApp.excelResult.tableDataList());
+        var itemName = cmd.get(1);
+        if(!canMergeBaseInfoSet(mainApp, itemName)) return;
 
-        // 解析表格数据并创建 EpisodeRecordInfo 对象
-        Set<EpisodeRecordInfo> episodeRecords = new java.util.HashSet<>();
-        for(var blockData : requiredBlocks)
+        var episodeRecords = new java.util.LinkedHashSet<BaseInfo>();
+        for(var blockData : mainApp.getBlockDataByNames(cmd.subList(2, cmd.size()))) {
             episodeRecords.addAll(EpisodeRecordInfo.ParseEpisodeRecordInfoByTableData(blockData));
-        mainApp.variables.put(item_name, episodeRecords);
+        }
+
+        mergeBaseInfoSet(mainApp, itemName, episodeRecords);
     }
 
     static void makeRSSItem(MainApplication mainApp, List<String> cmd) {
 
         if(cmd.size() < 3) {
-            System.out.println("Invalid command format for MAKE_RSS_ITEM. Expected: MAKE_RSS_ITEM <item_name> <block_name1> [<block_name2> ...]");
+            System.out.println("Invalid command format for MAKE_INFO_RSS. Expected: MAKE_INFO_RSS <item_name> <variable_name1> [<variable_name2> ...]");
             return;
         }
 
-        var item_name      = cmd.get(1);
-        var block_names    = cmd.subList(2, cmd.size());
-        var requiredBlocks = mainApp.getBlockDataByNames(block_names, mainApp.excelResult.tableDataList());
+        var itemName = cmd.get(1);
+        if(!canMergeBaseInfoSet(mainApp, itemName)) return;
 
-        // 解析表格数据并创建 RSSInfo 对象
-        Set<RSSInfo> rssItems = new java.util.HashSet<>();
-        for(var blockData : requiredBlocks)
+        var rssItems = new java.util.LinkedHashSet<BaseInfo>();
+        for(var blockData : mainApp.getBlockDataByNames(cmd.subList(2, cmd.size()))) {
             rssItems.addAll(RSSInfo.ParseRSSInfoByTableData(blockData));
-        mainApp.variables.put(item_name, rssItems);
+        }
+
+        mergeBaseInfoSet(mainApp, itemName, rssItems);
     }
 
     static void toDB(MainApplication mainApp, List<String> cmd) {
+
         if(cmd.size() < 2) {
-            System.out.println("Invalid command format for TO_DB. Expected: TO_DB <item_name1> [<item_name2> ...]");
+            System.out.println("Invalid command format for TO_DB. Expected: TO_DB <variable_name1> [<variable_name2> ...]");
             return;
         }
 
-        var item_names = cmd.subList(1, cmd.size());
-
-        Set<BaseInfo> to_db_info_set = new java.util.HashSet<>();
-        for(var item_name : item_names) {
-            var item = mainApp.variables.get(item_name);
-            if(item instanceof Set<?> itemSet) for(var obj : itemSet) {
-                if(obj instanceof BaseInfo info) to_db_info_set.add(info);
-            }
+        var toDbInfoSet = new java.util.LinkedHashSet<BaseInfo>();
+        for(var variableName : cmd.subList(1, cmd.size())) {
+            var infoSet = getBaseInfoSetVariable(mainApp, variableName);
+            if(infoSet == null) return;
+            toDbInfoSet.addAll(infoSet);
         }
 
         try(var db = new SQLiteAccess(mainApp.DATABASE_PATH)) {
-            db.UpsertInfo(to_db_info_set);
-            System.out.println("Database synchronization completed for items: " + item_names);
+            db.UpsertInfo(toDbInfoSet);
+            System.out.println("Database synchronization completed for variables: " + cmd.subList(1, cmd.size()));
         } catch(Exception e) {
             System.err.println("Database operation error: " + e.getMessage());
         }
     }
 
-    // void run(List<String> cmd) {
-    //     switch(cmd.get(0)) {
-    //     case "_item_ani", "_item_anime"                 -> itemAnime(cmd);
-    //     case "_item_epi", "_item_episode"               -> itemEpisode(cmd);
-    //     case "_item_episode_record"                     -> itemEpisodeRecord(cmd);
-    //     case "_item_rss"                                -> itemRSS(cmd);
-    //     case "_item_torrent_page"                       -> itemTorrentPage(cmd);
-    //     case "_fetch_task_ani", "_fetch_anime"          -> fetchAnime(cmd);
-    //     case "_fetch_task_epi", "_fetch_episode"        -> fetchEpisode(cmd);
-    //     case "_fetch_task_tor", "_fetch_torrent_page"   -> fetchTorrentPage(cmd);
-    //     case "_run_fetch_task"                          -> runTaskSet(cmd);
-    //     case "_download_torrent"                        -> downloadTorrent(cmd);
-    //     case "_to_db"                                   -> toDatabase(cmd);
-    //     case "_item_ani_store", "_item_epi_store", "_item_tor_store" -> unsupportedLegacyCommand(cmd);
-    //     default                                         -> unknownCommand(cmd);
-    //     }
-    // }
+    static void makeFetchTaskAnime(MainApplication mainApp, List<String> cmd) {
 
-    // static void itemAnime(ExcelResult excelResult, List<String> cmd) {
-    //     var batch = buildBatchFromBlocks(excelResult, cmd.subList(2, cmd.size()), Commands::toAnimeInfo);
-    //     putBatch(cmd.get(1), batch);
-    // }
+        if(cmd.size() < 3) {
+            System.out.println("Invalid command format for MAKE_TASK_FETCH_ANIME. Expected: MAKE_TASK_FETCH_ANIME <item_name> <variable_name1> [<variable_name2> ...]");
+            return;
+        }
 
-    // private void itemEpisode(List<String> cmd) {
-    //     var batch = buildBatchFromBlocks(cmd.subList(2, cmd.size()), Commands::toEpisodeInfo);
-    //     putBatch(cmd.get(1), batch);
-    // }
+        var itemName = cmd.get(1);
+        if(!canMergeTaskSet(mainApp, itemName)) return;
 
-    // private void itemEpisodeRecord(List<String> cmd) {
-    //     var batch = new DatabaseBatch();
-    //     for(var blockData : excelResult.getBlockDataByNames(cmd.subList(2, cmd.size()))) {
-    //         batch.episodeRecords.addAll(EpisodeRecordInfo.ParseEpisodeRecordInfoByTableData(blockData));
-    //     }
-    //     putBatch(cmd.get(1), batch);
-    // }
+        var tasks = new java.util.LinkedHashSet<Task>();
+        for(var blockData : mainApp.getBlockDataByNames(cmd.subList(2, cmd.size()))) {
+            for(var aniId : TableDataRows.getAnimeIds(blockData)) tasks.add(new FetchAnimeInfoTask(aniId));
+        }
 
-    // private void itemRSS(List<String> cmd) {
-    //     var batch = new DatabaseBatch();
-    //     for(var blockData : excelResult.getBlockDataByNames(cmd.subList(2, cmd.size()))) {
-    //         batch.rssItems.addAll(RSSInfo.ParseRSSInfoByTableData(blockData));
-    //     }
-    //     putBatch(cmd.get(1), batch);
-    // }
+        mergeTaskSet(mainApp, itemName, tasks);
+    }
 
-    // private void itemTorrentPage(List<String> cmd) {
-    //     var batch = buildBatchFromBlocks(cmd.subList(2, cmd.size()), Commands::toTorrentPageInfo);
-    //     putBatch(cmd.get(1), batch);
-    // }
+    static void makeFetchTaskEpisode(MainApplication mainApp, List<String> cmd) {
 
-    // static DatabaseBatch buildBatchFromBlocks(ExcelResult excelResult, List<String> blockNames, RowMapper mapper) {
-    //     var batch = new DatabaseBatch();
-    //     for(var blockData : excelResult.getBlockDataByNames(blockNames)) {
-    //         for(var rowIndex = 0; rowIndex < blockData.GetRowSize(); rowIndex++) {
-    //             mapper.map(TableDataRows.rowToMap(blockData, rowIndex), batch);
-    //         }
-    //     }
-    //     return batch;
-    // }
+        if(cmd.size() < 3) {
+            System.out.println("Invalid command format for MAKE_TASK_FETCH_EPISODE. Expected: MAKE_TASK_FETCH_EPISODE <item_name> <variable_name1> [<variable_name2> ...]");
+            return;
+        }
 
-    // private static void toAnimeInfo(Map<String, String> row, DatabaseBatch batch) {
-    //     try {
-    //         batch.animeItems.add(new AnimeInfo(row));
-    //     } catch(IllegalArgumentException _) {
-    //         // Ignore rows that do not contain a valid anime record.
-    //     }
-    // }
+        var itemName = cmd.get(1);
+        if(!canMergeTaskSet(mainApp, itemName)) return;
 
-    // private static void toEpisodeInfo(Map<String, String> row, DatabaseBatch batch) {
-    //     try {
-    //         batch.episodeItems.add(new EpisodeInfo(row));
-    //     } catch(IllegalArgumentException _) {
-    //         // Ignore rows that do not contain a valid episode record.
-    //     }
-    // }
+        var tasks = new java.util.LinkedHashSet<Task>();
+        for(var blockData : mainApp.getBlockDataByNames(cmd.subList(2, cmd.size()))) {
+            for(var aniId : TableDataRows.getAnimeIds(blockData)) tasks.add(new FetchEpisodeInfoTask(aniId));
+        }
 
-    // private static void toTorrentPageInfo(Map<String, String> row, DatabaseBatch batch) {
-    //     try {
-    //         batch.torrentPageItems.add(new TorrentPageInfo(row));
-    //     } catch(IllegalArgumentException _) {
-    //         // Ignore rows that do not contain a valid torrent page record.
-    //     }
-    // }
+        mergeTaskSet(mainApp, itemName, tasks);
+    }
 
-    // private void fetchAnime(List<String> cmd) {
-    //     var tasks = new LinkedHashSet<Task>();
-    //     for(var blockData : excelResult.getBlockDataByNames(cmd.subList(2, cmd.size()))) {
-    //         for(var aniId : TableDataRows.getAnimeIds(blockData)) tasks.add(new FetchAnimeInfoTask(aniId));
-    //     }
-    //     putTasks(cmd.get(1), tasks);
-    // }
+    static void makeFetchTaskTorrentPage(MainApplication mainApp, List<String> cmd) {
 
-    // private void fetchEpisode(List<String> cmd) {
-    //     var tasks = new LinkedHashSet<Task>();
-    //     for(var blockData : excelResult.getBlockDataByNames(cmd.subList(2, cmd.size()))) {
-    //         for(var aniId : TableDataRows.getAnimeIds(blockData)) tasks.add(new FetchEpisodeInfoTask(aniId));
-    //     }
-    //     putTasks(cmd.get(1), tasks);
-    // }
+        if(cmd.size() < 3) {
+            System.out.println("Invalid command format for MAKE_TASK_FETCH_TORRENT_PAGE. Expected: MAKE_TASK_FETCH_TORRENT_PAGE <item_name> <variable_name1> [<variable_name2> ...]");
+            return;
+        }
 
-    // private void fetchTorrentPage(List<String> cmd) {
-    //     var tasks = new LinkedHashSet<Task>();
-    //     for(var blockData : excelResult.getBlockDataByNames(cmd.subList(2, cmd.size()))) {
-    //         for(var rssUrl : TableDataRows.getRSSUrls(blockData)) tasks.add(new FetchTorrentPageTask(rssUrl));
-    //     }
-    //     putTasks(cmd.get(1), tasks);
-    // }
+        var itemName = cmd.get(1);
+        if(!canMergeTaskSet(mainApp, itemName)) return;
 
-    // private void runTaskSet(List<String> cmd) {
-    //     var varName = cmd.get(1);
-    //     var batch   = new DatabaseBatch();
+        var tasks = new java.util.LinkedHashSet<Task>();
+        for(var blockData : mainApp.getBlockDataByNames(cmd.subList(2, cmd.size()))) {
+            for(var rssUrl : TableDataRows.getRSSUrls(blockData)) tasks.add(new FetchTorrentPageTask(rssUrl));
+        }
 
-    //     for(var i = 2; i < cmd.size(); i++) {
-    //         var taskName = cmd.get(i);
-    //         var tasks    = taskMap.get(taskName);
-    //         if(tasks == null || tasks.isEmpty()) continue;
+        mergeTaskSet(mainApp, itemName, tasks);
+    }
 
-    //         System.out.println("Running Task Set: " + taskName);
-    //         Task.ParallelExecution(tasks);
-    //         collectTaskResults(tasks, batch);
-    //         UtilityFunctions.WriteItemListToFile(new ArrayList<>(tasks), ARGS.LOG_PATH + taskName + "_task_log.txt");
-    //     }
+    static void runTask(MainApplication mainApp, List<String> cmd) {
 
-    //     putBatch(varName, batch);
-    //     UtilityFunctions.WriteItemListToFile(batch.allItems(), ARGS.LOG_PATH + varName + "_fetch_result.txt");
-    // }
+        if(cmd.size() < 3) {
+            System.out.println("Invalid command format for RUN_TASK. Expected: RUN_TASK <result_item_name> <variable_name1> [<variable_name2> ...]");
+            return;
+        }
 
-    // private void downloadTorrent(List<String> cmd) {
-    //     var varName = cmd.get(1);
-    //     var hashes  = new LinkedHashSet<String>();
+        var resultItemName = cmd.get(1);
+        if(!canMergeBaseInfoSet(mainApp, resultItemName)) return;
 
-    //     for(var i = 2; i < cmd.size(); i++) {
-    //         var batch = dbItemMap.get(cmd.get(i));
-    //         if(batch == null) continue;
-    //         for(var torrentPageInfo : batch.torrentPageItems) {
-    //             if(torrentPageInfo.TOR_HASH != null && !torrentPageInfo.TOR_HASH.isBlank()) hashes.add(torrentPageInfo.TOR_HASH);
-    //         }
-    //     }
+        var tasks = new java.util.LinkedHashSet<Task>();
+        for(var variableName : cmd.subList(2, cmd.size())) {
+            var taskSet = getTaskSetVariable(mainApp, variableName);
+            if(taskSet == null) return;
+            tasks.addAll(taskSet);
+        }
 
-    //     if(hashes.isEmpty()) return;
+        Task.ParallelExecution(tasks);
+        mergeBaseInfoSet(mainApp, resultItemName, collectTaskResults(tasks));
+        UtilityFunctions.WriteItemListToFile(new java.util.ArrayList<>(tasks), mainApp.LOG_PATH + resultItemName + "_task_log.txt");
+    }
 
-    //     try(var db = new SQLiteAccess(ARGS.DATABASE_PATH)) {
-    //         var notExistHashes = db.GetTorrentHashNotExist(hashes);
-    //         var downloaders    = db.GetDownloaderByHash(notExistHashes);
-    //         var tasks          = new LinkedHashSet<Task>();
-    //         for(TorrentDownloader downloader : downloaders) {
-    //             if(downloader.getUrlList() != null && !downloader.getUrlList().isEmpty()) {
-    //                 tasks.add(new FetchTorrentInfoTask(downloader));
-    //             }
-    //         }
+    static void saveLog(MainApplication mainApp, List<String> cmd) {
 
-    //         Task.ParallelExecution(tasks);
+        if(cmd.size() < 3) {
+            System.out.println("Invalid command format for SAVE_LOG. Expected: SAVE_LOG <log_file_name> <var_name1> [<var_name2> ...]");
+            return;
+        }
 
-    //         var batch = new DatabaseBatch();
-    //         collectTaskResults(tasks, batch);
-    //         putBatch(varName, batch);
-    //         UtilityFunctions.WriteItemListToFile(batch.torrentItems, ARGS.LOG_PATH + varName + "_torrent_result.txt");
-    //     } catch(SQLException e) {
-    //         System.err.println("数据库操作失败: " + e.getMessage());
-    //     }
-    // }
+        var logRoot = java.nio.file.Path.of(mainApp.LOG_PATH).toAbsolutePath().normalize();
+        var logPath = logRoot.resolve(cmd.get(1)).normalize();
 
-    // private void toDatabase(List<String> cmd) {
-    //     var batch = new DatabaseBatch();
-    //     for(var i = 1; i < cmd.size(); i++) {
-    //         var items = dbItemMap.get(cmd.get(i));
-    //         if(items != null) batch.addAll(items);
-    //     }
+        if(!logPath.startsWith(logRoot)) {
+            System.out.println(color("Unsafe log path rejected: " + cmd.get(1), ColorCode.BOLD_RED));
+            return;
+        }
 
-    //     try(var db = new SQLiteAccess(ARGS.DATABASE_PATH)) {
-    //         var infoSet = new java.util.HashSet<Info>(batch.allItems());
-    //         db.UpsertInfo(infoSet);
-    //     } catch(SQLException e) {
-    //         System.err.println("Database operation error: " + e.getMessage());
-    //     }
+        var sb = new StringBuilder();
+        for(var variableName : cmd.subList(2, cmd.size())) {
+            sb.append("# ").append(variableName).append("\n");
+            if(!mainApp.variables.containsKey(variableName)) {
+                sb.append("Variable not found: ").append(variableName).append("\n\n");
+                continue;
+            }
 
-    //     UtilityFunctions.WriteItemListToFile(batch.allItems(), ARGS.LOG_PATH + "db_upsert.txt");
-    //     System.out.println("数据库同步完成");
-    // }
+            appendLogValue(sb, mainApp.variables.get(variableName));
+            sb.append("\n");
+        }
 
-    // private static void collectTaskResults(Set<Task> tasks, DatabaseBatch batch) {
-    //     for(var task : tasks) {
-    //         if(task instanceof FetchAnimeInfoTask fetchAnimeTask) {
-    //             var result = fetchAnimeTask.getResult();
-    //             if(result != null) batch.animeItems.add(result);
-    //         } else if(task instanceof FetchEpisodeInfoTask fetchEpisodeTask) {
-    //             var result = fetchEpisodeTask.getResult();
-    //             if(result != null) batch.episodeItems.addAll(result);
-    //         } else if(task instanceof FetchTorrentPageTask fetchTorrentPageTask) {
-    //             var result = fetchTorrentPageTask.getResultSet();
-    //             if(result != null) batch.torrentPageItems.addAll(result);
-    //         } else if(task instanceof FetchTorrentInfoTask fetchTorrentInfoTask) {
-    //             var result = fetchTorrentInfoTask.getResult();
-    //             if(result != null && result.length > 0) batch.torrentItems.add(new TorrentInfo(result));
-    //         }
-    //     }
-    // }
+        try {
+            var parent = logPath.getParent();
+            if(parent != null) java.nio.file.Files.createDirectories(parent);
+            java.nio.file.Files.writeString(logPath, sb.toString());
+            System.out.println("Log written to: " + logPath);
+        } catch(java.io.IOException e) {
+            System.err.println("Failed to write log: " + e.getMessage());
+        }
+    }
 
-    // private void putBatch(String varName, DatabaseBatch batch) {
-    //     if(batch != null && !batch.isEmpty()) dbItemMap.put(varName, batch);
-    // }
+    static void updateTorrent(MainApplication mainApp, List<String> cmd) {
 
-    // private void putTasks(String varName, Set<Task> tasks) {
-    //     if(tasks != null && !tasks.isEmpty()) taskMap.put(varName, tasks);
-    // }
+        if(cmd.size() < 2) {
+            System.out.println("Invalid command format for UPDATE_TORRENT. Expected: UPDATE_TORRENT <block_name1> [<block_name2> ...]");
+            return;
+        }
 
-    // private static void unsupportedLegacyCommand(List<String> cmd) {
-    //     System.err.println("Unsupported legacy command after schema migration: " + cmd.get(0));
-    // }
+        var requiredBlockNames = cmd.subList(1, cmd.size());
+        mainApp.getBlockDataByNames(requiredBlockNames);
+    }
 
-    // private static void unknownCommand(List<String> cmd) {
-    //     System.out.println("Unknown Command: " + cmd.get(0));
-    // }
 
-    // @FunctionalInterface
-    // private interface RowMapper {
-    //     void map(Map<String, String> row, DatabaseBatch batch);
-    // }
+    private static Set<BaseInfo> collectTaskResults(Set<Task> tasks) {
+
+        var result = new java.util.LinkedHashSet<BaseInfo>();
+        for(var task : tasks) {
+            if(task instanceof FetchAnimeInfoTask fetchAnimeTask) {
+                var info = fetchAnimeTask.getResult();
+                if(info != null) result.add(info);
+            } else if(task instanceof FetchEpisodeInfoTask fetchEpisodeTask) {
+                var infoSet = fetchEpisodeTask.getResult();
+                if(infoSet != null) result.addAll(infoSet);
+            } else if(task instanceof FetchTorrentPageTask fetchTorrentPageTask) {
+                var infoSet = fetchTorrentPageTask.getResultSet();
+                if(infoSet != null) result.addAll(infoSet);
+            } else if(task instanceof FetchTorrentInfoTask fetchTorrentInfoTask) {
+                var torrentData = fetchTorrentInfoTask.getResult();
+                if(torrentData != null && torrentData.length > 0) result.add(new TorrentInfo(torrentData));
+            }
+        }
+        return result;
+    }
+
+    private static boolean canMergeBaseInfoSet(MainApplication mainApp, String variableName) {
+
+        if(!mainApp.variables.containsKey(variableName)) return true;
+        if(asBaseInfoSet(mainApp.variables.get(variableName)) != null) return true;
+        System.out.println(color("Variable " + variableName + " exists but is not Set<? extends BaseInfo>; command skipped.", ColorCode.BOLD_RED));
+        return false;
+    }
+
+    private static boolean canMergeTaskSet(MainApplication mainApp, String variableName) {
+
+        if(!mainApp.variables.containsKey(variableName)) return true;
+        if(asTaskSet(mainApp.variables.get(variableName)) != null) return true;
+        System.out.println(color("Variable " + variableName + " exists but is not Set<? extends Task>; command skipped.", ColorCode.BOLD_RED));
+        return false;
+    }
+
+    private static Set<BaseInfo> getBaseInfoSetVariable(MainApplication mainApp, String variableName) {
+
+        if(!mainApp.variables.containsKey(variableName)) {
+            System.out.println(color("Variable not found: " + variableName, ColorCode.BOLD_RED));
+            return null;
+        }
+
+        var result = asBaseInfoSet(mainApp.variables.get(variableName));
+        if(result == null) {
+            System.out.println(color("Variable " + variableName + " is not Set<? extends BaseInfo>; command skipped.", ColorCode.BOLD_RED));
+        }
+        return result;
+    }
+
+    private static Set<Task> getTaskSetVariable(MainApplication mainApp, String variableName) {
+
+        if(!mainApp.variables.containsKey(variableName)) {
+            System.out.println(color("Variable not found: " + variableName, ColorCode.BOLD_RED));
+            return null;
+        }
+
+        var result = asTaskSet(mainApp.variables.get(variableName));
+        if(result == null) {
+            System.out.println(color("Variable " + variableName + " is not Set<? extends Task>; command skipped.", ColorCode.BOLD_RED));
+        }
+        return result;
+    }
+
+    private static void mergeBaseInfoSet(MainApplication mainApp, String variableName, Set<? extends BaseInfo> items) {
+
+        var result = new java.util.LinkedHashSet<BaseInfo>();
+        if(mainApp.variables.containsKey(variableName)) result.addAll(asBaseInfoSet(mainApp.variables.get(variableName)));
+        result.addAll(items);
+        mainApp.variables.put(variableName, result);
+    }
+
+    private static void mergeTaskSet(MainApplication mainApp, String variableName, Set<? extends Task> tasks) {
+
+        var result = new java.util.LinkedHashSet<Task>();
+        if(mainApp.variables.containsKey(variableName)) result.addAll(asTaskSet(mainApp.variables.get(variableName)));
+        result.addAll(tasks);
+        mainApp.variables.put(variableName, result);
+    }
+
+    private static Set<BaseInfo> asBaseInfoSet(Object value) {
+
+        if(!(value instanceof Set<?> set)) return null;
+
+        var result = new java.util.LinkedHashSet<BaseInfo>();
+        for(var item : set) {
+            if(!(item instanceof BaseInfo info)) return null;
+            result.add(info);
+        }
+        return result;
+    }
+
+    private static Set<Task> asTaskSet(Object value) {
+
+        if(!(value instanceof Set<?> set)) return null;
+
+        var result = new java.util.LinkedHashSet<Task>();
+        for(var item : set) {
+            if(!(item instanceof Task task)) return null;
+            result.add(task);
+        }
+        return result;
+    }
+
+    private static void appendLogValue(StringBuilder sb, Object value) {
+
+        if(value == null) {
+            sb.append("null\n");
+        } else if(value instanceof Iterable<?> iterable) {
+            for(var item : iterable) sb.append(String.valueOf(item)).append("\n");
+        } else if(value instanceof java.util.Map<?, ?> map) {
+            for(var entry : map.entrySet()) {
+                sb.append(String.valueOf(entry.getKey()))
+                    .append(": ")
+                    .append(String.valueOf(entry.getValue()))
+                    .append("\n");
+            }
+        } else if(value.getClass().isArray()) {
+            var length = java.lang.reflect.Array.getLength(value);
+            for(var i = 0; i < length; i++) {
+                sb.append(String.valueOf(java.lang.reflect.Array.get(value, i))).append("\n");
+            }
+        } else {
+            sb.append(String.valueOf(value)).append("\n");
+        }
+    }
 }
