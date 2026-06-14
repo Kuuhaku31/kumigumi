@@ -9,7 +9,6 @@ import java.util.Map;
 
 import Excel.TableData;
 import Utils.DatabaseUtils;
-import Utils.UtilityFunctions;
 
 
 public class AnimeInfo extends BaseInfo {
@@ -150,19 +149,23 @@ public class AnimeInfo extends BaseInfo {
     }
 
     @Override
+    public String toPrintString(String indent, boolean enable_color) {
+        return formatInfo("AnimeInfo", indent, enable_color, new Object[][] {
+            { "ANI_ID", ANI_ID },
+            { "air_date", air_date },
+            { "title", title },
+            { "title_cn", title_cn },
+            { "aliases", aliases },
+            { "description", description },
+            { "episode_count", episode_count },
+            { "url_official_site", url_official_site },
+            { "url_cover", url_cover },
+            { "update_datetime", update_datetime }
+        });
+    }
+
+    @Override
     public String toString() {
-        return 
-        "AnimeInfo{"
-        + "ANI_ID=" + ANI_ID
-        + ", air_date=" + UtilityFunctions.getDateString(air_date)
-        + ", title='" + title + '\''
-        + ", title_cn='" + title_cn + '\''
-        + ", aliases='" + aliases + '\''
-        + ", description='" + (description == null ? "null" : description.replace("\r\n", "\\n")) + '\''
-        + ", episode_count=" + episode_count
-        + ", url_official_site='" + url_official_site + '\''
-        + ", url_cover='" + url_cover + '\''
-        + ", update_datetime=" + UtilityFunctions.getDateString(update_datetime)
-        + '}';
+        return toPrintString("", false);
     }
 }

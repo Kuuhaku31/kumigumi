@@ -93,10 +93,15 @@ public class RSSInfo extends BaseInfo {
 
 
     @Override
+    public String toPrintString(String indent, boolean enable_color) {
+        return formatInfo("RSSInfo", indent, enable_color, new Object[][] {
+            { "URL_RSS", URL_RSS },
+            { "ANI_ID", ANI_ID }
+        });
+    }
+
+    @Override
     public String toString() {
-        return "RSSInfo{" +
-                "URL_RSS='" + URL_RSS + '\'' +
-                ", ANI_ID=" + ANI_ID +
-                '}';
+        return toPrintString("", false);
     }
 }

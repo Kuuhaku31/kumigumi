@@ -75,23 +75,23 @@ public class TableData {
     }
 
 
-    public String toPrintString(String indent) {
+    public String toPrintString(String indent, boolean enable_color) {
 
         var sb = new StringBuilder();
 
         var header = GetHeader();
-        sb.append(indent + color("Header:\t", BOLD_GREEN));
+        sb.append(indent + color("Header:\t", BOLD_GREEN, enable_color));
         for(var h : header) {
-            sb.append(color(h + "\t", GREEN));
+            sb.append(color(h + "\t", GREEN, enable_color));
         }
         sb.append("\n" + indent);
 
         var data_row_size = GetRowSize();
         for(var i = 0; i < data_row_size; i++) {
             var row = GetRow(i);
-            sb.append(color("Row " + i + ":\t", BOLD_CYAN));
+            sb.append(color("Row " + i + ":\t", BOLD_CYAN, enable_color));
             for(var cell : row) {
-                sb.append(color(cell + "\t", CYAN));
+                sb.append(color(cell + "\t", CYAN, enable_color));
             }
             if(i < data_row_size - 1) sb.append("\n" + indent);
         }
@@ -100,7 +100,15 @@ public class TableData {
     }
 
     public String toPrintString() {
-        return toPrintString("");
+        return toPrintString("", true);
+    }
+
+    public String toPrintString(String indent) {
+        return toPrintString(indent, true);
+    }
+
+    public String toPrintString(boolean enable_color) {
+        return toPrintString("", enable_color);
     }
 
     /**
@@ -108,34 +116,6 @@ public class TableData {
      */
     @Override
     public String toString() {
-
-        var sb = new StringBuilder();
-
-        // 基本信息
-        sb.append("TableData{");
-        sb.append("header_size=").append(header_size).append(", ");
-        sb.append("row_size=").append(row_size).append(", ");
-
-        // header 部分
-        sb.append("header=").append("[");
-        for(var i = 0; i < header_size; i++) {
-            sb.append(data[i]);
-            if(i < header_size - 1) sb.append(", ");
-        }
-
-        // data 部分
-        sb.append("], data=[");
-        for(var i = 0; i < row_size; i++) {
-            sb.append("[");
-            for(var j = 0; j < header_size; j++) {
-                sb.append(data[header_size + i * header_size + j]);
-                if(j < header_size - 1) sb.append(", ");
-            }
-            sb.append("]");
-            if(i < row_size - 1) sb.append(", ");
-        }
-        sb.append("]}");
-
-        return sb.toString();
+        return toPrintString("", false);
     }
 }

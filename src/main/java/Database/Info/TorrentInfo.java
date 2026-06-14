@@ -38,10 +38,17 @@ public class TorrentInfo extends BaseInfo {
     }
 
     @Override
+    public String toPrintString(String indent, boolean enable_color) {
+        return formatInfo("TorrentInfo", indent, enable_color, new Object[][] {
+            { "TOR_HASH", TOR_HASH },
+            { "file_name", file_name },
+            { "file_size", file_size },
+            { "torrent_file", torrent_file }
+        });
+    }
+
+    @Override
     public String toString() {
-        return "TorrentInfo{"
-            + "TOR_HASH='" + TOR_HASH + '\''
-            + ", file_name='" + file_name + '\''
-            + ", file_size=" + file_size + ", torrent_file=" + (torrent_file != null ? "[binary data]" : "null") + '}';
+        return toPrintString("", false);
     }
 }

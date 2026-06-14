@@ -156,4 +156,9 @@ public class UtilityFunctions {
         res     = colorCode.getCode() + res + "\033[0m";
         return res;
     }
+
+    public static String color(String str, ColorCode colorCode, boolean enable) {
+        if(enable) return color(str, colorCode);
+        else return str;
+    }
 }

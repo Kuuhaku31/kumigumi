@@ -106,43 +106,26 @@ public class TorrentPageInfo extends BaseInfo {
     }
 
     @Override
+    public String toPrintString(String indent, boolean enable_color) {
+        return formatInfo("TorrentPageInfo", indent, enable_color, new Object[][] {
+            { "URL_RSS", URL_RSS },
+            { "TOR_HASH", TOR_HASH },
+            { "air_datetime", air_datetime },
+            { "url_download", url_download },
+            { "url_page", url_page },
+            { "title", title },
+            { "subtitle_group", subtitle_group },
+            { "description", description },
+            { "update_datetime", update_datetime }
+        });
+    }
+
+    @Override
     public String toString() {
-        var format_str = "TorrentPageInfo { URL_RSS: %s, TOR_HASH: %s, air_datetime: %s, url_download: %s, url_page: %s, title: %s, subtitle_group: %s, description: %s }";
-        return String.format(format_str,
-            URL_RSS,
-            TOR_HASH,
-            air_datetime,
-            url_download,
-            url_page,
-            title,
-            subtitle_group,
-            description
-        );
+        return toPrintString("", false);
     }
 
     public String toFormatString() {
-        var format_str =
-        """
-        URL_RSS:        %s
-        TOR_HASH:       %s
-        air_datetime:   %s
-        url_download:   %s
-        url_page:       %s
-        title:          %s
-        subtitle_group: %s
-        description:
-
-        %s
-        """;
-        return String.format(format_str,
-            URL_RSS,
-            TOR_HASH,
-            air_datetime,
-            url_download,
-            url_page,
-            title,
-            subtitle_group,
-            description
-        );
+        return toPrintString("", false);
     }
 }

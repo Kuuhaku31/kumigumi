@@ -153,14 +153,17 @@ public class EpisodeRecordInfo extends BaseInfo {
 
 
     @Override
+    public String toPrintString(String indent, boolean enable_color) {
+        return formatInfo("EpisodeRecordInfo", indent, enable_color, new Object[][] {
+            { "EPI_ID", EPI_ID },
+            { "view_datetime", view_datetime },
+            { "rating", rating },
+            { "comment", comment }
+        });
+    }
+
+    @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("EpisodeRecordInfo{");
-        sb.append("EPI_ID=").append(EPI_ID);
-        sb.append(", view_datetime=").append(view_datetime);
-        sb.append(", rating=").append(rating);
-        sb.append(", comment='").append(comment).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return toPrintString("", false);
     }
 }

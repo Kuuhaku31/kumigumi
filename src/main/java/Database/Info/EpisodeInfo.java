@@ -156,56 +156,27 @@ public class EpisodeInfo extends BaseInfo {
 
 
     @Override
+    public String toPrintString(String indent, boolean enable_color) {
+        return formatInfo("EpisodeInfo", indent, enable_color, new Object[][] {
+            { "EPI_ID", EPI_ID },
+            { "ANI_ID", ANI_ID },
+            { "ep", ep },
+            { "sort", sort },
+            { "air_date", air_date },
+            { "duration", duration },
+            { "title", title },
+            { "title_cn", title_cn },
+            { "description", description },
+            { "update_datetime", update_datetime }
+        });
+    }
+
+    @Override
     public String toString() {
-        return "EpisodeInfo{" +
-            "EPI_ID=" + EPI_ID +
-            ", ANI_ID=" + ANI_ID +
-            ", ep='" + ep + '\'' +
-            ", sort=" + sort +
-            ", air_date=" + UtilityFunctions.getDateString(air_date) +
-            ", duration=" + duration +
-            ", title='" + title + '\'' +
-            ", title_cn='" + title_cn + '\'' +
-            ", description='" + UtilityFunctions.standardString(description) + '\'' +
-            ", update_datetime=" + UtilityFunctions.getDateString(update_datetime) +
-            '}';
+        return toPrintString("", false);
     }
 
     public String toFormatString() {
-        var format_str = 
-            """
-            EpisodeInfo(hashCode=%s)
-
-            EPI_ID:     %d
-            ANI_ID:     %d
-            ep:         %s
-            sort:       %s
-            air_date:   %s
-            duration:   %s
-            title:      %s
-            title_cn:   %s
-            description:
-
-            %s
-
-            update_datetime: %s
-
-            """;
-        return String.format(
-            format_str,
-            // 十六进制表示实例的哈希码，作为简易标识符
-            Integer.toHexString(System.identityHashCode(this)),
-
-            EPI_ID,
-            ANI_ID,
-            ep,
-            sort,
-            UtilityFunctions.getDateString(air_date),
-            duration,
-            title,
-            title_cn,
-            description,
-            UtilityFunctions.getDateString(update_datetime)
-        );
+        return toPrintString("", false);
     }
 }

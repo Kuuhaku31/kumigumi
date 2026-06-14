@@ -100,6 +100,23 @@ class DatabaseInfoTest {
         assertArrayEquals(data, info.torrent_file);
     }
 
+    @Test
+    void infoObjectsUsePrintableMultilineFormat() {
+        var rss = new RSSInfo(Map.of(
+            "URL_RSS", "https://example.com/feed.xml",
+            "ANI_ID", "100"
+        ));
+
+        var plain = rss.toString();
+        assertTrue(plain.startsWith("RSSInfo:\n"));
+        assertTrue(plain.contains("  URL_RSS:\thttps://example.com/feed.xml"));
+        assertFalse(plain.contains("\033["));
+
+        var colored = rss.toPrintString();
+        assertTrue(colored.contains("\033["));
+        assertTrue(rss.toPrintString(false).equals(plain));
+    }
+
     static byte[] sampleTorrent() {
         return ("d4:info" + sampleInfoDictionary() + "e").getBytes(StandardCharsets.UTF_8);
     }
