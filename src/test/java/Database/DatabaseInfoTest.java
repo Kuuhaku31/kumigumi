@@ -36,6 +36,7 @@ class DatabaseInfoTest {
         assertEquals(100, anime.ANI_ID);
         assertEquals("Original", anime.title);
         assertEquals(12, anime.episode_count);
+        assertNotNull(anime.update_datetime);
 
         var episode = new EpisodeInfo(Map.of(
             "EPI_ID", "200",

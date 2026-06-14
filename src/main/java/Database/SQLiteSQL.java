@@ -38,6 +38,8 @@ final class SQLiteSQL {
     "url_official_site" text,
     "url_cover"         text,
 
+    "update_datetime"   text NOT NULL,
+
     PRIMARY KEY ("ANI_ID" DESC)
     );
     """;
@@ -153,9 +155,10 @@ final class SQLiteSQL {
         description,
         episode_count,
         url_official_site,
-        url_cover
+        url_cover,
+        update_datetime
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(ANI_ID) DO UPDATE SET
         air_date            = excluded.air_date,
         title               = excluded.title,
@@ -164,7 +167,8 @@ final class SQLiteSQL {
         description         = excluded.description,
         episode_count       = excluded.episode_count,
         url_official_site   = excluded.url_official_site,
-        url_cover           = excluded.url_cover;
+        url_cover           = excluded.url_cover,
+        update_datetime     = excluded.update_datetime;
     """;
 
     static final String UPSERT_EPISODE_INFO =

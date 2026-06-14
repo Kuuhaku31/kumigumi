@@ -2,6 +2,7 @@ package Database.Info;
 
 import java.sql.*;
 import java.text.ParseException;
+import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,8 @@ public class AnimeInfo extends BaseInfo {
     public final String         url_official_site;
     public final String         url_cover;
 
+    public final OffsetDateTime update_datetime;
+
 
     @Override
     public void setParams(PreparedStatement ps) throws SQLException {
@@ -36,6 +39,7 @@ public class AnimeInfo extends BaseInfo {
         DatabaseUtils.safeSetInt            (ps,  7, episode_count    );
         DatabaseUtils.safeSetString         (ps,  8, url_official_site);
         DatabaseUtils.safeSetString         (ps,  9, url_cover        );
+        DatabaseUtils.safeSetOffsetDateTime (ps, 10, update_datetime  );
     }
 
     public AnimeInfo(
@@ -61,6 +65,7 @@ public class AnimeInfo extends BaseInfo {
         this.episode_count     = episode_count;
         this.url_official_site = url_official_site;
         this.url_cover         = url_cover;
+        this.update_datetime   = OffsetDateTime.now();
     }
 
     /**
@@ -123,6 +128,7 @@ public class AnimeInfo extends BaseInfo {
 
         url_official_site = data.getOrDefault("url_official_site", null);
         url_cover         = data.getOrDefault("url_cover", null);
+        update_datetime   = OffsetDateTime.now();
     }
 
     /**
@@ -155,6 +161,8 @@ public class AnimeInfo extends BaseInfo {
         + ", description='" + (description == null ? "null" : description.replace("\r\n", "\\n")) + '\''
         + ", episode_count=" + episode_count
         + ", url_official_site='" + url_official_site + '\''
-        + ", url_cover='" + url_cover + '\'' + '}';
+        + ", url_cover='" + url_cover + '\''
+        + ", update_datetime=" + UtilityFunctions.getDateString(update_datetime)
+        + '}';
     }
 }

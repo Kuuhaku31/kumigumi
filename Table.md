@@ -22,6 +22,7 @@
 | `episode_count`     | `integer` | 总集数          |
 | `url_official_site` | `text`    | 官方站点链接    |
 | `url_cover`         | `text`    | 封面链接        |
+| `update_datetime`   | `datetime` | 更新时间        |
 
 主键：`ANI_ID DESC`
 

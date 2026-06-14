@@ -83,6 +83,7 @@ air_date 3 date
 - `episode_count`
 - `url_official_site`
 - `url_cover`
+- `update_datetime`
 
 ### episode
 
