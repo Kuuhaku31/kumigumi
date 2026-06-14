@@ -91,8 +91,6 @@ public abstract class Task {
         }
 
         System.out.println();
-        System.out.println();
-        System.out.println();
 
         // 创建线程池并执行任务，最大线程数为 2，使用 CountDownLatch 等待所有任务完成
         // var executor = Executors.newCachedThreadPool();
