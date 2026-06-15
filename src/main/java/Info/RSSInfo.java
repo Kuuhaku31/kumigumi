@@ -1,4 +1,4 @@
-package Database.Info;
+package Info;
 
 import java.util.Map;
 import java.util.Set;

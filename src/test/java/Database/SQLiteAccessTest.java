@@ -11,12 +11,13 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import Database.Info.RSSInfo;
-import Database.Info.TorrentInfo;
-import Database.Info.TorrentPageInfo;
-import Database.Info.AnimeInfo;
-import Database.Info.EpisodeInfo;
-import Database.Info.EpisodeRecordInfo;
+import Info.RSSInfo;
+import Info.TorrentInfo;
+import Info.TorrentPageInfo;
+import Info.AnimeInfo;
+import Info.EpisodeInfo;
+import Info.EpisodeRecordInfo;
+import Info.InfoTest;
 
 import java.nio.file.Path;
 
@@ -28,7 +29,7 @@ class SQLiteAccessTest {
     @Test
     void initializesDatabaseAndUpsertsCurrentInfoTypes() throws Exception {
         var dbPath = tempDir.resolve("kumigumi-test.db").toString();
-        var torrent = new TorrentInfo(DatabaseInfoTest.sampleTorrent());
+        var torrent = new TorrentInfo(InfoTest.sampleTorrent());
 
         try(var db = new SQLiteAccess(dbPath)) {
             db.UpsertInfo(Set.of(

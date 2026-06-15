@@ -2,7 +2,7 @@ package Main.FetchTask;
 
 import java.util.Set;
 
-import Database.Info.BaseInfo;
+import Info.BaseInfo;
 import Utils.Task;
 
 

@@ -3,7 +3,7 @@
 kumigumi 是一个以 Excel 为操作入口、SQLite 为本地数据仓库的追番辅助项目。当前版本的数据流已经统一为：
 
 ```text
-Excel 指令/数据块 -> Main 内部 FetchTask 抓取任务 -> Database.Info.*Info 数据对象 -> SQLiteAccess.UpsertInfo -> SQLite
+Excel 指令/数据块 -> Main 内部 FetchTask 抓取任务 -> Info.*Info 数据对象 -> SQLiteAccess.UpsertInfo -> SQLite
 ```
 
 旧的根级 `FetchTask/`、`InfoItem/`、`Database.Item`、`UpsertItem/UpdateItem` 系列已经废弃。当前抓取任务位于 `Main/FetchTask/`，只作为 Main 内部实现使用。
@@ -13,7 +13,7 @@ Excel 指令/数据块 -> Main 内部 FetchTask 抓取任务 -> Database.Info.*I
 - 从 Excel 读取指令表和数据块，批量导入番剧、分集、观看记录、RSS、种子页信息。
 - 通过 Bangumi API 抓取番剧与分集信息。
 - 通过 RSS 抓取种子页信息，并按缺失的 `TOR_HASH` 下载 torrent 文件。
-- 使用 SQLite 保存结构化数据，schema 以 `Table.md`、`Database.Info.*Info`、`SQLiteSQL` 和 `SQLiteAccess` 初始化逻辑为准。
+- 使用 SQLite 保存结构化数据，schema 以 `Table.md`、`Info.*Info`、`SQLiteSQL` 和 `SQLiteAccess` 初始化逻辑为准。
 - 所有数据库写入统一走 `SQLiteAccess.UpsertInfo` 方法。
 
 ## 项目结构
@@ -22,9 +22,10 @@ Excel 指令/数据块 -> Main 内部 FetchTask 抓取任务 -> Database.Info.*I
 src/main/java/
   Main/          程序入口、Excel 指令处理，以及内部 FetchTask 抓取任务
   Excel/         Excel 读取、命令流和数据块解析
-  Database/      SQLite 初始化、访问层、SQL 定义和 Info 数据对象
+  Info/          可入库的数据对象
+  Database/      SQLite 初始化、访问层和 SQL 定义
   NetAccess/     Bangumi、RSS、torrent 下载等网络访问
-  Utils/         数据块、torrent 元信息解析和数据库绑定工具
+  Utils/         数据块、torrent 元信息解析和通用工具
   module-info.java JPMS 模块描述符，定义对外导出包和外部依赖
 
 Table.md         当前数据库 schema
@@ -35,7 +36,7 @@ TODO.md          后续优化清单
 
 ## 模块边界
 
-项目当前作为单个 JPMS 模块 `kumigumi` 编译。`module-info.java` 导出 `Main`、`Database`、`Database.Info`、`Excel`、`NetAccess` 和 `Utils`；未导出的 `MetaData` 以及 `Main.FetchTask` 内部抓取任务实现不作为外部 API 使用。
+项目当前作为单个 JPMS 模块 `kumigumi` 编译。`module-info.java` 导出 `Main`、`Database`、`Info`、`Excel`、`NetAccess` 和 `Utils`；未导出的 `MetaData` 以及 `Main.FetchTask` 内部抓取任务实现不作为外部 API 使用。
 
 ## 启动参数
 
@@ -93,7 +94,7 @@ Excel 通过命令和数据块驱动程序运行。常用命令如下：
 ## 开发说明
 
 - 抓取任务应放在 `Main/FetchTask/` 下，作为 Main 内部实现，不对其它模块开放。
-- 新数据对象应放在 `Database.Info.*Info` 中，并与 `Table.md` 保持一致。
+- 新数据对象应放在 `Info.*Info` 中，并与 `Table.md` 保持一致。
 - 数据库写入只新增或复用 `UpsertInfo`，不要恢复 `UpsertItem/UpdateItem` 抽象。
 - schema 变更需要同步更新 `Table.md`、对应 `*Info` 类、`SQLiteSQL`、`SQLiteAccess` 初始化逻辑和 Excel 文档。
 

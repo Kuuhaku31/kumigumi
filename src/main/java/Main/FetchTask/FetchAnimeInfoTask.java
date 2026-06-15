@@ -3,8 +3,8 @@ package Main.FetchTask;
 import java.util.Map;
 import java.util.Set;
 
-import Database.Info.AnimeInfo;
-import Database.Info.BaseInfo;
+import Info.AnimeInfo;
+import Info.BaseInfo;
 import NetAccess.NetAccess;
 import Utils.DataBlock;
 

@@ -5,8 +5,8 @@ import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.Set;
 
-import Database.Info.BaseInfo;
-import Database.Info.TorrentInfo;
+import Info.BaseInfo;
+import Info.TorrentInfo;
 import Database.TorrentDownloader;
 import NetAccess.NetAccess;
 

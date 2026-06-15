@@ -1,4 +1,4 @@
-package Database.Info;
+package Info;
 
 import java.time.OffsetDateTime;
 import java.util.Date;

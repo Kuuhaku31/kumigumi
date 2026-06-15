@@ -3,8 +3,8 @@ package Main.FetchTask;
 import java.util.Map;
 import java.util.Set;
 
-import Database.Info.BaseInfo;
-import Database.Info.TorrentPageInfo;
+import Info.BaseInfo;
+import Info.TorrentPageInfo;
 import NetAccess.NetAccess;
 import Utils.DataBlock;
 

@@ -1,4 +1,4 @@
-package Database.Info;
+package Info;
 
 import Utils.TorrentMetaUtil;
 

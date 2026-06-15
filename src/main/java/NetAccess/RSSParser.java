@@ -12,7 +12,7 @@ import Utils.UtilityFunctions;
 import com.apptasticsoftware.rssreader.Item;
 import com.apptasticsoftware.rssreader.RssReader;
 
-import Database.Info.TorrentPageInfo;
+import Info.TorrentPageInfo;
 
 
 final class RSSParser {

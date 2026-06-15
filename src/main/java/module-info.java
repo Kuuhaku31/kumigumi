@@ -11,7 +11,7 @@ module kumigumi {
 
     exports Main;
     exports Database;
-    exports Database.Info;
+    exports Info;
     exports Excel;
     exports NetAccess;
     exports Utils;

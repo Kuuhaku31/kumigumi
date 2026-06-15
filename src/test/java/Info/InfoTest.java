@@ -1,4 +1,4 @@
-package Database;
+package Info;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -10,14 +10,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import Database.Info.RSSInfo;
-import Database.Info.TorrentInfo;
-import Database.Info.TorrentPageInfo;
-import Database.Info.AnimeInfo;
-import Database.Info.EpisodeInfo;
-import Database.Info.EpisodeRecordInfo;
-
-class DatabaseInfoTest {
+public class InfoTest {
 
     @Test
     void createsSchemaInfoObjectsFromMaps() {
@@ -117,11 +110,11 @@ class DatabaseInfoTest {
         assertTrue(rss.toPrintString(false).equals(plain));
     }
 
-    static byte[] sampleTorrent() {
+    public static byte[] sampleTorrent() {
         return ("d4:info" + sampleInfoDictionary() + "e").getBytes(StandardCharsets.UTF_8);
     }
 
-    static String expectedInfoHash() throws Exception {
+    public static String expectedInfoHash() throws Exception {
         var digest = MessageDigest.getInstance("SHA-1");
         return HexFormat.of().formatHex(digest.digest(sampleInfoDictionary().getBytes(StandardCharsets.UTF_8)));
     }

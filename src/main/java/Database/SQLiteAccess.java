@@ -15,13 +15,13 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import Database.Info.AnimeInfo;
-import Database.Info.BaseInfo;
-import Database.Info.EpisodeInfo;
-import Database.Info.EpisodeRecordInfo;
-import Database.Info.RSSInfo;
-import Database.Info.TorrentInfo;
-import Database.Info.TorrentPageInfo;
+import Info.AnimeInfo;
+import Info.BaseInfo;
+import Info.EpisodeInfo;
+import Info.EpisodeRecordInfo;
+import Info.RSSInfo;
+import Info.TorrentInfo;
+import Info.TorrentPageInfo;
 
 
 public class SQLiteAccess implements Closeable {

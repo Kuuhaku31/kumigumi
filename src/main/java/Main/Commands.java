@@ -8,10 +8,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import Database.Info.BaseInfo;
-import Database.Info.EpisodeRecordInfo;
-import Database.Info.RSSInfo;
-import Database.Info.TorrentPageInfo;
+import Info.BaseInfo;
+import Info.EpisodeRecordInfo;
+import Info.RSSInfo;
+import Info.TorrentPageInfo;
 import Database.SQLiteAccess;
 import Database.TorrentDownloader;
 import Main.FetchTask.FetchAnimeInfoTask;
