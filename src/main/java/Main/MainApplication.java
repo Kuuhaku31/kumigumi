@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -123,6 +124,8 @@ final class MainApplication {
 
                 case TO_DB -> Commands.toDB(this, cmd);
 
+                case UPDATE_TORRENT -> Commands.updateTorrent(this, cmd);
+
                 default -> System.out.println("Unknown command: " + cmd.getFirst());
                 }
 
@@ -143,6 +146,18 @@ final class MainApplication {
             } else {
                 System.out.println(color("变量 " + blockName + " 不是 TableData 类型", ColorCode.RED));
             }
+        }
+        return res;
+    }
+
+    Set<Item> getItemsByNames(List<String> itemNames) {
+        Set<Item> res = new HashSet<>();
+        for(var itemName : itemNames) {
+            var item = variables.get(itemName);
+            if(item == null) {
+                System.out.println(color("未找到名为 " + itemName + " 的变量", ColorCode.RED));
+            }
+            else res.add(item);
         }
         return res;
     }
