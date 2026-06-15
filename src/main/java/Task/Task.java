@@ -9,10 +9,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import Utils.ColorCode;
+import Utils.Printable;
 import Utils.UtilityFunctions;
 
 
-public abstract class Task implements Utils.Printable {
+public abstract class Task implements Printable {
 
     Integer       totalTasks    = null;
     AtomicInteger startedCount  = null;

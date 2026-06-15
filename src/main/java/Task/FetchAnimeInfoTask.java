@@ -35,7 +35,7 @@ public class FetchAnimeInfoTask extends Task {
     public Map<String, Object> getInfo() {
         var info = super.getInfo();
         info.put("ANI_ID", ANI_ID);
-        info.put("Result", result);
+        info.put("ResultType", result != null ? result.getClass().getSimpleName() : "null");
         return info;
     }
 }

@@ -36,6 +36,7 @@ public class FetchEpisodeInfoTask extends Task {
     public Map<String, Object> getInfo() {
         var info = super.getInfo();
         info.put("ANI_ID", ANI_ID);
+        info.put("ResultType", result_set != null ? result_set.getClass().getSimpleName() : "null");
         info.put("ResultSize", result_set == null ? 0 : result_set.size());
         return info;
     }
