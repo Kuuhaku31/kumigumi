@@ -1,9 +1,9 @@
 package Excel;
 
 
-public class CreateTableException extends RuntimeException {
+class CreateTableException extends RuntimeException {
 
-    public CreateTableException(String message) {
+    CreateTableException(String message) {
         super(message);
     }
 
