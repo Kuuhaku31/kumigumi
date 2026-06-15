@@ -1,13 +1,11 @@
 package Database.Info;
 
-import java.sql.*;
 import java.text.ParseException;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import Utils.DatabaseUtils;
 import Utils.DataBlock;
 
 
@@ -26,20 +24,6 @@ public class AnimeInfo extends BaseInfo {
 
     public final OffsetDateTime update_datetime;
 
-
-    @Override
-    public void setParams(PreparedStatement ps) throws SQLException {
-        DatabaseUtils.safeSetInt            (ps,  1, ANI_ID           );
-        DatabaseUtils.safeSetDate           (ps,  2, air_date         );
-        DatabaseUtils.safeSetString         (ps,  3, title            );
-        DatabaseUtils.safeSetString         (ps,  4, title_cn         );
-        DatabaseUtils.safeSetString         (ps,  5, aliases          );
-        DatabaseUtils.safeSetString         (ps,  6, description      );
-        DatabaseUtils.safeSetInt            (ps,  7, episode_count    );
-        DatabaseUtils.safeSetString         (ps,  8, url_official_site);
-        DatabaseUtils.safeSetString         (ps,  9, url_cover        );
-        DatabaseUtils.safeSetOffsetDateTime (ps, 10, update_datetime  );
-    }
 
     public AnimeInfo(
         Integer ANI_ID,

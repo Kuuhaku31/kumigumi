@@ -1,6 +1,6 @@
 module kumigumi {
     requires java.net.http;
-    requires transitive java.sql;
+    requires java.sql;
     requires static jdk.httpserver;
 
     requires com.apptasticsoftware.rssreader;

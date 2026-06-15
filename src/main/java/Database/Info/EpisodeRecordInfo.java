@@ -1,11 +1,9 @@
 package Database.Info;
 
-import java.sql.*;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Set;
 
-import Utils.DatabaseUtils;
 import Utils.DataBlock;
 
 
@@ -16,16 +14,6 @@ public class EpisodeRecordInfo extends BaseInfo {
 
     public final Integer        rating;
     public final String         comment;
-
-    @Override
-    public void setParams(PreparedStatement ps) throws SQLException {
-        DatabaseUtils.safeSetInt            (ps, 1, EPI_ID        );
-        DatabaseUtils.safeSetOffsetDateTime (ps, 2, view_datetime );
-        DatabaseUtils.safeSetInt            (ps, 3, rating       );
-        DatabaseUtils.safeSetString         (ps, 4, comment      );
-    }
-
-
     public EpisodeRecordInfo(Integer epi_id, OffsetDateTime view_datetime, Integer rating, String comment) {
         if(epi_id == null) {
             throw new IllegalArgumentException("EpisodeRecordInfo构造函数: EPI_ID不能为空");

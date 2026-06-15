@@ -1,10 +1,8 @@
 package Database.Info;
 
-import java.sql.*;
 import java.util.Map;
 import java.util.Set;
 
-import Utils.DatabaseUtils;
 import Utils.DataBlock;
 
 
@@ -12,13 +10,6 @@ public class RSSInfo extends BaseInfo {
 
     public final String  URL_RSS;
     public final Integer ANI_ID;
-
-
-    @Override
-    public void setParams(PreparedStatement ps) throws SQLException {
-        DatabaseUtils.safeSetString(ps, 1, URL_RSS);
-        DatabaseUtils.safeSetInt(ps, 2, ANI_ID);
-    }
 
     public RSSInfo(String url_rss, Integer ani_id) {
         if(url_rss == null) {

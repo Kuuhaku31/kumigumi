@@ -1,8 +1,5 @@
 package Database.Info;
 
-import java.sql.*;
-
-import Utils.DatabaseUtils;
 import Utils.TorrentMetaUtil;
 
 
@@ -13,16 +10,6 @@ public class TorrentInfo extends BaseInfo {
     public final String file_name;    // 文件名
     public final Long   file_size;    // 文件大小
     public final byte[] torrent_file; // 种子文件二进制数据
-
-    @Override
-    public void setParams(PreparedStatement ps) throws SQLException {
-        DatabaseUtils.safeSetString (ps, 1, TOR_HASH    );
-        DatabaseUtils.safeSetString (ps, 2, file_name   );
-        DatabaseUtils.safeSetLong   (ps, 3, file_size   );
-        DatabaseUtils.safeSetBytes  (ps, 4, torrent_file);
-    }
-
-
     /**
      * 构造 TorrentInfo 实例
      * @param torrent_file 种子文件的二进制数据

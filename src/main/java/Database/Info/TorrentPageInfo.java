@@ -1,10 +1,7 @@
 package Database.Info;
 
-import java.sql.*;
 import java.time.OffsetDateTime;
 import java.util.Map;
-
-import Utils.DatabaseUtils;
 
 
 public class TorrentPageInfo extends BaseInfo {
@@ -20,21 +17,6 @@ public class TorrentPageInfo extends BaseInfo {
     public final String         description;
 
     public final OffsetDateTime update_datetime;
-
-    @Override
-    public void setParams(PreparedStatement ps) throws SQLException {
-        DatabaseUtils.safeSetString         (ps,  1, URL_RSS        );
-        DatabaseUtils.safeSetString         (ps,  2, TOR_HASH       );
-        DatabaseUtils.safeSetOffsetDateTime (ps,  3, air_datetime   );
-        DatabaseUtils.safeSetString         (ps,  4, url_download   );
-        DatabaseUtils.safeSetString         (ps,  5, url_page       );
-        DatabaseUtils.safeSetString         (ps,  6, title          );
-        DatabaseUtils.safeSetString         (ps,  7, subtitle_group );
-        DatabaseUtils.safeSetString         (ps,  8, description    );
-        DatabaseUtils.safeSetOffsetDateTime (ps,  9, update_datetime);
-    }
-
-
     public TorrentPageInfo(
         String         URL_RSS,
         String         TOR_HASH,

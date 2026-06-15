@@ -1,11 +1,9 @@
 package Database.Info;
 
-import java.sql.*;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.Map;
 
-import Utils.DatabaseUtils;
 import Utils.UtilityFunctions;
 
 
@@ -23,21 +21,6 @@ public class EpisodeInfo extends BaseInfo {
     public final String         description;
 
     public final OffsetDateTime update_datetime;
-
-
-    @Override
-    public void setParams(PreparedStatement ps) throws SQLException {
-        DatabaseUtils.safeSetInt            (ps,  1, EPI_ID         );
-        DatabaseUtils.safeSetInt            (ps,  2, ANI_ID         );
-        DatabaseUtils.safeSetInt            (ps,  3, ep             );
-        DatabaseUtils.safeSetDouble         (ps,  4, sort           );
-        DatabaseUtils.safeSetDate           (ps,  5, air_date       );
-        DatabaseUtils.safeSetInt            (ps,  6, duration       );
-        DatabaseUtils.safeSetString         (ps,  7, title          );
-        DatabaseUtils.safeSetString         (ps,  8, title_cn       );
-        DatabaseUtils.safeSetString         (ps,  9, description    );
-        DatabaseUtils.safeSetOffsetDateTime (ps, 10, update_datetime);
-    }
 
     public EpisodeInfo(
         Integer EPI_ID,

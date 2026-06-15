@@ -1,7 +1,5 @@
 package Database.Info;
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.Date;
 
@@ -9,8 +7,6 @@ import Utils.ColorCode;
 import Utils.UtilityFunctions;
 
 public abstract class BaseInfo implements Utils.Printable {
-
-    public abstract void setParams(PreparedStatement ps) throws SQLException;
 
     @Override
     public abstract String toPrintString(String indent, boolean enable_color);
