@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import Utils.ColorCode;
-import Utils.TableData;
+import Utils.DataBlock;
 
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.CellValue;
@@ -25,9 +25,9 @@ final class ExcelReadContext {
 
     private final Map<String, String>    variables;     // 定义的变量
     private final List<List<String>>     commands;      // 保存命令列表
-    private final Map<String, TableData> blockDataList; // 保存块信息
+    private final Map<String, DataBlock> dataBlockList; // 保存数据块信息
 
-    private String                     blockName    = null;            // 当前块名称
+    private String                     blockName    = null;            // 当前数据块名称
     private TableMetaData              tmpMetaData  = null;            // 解析过程中使用的元数据
     private Map<String, TableMetaData> metaDataList = new HashMap<>(); // 解析过程中使用的元数据列表
 
@@ -40,7 +40,7 @@ final class ExcelReadContext {
         this.cursor        = new ExcelCursor(0, 0, "main");
         this.variables     = new HashMap<>();
         this.commands      = new ArrayList<>();
-        this.blockDataList = new HashMap<>();
+        this.dataBlockList = new HashMap<>();
     }
 
     ExcelResult parse() throws IOException {
@@ -58,7 +58,7 @@ final class ExcelReadContext {
             // 如果单元格数据以 "#" 开头，则进行预处理
             else if(cellData.startsWith("#")) preprocessing(cellData);
 
-            // 如果正在解析块，添加列信息到块元数据中
+            // 如果正在解析数据块，添加列信息到数据块元数据中
             else if(tmpMetaData != null) {
                 var header = cellData;
                 var colIdx = (int)Double.parseDouble(getCell(1)) - 1;
@@ -86,8 +86,8 @@ final class ExcelReadContext {
 
         System.out.println();
 
-        // 创建块数据
-        System.out.println(color("开始通过解析的元数据创建表", ColorCode.GREEN));
+        // 创建数据块
+        System.out.println(color("开始通过解析的元数据创建数据块", ColorCode.GREEN));
         for(var entry : metaDataList.entrySet()) {
 
             var blockName = entry.getKey();
@@ -95,13 +95,13 @@ final class ExcelReadContext {
 
             {
                 var print_name = color(blockName, ColorCode.BOLD_MAGENTA);
-                var title = color("Creating block: " + print_name + " with metadata:", ColorCode.GREEN);
+                var title = color("Creating data block: " + print_name + " with metadata:", ColorCode.GREEN);
                 System.out.println(title);
                 System.out.println(blockMeta.toPrintString("  "));
             }
 
             try {
-                create_table_data(blockName, blockMeta);
+                createDataBlock(blockName, blockMeta);
                 System.out.println(color("Success", ColorCode.GREEN));
                 System.out.println();
             }
@@ -112,13 +112,13 @@ final class ExcelReadContext {
         }
 
         // 返回结果
-        return new ExcelResult(variables, commands, blockDataList);
+        return new ExcelResult(variables, commands, dataBlockList);
     }
 
     /**
-     * 创建表格数据对象
+     * 创建数据块对象
      */
-    private void create_table_data(String tableName, TableMetaData tableMeta) throws CreateTableException {
+    private void createDataBlock(String dataBlockName, TableMetaData tableMeta) throws CreateTableException {
 
         // 参数检查
         if(tableMeta.sheetName == null || tableMeta.startRow == null || tableMeta.endRow == null) {
@@ -134,7 +134,7 @@ final class ExcelReadContext {
         // 获取工作表数据
         var sheet = workbook.getSheet(tableMeta.sheetName);
         if(sheet == null) {
-            var msg = "Sheet not found: " + tableMeta.sheetName + " for table: " + tableName;
+            var msg = "Sheet not found: " + tableMeta.sheetName + " for data block: " + dataBlockName;
             throw new CreateTableException(msg);
         }
 
@@ -143,10 +143,10 @@ final class ExcelReadContext {
         var headers        = new String[headerMetaList.size()];
         for(var i = 0; i < headerMetaList.size(); i++) headers[i] = headerMetaList.get(i).getKey();
 
-        var tableValues = new ArrayList<String>();
-        for(var header : headers) tableValues.add(header);
+        var dataBlockValues = new ArrayList<String>();
+        for(var header : headers) dataBlockValues.add(header);
 
-        // 遍历表格每一行
+        // 遍历数据块对应的每一行
         for(var sheet_row_idx = tableMeta.startRow; sheet_row_idx < tableMeta.endRow; sheet_row_idx++) {
             // 遍历每一列（仅考虑 column_list 中定义的列）
             for(var columnIndex = 0; columnIndex < headerMetaList.size(); columnIndex++) {
@@ -156,10 +156,10 @@ final class ExcelReadContext {
                 cell_value = getCell(tableMeta.sheetName, sheet_row_idx, column_map.getValue().col()); // 提取单元格值
                 cell_value = CellStringType.parseCellString(cell_value, CellStringType.fromString(column_map.getValue().type())); // 解析出显示值
 
-                tableValues.add(cell_value);
+                dataBlockValues.add(cell_value);
             }
         }
-        blockDataList.put(tableName, new TableData(tableValues.toArray(String[]::new), headers.length));
+        dataBlockList.put(dataBlockName, new DataBlock(dataBlockValues.toArray(String[]::new), headers.length));
     }
 
     private void preprocessing(String cellData) {
@@ -193,7 +193,7 @@ final class ExcelReadContext {
             break;
         }
 
-        // 创建 TableData
+        // 创建 DataBlock（数据块）
         case "#block" -> {
 
             var blockName = getCell(1);

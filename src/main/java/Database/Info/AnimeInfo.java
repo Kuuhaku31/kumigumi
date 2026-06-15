@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import Utils.DatabaseUtils;
-import Utils.TableData;
+import Utils.DataBlock;
 
 
 public class AnimeInfo extends BaseInfo {
@@ -131,14 +131,14 @@ public class AnimeInfo extends BaseInfo {
     }
 
     /**
-     * TableData -> List<AnimeInfo>
+     * DataBlock（数据块） -> List<AnimeInfo>
      */
-    public static List<AnimeInfo> convertAnimeInfo(TableData tableData) {
+    public static List<AnimeInfo> convertAnimeInfo(DataBlock dataBlock) {
 
-        // var aniIdIndex = tableData.GetColumnIndex("ANI_ID");
+        // var aniIdIndex = dataBlock.GetColumnIndex("ANI_ID");
         // if(aniIdIndex == -1) return null;
 
-        // var rows     = tableData.GetData();
+        // var rows     = dataBlock.GetData();
         // var infoList = new ArrayList<AnimeInfo>();
         // for(var row : rows) {
         //     var info = new AnimeInfo(Integer.parseInt(row[aniIdIndex]));

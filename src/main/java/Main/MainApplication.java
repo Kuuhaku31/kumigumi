@@ -12,7 +12,7 @@ import java.util.Set;
 
 import Excel.ExcelReader;
 import Utils.ColorCode;
-import Utils.TableData;
+import Utils.DataBlock;
 
 import static Utils.UtilityFunctions.color;
 
@@ -88,7 +88,7 @@ final class MainApplication {
         // 读取 Excel 文件
         var excelResult = ExcelReader.Read(EXCEL_FILE_PATH);
         variables.putAll(StringItem.parse(excelResult.variables()));
-        variables.putAll(TableDataItem.parse(excelResult.tableDataList()));
+        variables.putAll(DataBlockItem.parse(excelResult.dataBlockList()));
         commandList.addAll(excelResult.commands());
 
         System.out.println();
@@ -135,16 +135,16 @@ final class MainApplication {
         System.out.println("完成");
     }
 
-    Set<TableData> getBlockDataByNames(List<String> blockNames) {
-        Set<TableData> res = new java.util.HashSet<>();
+    Set<DataBlock> getDataBlockByNames(List<String> blockNames) {
+        Set<DataBlock> res = new java.util.HashSet<>();
         for(var blockName : blockNames) {
-            var blockData = variables.get(blockName);
-            if(blockData == null) {
+            var dataBlock = variables.get(blockName);
+            if(dataBlock == null) {
                 System.out.println(color("未找到名为 " + blockName + " 的变量", ColorCode.RED));
-            } else if(blockData instanceof TableDataItem tableDataItem) {
-                res.add(tableDataItem.data);
+            } else if(dataBlock instanceof DataBlockItem dataBlockItem) {
+                res.add(dataBlockItem.data);
             } else {
-                System.out.println(color("变量 " + blockName + " 不是 TableData 类型", ColorCode.RED));
+                System.out.println(color("变量 " + blockName + " 不是 DataBlock 类型", ColorCode.RED));
             }
         }
         return res;

@@ -48,7 +48,7 @@ public class UtilityFunctions {
         System.out.println();
     }
 
-    public static void SaveDataList(List<TableData> data_list) {
+    public static void SaveDataList(List<DataBlock> data_list) {
         var path = Paths.get("D:/repositories/kumigumi/ignore/DataBuffer.txt");
 
         try {

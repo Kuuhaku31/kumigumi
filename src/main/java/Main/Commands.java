@@ -114,8 +114,8 @@ final class Commands {
 
         // 创建 InfoSetItem 并合并数据
         var item = new InfoSetItem();
-        for(var blockData : mainApp.getBlockDataByNames(cmd.subList(2, cmd.size()))) {
-            item.data.addAll(EpisodeRecordInfo.ParseEpisodeRecordInfoByTableData(blockData));
+        for(var dataBlock : mainApp.getDataBlockByNames(cmd.subList(2, cmd.size()))) {
+            item.data.addAll(EpisodeRecordInfo.ParseEpisodeRecordInfoByDataBlock(dataBlock));
         }
 
         // 合并到变量
@@ -133,8 +133,8 @@ final class Commands {
 
         // 创建 InfoSetItem 并合并数据
         var item = new InfoSetItem();
-        for(var blockData : mainApp.getBlockDataByNames(cmd.subList(2, cmd.size()))) {
-            item.data.addAll(RSSInfo.ParseRSSInfoByTableData(blockData));
+        for(var dataBlock : mainApp.getDataBlockByNames(cmd.subList(2, cmd.size()))) {
+            item.data.addAll(RSSInfo.ParseRSSInfoByDataBlock(dataBlock));
         }
 
         // 合并到变量
@@ -152,8 +152,8 @@ final class Commands {
 
         // 创建任务集合
         var item = new TaskSetItem();
-        for(var block : mainApp.getBlockDataByNames(cmd.subList(2, cmd.size()))) {
-            item.data.addAll(FetchAnimeInfoTask.ParseFetchAnimeInfoTaskByTableData(block));
+        for(var dataBlock : mainApp.getDataBlockByNames(cmd.subList(2, cmd.size()))) {
+            item.data.addAll(FetchAnimeInfoTask.ParseFetchAnimeInfoTaskByDataBlock(dataBlock));
         }
 
         // 合并到变量
@@ -171,8 +171,8 @@ final class Commands {
 
         // 创建任务集合
         var item = new TaskSetItem();
-        for(var block : mainApp.getBlockDataByNames(cmd.subList(2, cmd.size()))) {
-            item.data.addAll(FetchEpisodeInfoTask.ParseFetchEpisodeInfoTaskByTableData(block));
+        for(var dataBlock : mainApp.getDataBlockByNames(cmd.subList(2, cmd.size()))) {
+            item.data.addAll(FetchEpisodeInfoTask.ParseFetchEpisodeInfoTaskByDataBlock(dataBlock));
         }
 
         // 合并到变量
@@ -190,8 +190,8 @@ final class Commands {
 
         // 创建任务集合
         var item = new TaskSetItem();
-        for(var block : mainApp.getBlockDataByNames(cmd.subList(2, cmd.size()))) {
-            item.data.addAll(FetchTorrentPageTask.ParseFetchTorrentPageTaskByTableData(block));
+        for(var dataBlock : mainApp.getDataBlockByNames(cmd.subList(2, cmd.size()))) {
+            item.data.addAll(FetchTorrentPageTask.ParseFetchTorrentPageTaskByDataBlock(dataBlock));
         }
 
         // 合并到变量

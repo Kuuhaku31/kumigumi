@@ -65,7 +65,7 @@ public abstract void setParams(PreparedStatement ps) throws SQLException;
 
 `setParams` 为 public 是因为 `SQLiteAccess` 位于 `Database` 包，而具体数据对象位于 `Database.Info` 子包，二者不是同一个 Java 包。
 
-`Database.Info.*Info` 类负责保存字段、校验构造参数、从 `Map<String, String>` 或 `TableData` 解析数据，并实现 `setParams`。这些类不保存 SQL。
+`Database.Info.*Info` 类负责保存字段、校验构造参数、从 `Map<String, String>` 或 `DataBlock` 解析数据，并实现 `setParams`。这些类不保存 SQL。
 
 `DatabaseUtils` 位于通用 `Utils` 模块，负责 JDBC 参数安全绑定、hash 去重、批量查询分块和字符串参数绑定。`Database.Info.*Info` 和 `SQLiteAccess` 都通过它复用这些工具。
 

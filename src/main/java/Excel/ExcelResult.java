@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 import Utils.ColorCode;
-import Utils.TableData;
+import Utils.DataBlock;
 
 import static Utils.UtilityFunctions.color;
 
@@ -14,7 +14,7 @@ import static Utils.UtilityFunctions.color;
 public record ExcelResult(
     Map<String, String>    variables,    // 变量名 -> 变量值
     List<List<String>>     commands,     // 解析出的命令列表，每个命令是一个字符串列表，第一项是命令名，后续项是参数
-    Map<String, TableData> tableDataList // 解析出的表格数据列表
+    Map<String, DataBlock> dataBlockList // 解析出的数据块列表
 ) {
 
     public String getCommandsInfo() {
@@ -38,24 +38,24 @@ public record ExcelResult(
         return sb.toString();
     }
 
-    public String getBlocksInfo() {
+    public String getDataBlocksInfo() {
         var sb = new StringBuilder();
-        sb.append("#Block Data List:\n");
-        for(var entry : tableDataList.entrySet()) {
+        sb.append("#Data Block List:\n");
+        for(var entry : dataBlockList.entrySet()) {
             sb.append("\t").append(entry.getKey()).append(": ").append(entry.getValue().toString().replace("\n", "\n\t")).append("\n");
         }
         return sb.toString();
     }
 
-    public TableData getBlockDataByName(String blockName) {
-        return tableDataList.get(blockName);
+    public DataBlock getDataBlockByName(String blockName) {
+        return dataBlockList.get(blockName);
     }
 
-    public Set<TableData> getBlockDataByNames(List<String> blockNames) {
-        Set<TableData> res = new HashSet<>();
+    public Set<DataBlock> getDataBlockByNames(List<String> blockNames) {
+        Set<DataBlock> res = new HashSet<>();
         for(var blockName : blockNames) {
-            var blockData = getBlockDataByName(blockName);
-            if(blockData != null) res.add(blockData);
+            var dataBlock = getDataBlockByName(blockName);
+            if(dataBlock != null) res.add(dataBlock);
         }
         return res;
     }
@@ -72,9 +72,9 @@ public record ExcelResult(
     //     row2: [cmd2, arg1, arg2, ...]
     //     ...
     //
-    // Block Data List:
-    //     block1: TableData{header_size=3, row_size=2, header=[Header1, Header2, Header3], data=[[Data11, Data12, Data13], [Data21, Data22, Data23]]}
-    //     block2: TableData{header_size=2, row_size=3, header=[H1, H2], data=[[D11, D12], [D21, D22], [D31, D32]]}
+    // Data Block List:
+    //     block1: DataBlock{header_size=3, row_size=2, header=[Header1, Header2, Header3], data=[[Data11, Data12, Data13], [Data21, Data22, Data23]]}
+    //     block2: DataBlock{header_size=2, row_size=3, header=[H1, H2], data=[[D11, D12], [D21, D22], [D31, D32]]}
     //     ...
     //
     public String toPrintString(String indent) {
@@ -104,12 +104,12 @@ public record ExcelResult(
             sb.append(color("]\n", ColorCode.BOLD_CYAN));
         }
 
-        // 块数据列表
+        // 数据块列表
         sb.append(indent);
         sb.append("\n" + indent);
-        sb.append(color("Block Data List:", ColorCode.BOLD_MAGENTA));
+        sb.append(color("Data Block List:", ColorCode.BOLD_MAGENTA));
         sb.append("\n");
-        var it = tableDataList().entrySet().iterator();
+        var it = dataBlockList().entrySet().iterator();
         while(it.hasNext()) {
             var entry = it.next();
             sb.append(indent).append(color(this_indent + entry.getKey() + ":\n", ColorCode.BOLD_MAGENTA));
@@ -130,7 +130,7 @@ public record ExcelResult(
         sb.append("ExcelResult:\n");
         sb.append(getVariables()).append("\n");
         sb.append(getCommandsInfo()).append("\n");
-        sb.append(getBlocksInfo()).append("\n");
+        sb.append(getDataBlocksInfo()).append("\n");
         return sb.toString();
     }
 }

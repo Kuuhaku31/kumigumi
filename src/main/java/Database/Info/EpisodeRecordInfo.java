@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 import Utils.DatabaseUtils;
-import Utils.TableData;
+import Utils.DataBlock;
 
 
 public class EpisodeRecordInfo extends BaseInfo {
@@ -96,10 +96,10 @@ public class EpisodeRecordInfo extends BaseInfo {
     }
 
     /**
-     * 从TableData创建EpisodeRecordInfo实例
+     * 从 DataBlock（数据块）创建 EpisodeRecordInfo 实例
      * @param data
      */
-    public static Set<EpisodeRecordInfo> ParseEpisodeRecordInfoByTableData(TableData data) {
+    public static Set<EpisodeRecordInfo> ParseEpisodeRecordInfoByDataBlock(DataBlock data) {
 
         // 获取列索引
         var epi_id_index         = data.GetColumnIndex("EPI_ID");

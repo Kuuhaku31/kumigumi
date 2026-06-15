@@ -6,7 +6,7 @@ import java.util.Set;
 import Database.Info.BaseInfo;
 import Database.Info.TorrentPageInfo;
 import NetAccess.NetAccess;
-import Utils.TableData;
+import Utils.DataBlock;
 
 
 public class FetchTorrentPageTask extends FetchInfoTask {
@@ -49,14 +49,14 @@ public class FetchTorrentPageTask extends FetchInfoTask {
         return result_set;
     }
 
-    public static Set<FetchTorrentPageTask> ParseFetchTorrentPageTaskByTableData(TableData tableData) {
+    public static Set<FetchTorrentPageTask> ParseFetchTorrentPageTaskByDataBlock(DataBlock dataBlock) {
 
-        var url_rss_index = tableData.GetColumnIndex("URL_RSS");
+        var url_rss_index = dataBlock.GetColumnIndex("URL_RSS");
 
         Set<FetchTorrentPageTask> taskSet = new java.util.HashSet<>();
-        for(var rowIndex = 0; rowIndex < tableData.GetRowSize(); rowIndex++) {
+        for(var rowIndex = 0; rowIndex < dataBlock.GetRowSize(); rowIndex++) {
             String url_rss = null;
-            var    row     = tableData.GetRow(rowIndex);
+            var    row     = dataBlock.GetRow(rowIndex);
 
             if(url_rss_index != -1) {
                 var url_rss_str = row[url_rss_index];

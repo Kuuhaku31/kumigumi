@@ -8,7 +8,7 @@ import java.util.Set;
 import Database.Info.BaseInfo;
 import Task.FetchInfoTask;
 import Utils.Printable;
-import Utils.TableData;
+import Utils.DataBlock;
 
 
 abstract class Item implements Printable {
@@ -90,9 +90,9 @@ class TaskSetItem extends Item {
 }
 
 
-class TableDataItem extends Item {
-    final TableData data;
-    TableDataItem(TableData data) { this.data = data; }
+class DataBlockItem extends Item {
+    final DataBlock data;
+    DataBlockItem(DataBlock data) { this.data = data; }
 
     @Override
     public String toPrintString(String indent, boolean enable_color) {
@@ -100,10 +100,10 @@ class TableDataItem extends Item {
         return data.toPrintString(indent, enable_color);
     }
 
-    static Map<String, TableDataItem> parse(Map<String, TableData> input) {
-        Map<String, TableDataItem> result = new HashMap<>();
+    static Map<String, DataBlockItem> parse(Map<String, DataBlock> input) {
+        Map<String, DataBlockItem> result = new HashMap<>();
         for(var entry : input.entrySet()) {
-            result.put(entry.getKey(), new TableDataItem(entry.getValue()));
+            result.put(entry.getKey(), new DataBlockItem(entry.getValue()));
         }
         return result;
     }

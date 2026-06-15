@@ -8,7 +8,10 @@ import static Utils.ColorCode.GREEN;
 import static Utils.UtilityFunctions.color;
 
 
-public class TableData implements Utils.Printable {
+/**
+ * DataBlock（数据块）保存从 Excel #block 指令解析出的表头和行数据。
+ */
+public class DataBlock implements Utils.Printable {
 
     private final int header_size;
     private final int row_size;
@@ -16,11 +19,11 @@ public class TableData implements Utils.Printable {
 
 
     /**
-     * 构造函数，接受一个包含 header 和 data 的一维字符串数组，以及 header 的大小
+     * 构造函数，接受一个包含 header 和行数据的一维字符串数组，以及 header 的大小。
      * @param data
      * @param header_size
      */
-    public TableData(String[] data, int header_size) {
+    public DataBlock(String[] data, int header_size) {
 
         if(header_size <= 0) throw new IllegalArgumentException("Header size must be greater than 0");
         var data_size = data.length;
@@ -134,7 +137,7 @@ public class TableData implements Utils.Printable {
     }
 
     /**
-     * TableData{header_size=3, row_size=2, header=[Header1, Header2, Header3], data=[[Data11, Data12, Data13], [Data21, Data22, Data23]]}
+     * 输出 DataBlock（数据块）的表头和行内容，不带颜色。
      */
     @Override
     public String toString() {

@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import Utils.DatabaseUtils;
-import Utils.TableData;
+import Utils.DataBlock;
 
 
 public class RSSInfo extends BaseInfo {
@@ -56,10 +56,10 @@ public class RSSInfo extends BaseInfo {
     }
 
     /**
-     * 从TableData创建RSSInfo实例
+     * 从 DataBlock（数据块）创建 RSSInfo 实例
      * @param data
      */
-    public static Set<RSSInfo> ParseRSSInfoByTableData(TableData data) {
+    public static Set<RSSInfo> ParseRSSInfoByDataBlock(DataBlock data) {
 
         // 获取列索引
         var url_rss_index = data.GetColumnIndex("URL_RSS");

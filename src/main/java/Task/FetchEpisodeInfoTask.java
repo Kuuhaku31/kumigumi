@@ -6,7 +6,7 @@ import java.util.Set;
 import Database.Info.BaseInfo;
 import Database.Info.EpisodeInfo;
 import NetAccess.NetAccess;
-import Utils.TableData;
+import Utils.DataBlock;
 
 
 public class FetchEpisodeInfoTask extends FetchInfoTask {
@@ -50,14 +50,14 @@ public class FetchEpisodeInfoTask extends FetchInfoTask {
     }
 
 
-    public static Set<FetchEpisodeInfoTask> ParseFetchEpisodeInfoTaskByTableData(TableData tableData) {
+    public static Set<FetchEpisodeInfoTask> ParseFetchEpisodeInfoTaskByDataBlock(DataBlock dataBlock) {
 
-        var ani_id_index = tableData.GetColumnIndex("ANI_ID");
+        var ani_id_index = dataBlock.GetColumnIndex("ANI_ID");
 
         Set<FetchEpisodeInfoTask> taskSet = new java.util.HashSet<>();
-        for(var rowIndex = 0; rowIndex < tableData.GetRowSize(); rowIndex++) {
+        for(var rowIndex = 0; rowIndex < dataBlock.GetRowSize(); rowIndex++) {
             Integer ani_id = null;
-            var     row    = tableData.GetRow(rowIndex);
+            var     row    = dataBlock.GetRow(rowIndex);
 
             if(ani_id_index != -1) {
                 var ani_id_str = row[ani_id_index];

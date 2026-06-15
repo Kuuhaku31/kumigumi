@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 import Database.TorrentDownloader;
-import Utils.TableData;
+import Utils.DataBlock;
 import Utils.Task;
 import Utils.TaskStatus;
 
@@ -61,27 +61,27 @@ class TaskTest {
     }
 
     @Test
-    void parseFetchTasksByTableData() {
-        var animeTable = new TableData(new String[] {
+    void parseFetchTasksByDataBlock() {
+        var animeDataBlock = new DataBlock(new String[] {
             "ANI_ID", "title",
             "100",    "A",
             "",       "Blank",
             "bad",    "Bad",
             "101",    "B"
         }, 2);
-        var animeTasks = FetchAnimeInfoTask.ParseFetchAnimeInfoTaskByTableData(animeTable);
+        var animeTasks = FetchAnimeInfoTask.ParseFetchAnimeInfoTaskByDataBlock(animeDataBlock);
         assertEquals(Set.of(100, 101), animeTasks.stream().map(task -> task.ANI_ID).collect(Collectors.toSet()));
 
-        var episodeTasks = FetchEpisodeInfoTask.ParseFetchEpisodeInfoTaskByTableData(animeTable);
+        var episodeTasks = FetchEpisodeInfoTask.ParseFetchEpisodeInfoTaskByDataBlock(animeDataBlock);
         assertEquals(Set.of(100, 101), episodeTasks.stream().map(task -> task.ANI_ID).collect(Collectors.toSet()));
 
-        var rssTable = new TableData(new String[] {
+        var rssDataBlock = new DataBlock(new String[] {
             "URL_RSS", "name",
             " https://example.com/rss.xml ", "rss",
             "",                            "blank",
             "https://example.com/other.xml", "other"
         }, 2);
-        var torrentPageTasks = FetchTorrentPageTask.ParseFetchTorrentPageTaskByTableData(rssTable);
+        var torrentPageTasks = FetchTorrentPageTask.ParseFetchTorrentPageTaskByDataBlock(rssDataBlock);
         assertEquals(
             Set.of("https://example.com/rss.xml", "https://example.com/other.xml"),
             torrentPageTasks.stream().map(task -> task.URL_RSS).collect(Collectors.toSet())

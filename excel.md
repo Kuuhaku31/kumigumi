@@ -55,11 +55,11 @@ air_date 3 date
 | ------------------------------------------ | -------------------------------------------- |
 | `_print_variable`                          | 打印变量内容                                 |
 | `_print_message`                           | 打印消息内容                                 |
-| `_make_info_episode_record` / `_mier`      | 根据 TableData 生成 EpisodeRecordInfo        |
-| `_make_info_rss` / `_mir`                  | 根据 TableData 生成 RSSinfo                  |
-| `_make_task_fetch_anime` / `_mtfa`         | 根据 TableData 生成 FetchAnimeInfoTask       |
-| `_make_task_fetch_episode` / `_mtfe`       | 根据 TableData 生成 FetchEpisodeInfoTask     |
-| `_make_task_fetch_torrent_page` / `_mtftp` | 根据 TableData 生成 FetchTorrentPageInfoTask |
+| `_make_info_episode_record` / `_mier`      | 根据 `DataBlock` 生成 EpisodeRecordInfo        |
+| `_make_info_rss` / `_mir`                  | 根据 `DataBlock` 生成 RSSinfo                  |
+| `_make_task_fetch_anime` / `_mtfa`         | 根据 `DataBlock` 生成 FetchAnimeInfoTask       |
+| `_make_task_fetch_episode` / `_mtfe`       | 根据 `DataBlock` 生成 FetchEpisodeInfoTask     |
+| `_make_task_fetch_torrent_page` / `_mtftp` | 根据 `DataBlock` 生成 FetchTorrentPageInfoTask |
 | `_run_task`                                | 执行任务                                     |
 | `_save_log`                                | 保存日志                                     |
 | `_to_db`                                   | 写入数据库                                   |
@@ -82,8 +82,8 @@ _print_message <message>
 _mier <item_name> <variable_name1> [<variable_name2> ...]
 ```
 
-variable_name 必须引用一个TableData对象
-且该 TableData 对象必须包含 `EPI_ID`、`view_datetime` 和 `timezone` 字段
+variable_name 必须引用一个 `DataBlock` 对象
+且该 `DataBlock` 对象必须包含 `EPI_ID`、`view_datetime` 和 `timezone` 字段
 
 1. 如果 `Map<String, Object> variables` 中不存在key为 `item_name` 的变量，则：
     构建完成后，`item_name` 变量将引用一个 `Set<EpisodeRecordInfo>` 对象。
@@ -98,8 +98,8 @@ variable_name 必须引用一个TableData对象
 _mir <item_name> <variable_name1> [<variable_name2> ...]
 ```
 
-variable_name 必须引用一个TableData对象
-且该 TableData 对象必须包含 `URL_RSS` 字段
+variable_name 必须引用一个 `DataBlock` 对象
+且该 `DataBlock` 对象必须包含 `URL_RSS` 字段
 
 接下来同 `_make_info_episode_record` / `_mier`
 
@@ -109,8 +109,8 @@ variable_name 必须引用一个TableData对象
 _mtfa <item_name> <variable_name1> [<variable_name2> ...]
 ```
 
-variable_name 必须引用一个TableData对象
-且该 TableData 对象必须包含 `ANI_ID` 字段
+variable_name 必须引用一个 `DataBlock` 对象
+且该 `DataBlock` 对象必须包含 `ANI_ID` 字段
 
 1. 如果 `Map<String, Object> variables` 中不存在key为 `item_name` 的变量，则：
     构建完成后，`item_name` 变量将引用一个 `Set<FetchAnimeInfoTask>` 对象。
@@ -122,12 +122,12 @@ variable_name 必须引用一个TableData对象
 ### `_make_task_fetch_episode` / `_mtfe`
 
 同 `_make_task_fetch_anime` / `_mtfa`
-但 `variable_name` 引用的 `TableData` 必须包含 `ANI_ID` 字段，生成的对象类型为 `FetchEpisodeInfoTask`
+但 `variable_name` 引用的 `DataBlock` 必须包含 `ANI_ID` 字段，生成的对象类型为 `FetchEpisodeInfoTask`
 
 ### `_make_task_fetch_torrent_page` / `_mtftp`
 
 同 `_make_task_fetch_anime` / `_mtfa`
-但 `variable_name` 引用的 `TableData` 必须包含 `URL_RSS` 字段，生成的对象类型为 `FetchTorrentPageInfoTask`
+但 `variable_name` 引用的 `DataBlock` 必须包含 `URL_RSS` 字段，生成的对象类型为 `FetchTorrentPageInfoTask`
 
 ### `_run_task`
 
