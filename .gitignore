@@ -1,15 +1,10 @@
 
 
-/ignore/
-/resources/
-/out/
 /target/
-/log/
 
 *.jar
 /*.code-workspace
 
-*.torrent
 
 *.tmp
 tmp_*
