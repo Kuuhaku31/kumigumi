@@ -19,41 +19,48 @@ import static Utils.UtilityFunctions.color;
 
 final class MainApplication {
 
-    //  = "D:/OneDrive/db/kumigumi/test.xlsx";
-    //  = "D:/OneDrive/db/kumigumi/kumigumi.db";
-    //  = "ignore/logs/";
-    public String EXCEL_FILE_PATH;
-    public String DATABASE_PATH;
-    public String LOG_PATH;
+    public final String EXCEL_FILE_PATH;
+    public final String DATABASE_PATH;
+    public final String LOG_PATH;
 
     final Map<String, Item> variables    = new java.util.HashMap<>();
     final List<List<String>> commandList = new java.util.ArrayList<>();
 
     MainApplication(String[] args) {
 
+        String excelFilePath = null;
+        String databasePath  = null;
+        String logPath       = null;
+
         // 解析命令行参数
-        for(int i = 0; i < args.length; i++) {
-            switch(args[i]) {
-            case "--excel_file_path", "-ex" -> {
-                if(i + 1 < args.length) EXCEL_FILE_PATH = args[++i];
-            }
-            case "--database_path", "-db" -> {
-                if(i + 1 < args.length) DATABASE_PATH = args[++i];
-            }
-            case "--log_path" -> {
-                if(i + 1 < args.length) LOG_PATH = args[++i];
-            }
+        for(int i = 0; i < args.length; i++) switch(args[i]) {
+
+            case "--excel_file_path", "-ex" -> { if(i + 1 < args.length) excelFilePath = args[++i]; }
+            case "--database_path", "-db"   -> { if(i + 1 < args.length) databasePath  = args[++i]; }
+            case "--log_path"               -> { if(i + 1 < args.length) logPath       = args[++i]; }
             case "--use_config" -> {
+
                 var configPath = "./kumigumi.ini";
                 if(i + 1 < args.length) configPath = args[++i];
-                read_config_from_env(configPath);
+
+                var config = read_config_from_env(configPath);
+                if(config.containsKey("EXCEL_FILE_PATH")) excelFilePath = config.get("EXCEL_FILE_PATH");
+                if(config.containsKey("DATABASE_PATH"))   databasePath  = config.get("DATABASE_PATH");
+                if(config.containsKey("LOG_PATH"))        logPath       = config.get("LOG_PATH");
             }
+
             default -> System.out.println("Unknown argument: " + args[i]);
-            }
         }
+
+        var nowTimeStr  = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        EXCEL_FILE_PATH = excelFilePath;
+        DATABASE_PATH   = databasePath;
+        LOG_PATH        = logPath + nowTimeStr + "/";
     }
 
-    private void read_config_from_env(String config_file_path) {
+    private Map<String, String> read_config_from_env(String config_file_path) {
+
+        var config = new java.util.HashMap<String, String>();
         try(var reader = Files.newBufferedReader(Path.of(config_file_path))) {
             String line;
             while((line = reader.readLine()) != null) {
@@ -62,9 +69,7 @@ final class MainApplication {
                     var key   = parts[0].trim();
                     var value = parts[1].trim();
                     switch(key) {
-                    case "EXCEL_FILE_PATH" -> EXCEL_FILE_PATH = value;
-                    case "DATABASE_PATH" -> DATABASE_PATH = value;
-                    case "LOG_PATH" -> LOG_PATH = value;
+                    case "EXCEL_FILE_PATH", "DATABASE_PATH", "LOG_PATH" -> config.put(key, value);
                     default -> System.out.println("Unknown config key: " + key);
                     }
                 }
@@ -72,12 +77,10 @@ final class MainApplication {
         } catch(IOException e) {
             System.out.println("Failed to read config file: " + e.getMessage());
         }
+        return config;
     }
 
     void Run() throws IOException {
-
-        var nowTimeStr = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-        LOG_PATH += nowTimeStr + "/";
 
         System.out.println("Excel File Path: " + EXCEL_FILE_PATH);
         System.out.println("Database Path: " + DATABASE_PATH);
