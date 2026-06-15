@@ -5,8 +5,8 @@ public enum ExcelCommand {
 
     PRINT_VARIABLE("_print_variable", "_pv"),
     PRINT_MESSAGE("_print_message", "_pm"),
-    MAKE_EPISODE_RECORD_ITEM("_make_info_episode_record", "_mier", "_make_episode_record", "_item_episode_record"),
-    MAKE_RSS_ITEM("_make_info_rss", "_mir", "_make_rss", "_item_rss"),
+    MAKE_ITEM_EPISODE_RECORD("_make_info_episode_record", "_mier", "_make_episode_record", "_item_episode_record"),
+    MAKE_ITEM_RSS("_make_info_rss", "_mir", "_make_rss", "_item_rss"),
     TO_DB("_to_db"),
     MAKE_FETCH_TASK_ANIME("_make_task_fetch_anime", "_mtfa", "_make_fetch_task_anime", "_mfa", "_fetch_task_ani", "_fetch_anime"),
     MAKE_FETCH_TASK_EPISODE("_make_task_fetch_episode", "_mtfe", "_make_fetch_task_episode", "_mfe", "_fetch_task_epi", "_fetch_episode"),
