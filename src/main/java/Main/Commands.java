@@ -346,4 +346,63 @@ final class Commands {
             System.err.println("Database operation error: " + e.getMessage());
         }
     }
+
+    static void exportTorrent(MainApplication mainApp, List<String> cmd) {
+
+        // 参数检查
+        if(cmd.size() < 2) {
+            System.out.println(color("Invalid command format for EXPORT_TORRENT. Expected: EXPORT_TORRENT <block_name1> [<block_name2> ...]", ColorCode.BOLD_RED));
+            return;
+        }
+
+        // 构建待导出的种子哈希集合
+        var requested_tor_hash_set = new HashSet<String>();
+        {
+            var requested_variable_names = cmd.subList(1, cmd.size());
+            var requested_items          = mainApp.getItemsByNames(requested_variable_names);
+            for(var item : requested_items) {
+                if(!(item instanceof DataBlockItem set_item)) {
+                    System.out.println(color("Variable " + cmd.get(1) + " is not DataBlockItem; skipped.", ColorCode.BOLD_RED));
+                    continue;
+                } else {
+                    var block = set_item.data;
+                    var tor_hash_str_list = block.GetColumn("TOR_HASH");
+                    if(tor_hash_str_list == null) {
+                        System.out.println(color("DataBlock in variable " + cmd.get(1) + " does not contain 'TOR_HASH' column; skipped.", ColorCode.BOLD_RED));
+                        continue;
+                    }
+                    for(var tor_hash_str : tor_hash_str_list) {
+                        requested_tor_hash_set.add(tor_hash_str.trim());
+                    }
+                }
+            }
+        }
+        if(requested_tor_hash_set.isEmpty()) {
+            System.out.println(color("No valid TOR_HASH found for export.", ColorCode.YELLOW));
+            return;
+        }
+
+        // 确保导出目录存在
+        var exportDirPath = Path.of(mainApp.EXPORT_DIR);
+        try {
+            if(!Files.exists(exportDirPath)) {
+                Files.createDirectories(exportDirPath);
+                System.out.println(color("Created export directory: " + mainApp.EXPORT_DIR, ColorCode.BOLD_GREEN));
+            } else if(!Files.isDirectory(exportDirPath)) {
+                System.out.println(color("Export path exists but is not a directory: " + mainApp.EXPORT_DIR, ColorCode.BOLD_RED));
+                return;
+            }
+        } catch(IOException e) {
+            System.err.println("Failed to create export directory: " + e.getMessage());
+            return;
+        }
+
+        // 导出种子文件
+        try(var db = new SQLiteAccess(mainApp.DATABASE_PATH)) {
+            db.ExportTorrentFiles(requested_tor_hash_set, mainApp.EXPORT_DIR);
+            System.out.println("Torrent export completed for " + requested_tor_hash_set.size() + " torrents.");
+        } catch(Exception e) {
+            System.err.println("Database operation error: " + e.getMessage());
+        }
+    }
 }

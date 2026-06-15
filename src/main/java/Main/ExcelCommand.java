@@ -18,12 +18,8 @@ enum ExcelCommand {
     TO_DB("_to_db"),
 
     UPDATE_TORRENT("_update_torrent"),
+    EXPORT_TORRENT("_export_torrent");
 
-    ITEM_ANI("_item_ani", "_item_anime"),
-    ITEM_EPI("_item_epi", "_item_episode"),
-    ITEM_TORRENT_PAGE("_item_torrent_page"),
-    DOWNLOAD_TORRENT("_download_torrent"),
-    UNSUPPORTED_LEGACY_COMMAND("_item_ani_store", "_item_epi_store", "_item_tor_store");
 
     private final String[] aliases;
 

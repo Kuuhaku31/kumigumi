@@ -19,9 +19,10 @@ import static Utils.UtilityFunctions.color;
 
 final class MainApplication {
 
-    public final String EXCEL_FILE_PATH;
-    public final String DATABASE_PATH;
-    public final String LOG_PATH;
+    final String EXCEL_FILE_PATH;
+    final String DATABASE_PATH;
+    final String LOG_PATH;
+    final String EXPORT_DIR;
 
     final Map<String, Item> variables    = new java.util.HashMap<>();
     final List<List<String>> commandList = new java.util.ArrayList<>();
@@ -31,6 +32,7 @@ final class MainApplication {
         String excelFilePath = null;
         String databasePath  = null;
         String logPath       = null;
+        String exportDir     = null;
 
         // 解析命令行参数
         for(int i = 0; i < args.length; i++) switch(args[i]) {
@@ -38,6 +40,7 @@ final class MainApplication {
             case "--excel_file_path", "-ex" -> { if(i + 1 < args.length) excelFilePath = args[++i]; }
             case "--database_path", "-db"   -> { if(i + 1 < args.length) databasePath  = args[++i]; }
             case "--log_path"               -> { if(i + 1 < args.length) logPath       = args[++i]; }
+            case "--export_dir"             -> { if(i + 1 < args.length) exportDir     = args[++i]; }
             case "--use_config" -> {
 
                 var configPath = "./kumigumi.ini";
@@ -47,6 +50,7 @@ final class MainApplication {
                 if(config.containsKey("EXCEL_FILE_PATH")) excelFilePath = config.get("EXCEL_FILE_PATH");
                 if(config.containsKey("DATABASE_PATH"))   databasePath  = config.get("DATABASE_PATH");
                 if(config.containsKey("LOG_PATH"))        logPath       = config.get("LOG_PATH");
+                if(config.containsKey("EXPORT_DIR"))      exportDir     = config.get("EXPORT_DIR");
             }
 
             default -> System.out.println("Unknown argument: " + args[i]);
@@ -56,6 +60,12 @@ final class MainApplication {
         EXCEL_FILE_PATH = excelFilePath;
         DATABASE_PATH   = databasePath;
         LOG_PATH        = logPath + nowTimeStr + "/";
+
+        // 如果 EXPORT_DIR 仍未设置，则使用下载目录
+        if(exportDir == null || exportDir.isEmpty()) {
+            exportDir = "./exported_torrents/";
+        }
+        EXPORT_DIR = exportDir;
     }
 
     private Map<String, String> read_config_from_env(String config_file_path) {
@@ -69,7 +79,7 @@ final class MainApplication {
                     var key   = parts[0].trim();
                     var value = parts[1].trim();
                     switch(key) {
-                    case "EXCEL_FILE_PATH", "DATABASE_PATH", "LOG_PATH" -> config.put(key, value);
+                    case "EXCEL_FILE_PATH", "DATABASE_PATH", "LOG_PATH", "EXPORT_DIR" -> config.put(key, value);
                     default -> System.out.println("Unknown config key: " + key);
                     }
                 }
@@ -85,6 +95,7 @@ final class MainApplication {
         System.out.println("Excel File Path: " + EXCEL_FILE_PATH);
         System.out.println("Database Path: " + DATABASE_PATH);
         System.out.println("Log Path: " + LOG_PATH);
+        System.out.println("Export Dir: " + EXPORT_DIR);
 
         Files.createDirectories(Path.of(LOG_PATH));
 
@@ -128,6 +139,7 @@ final class MainApplication {
                 case TO_DB -> Commands.toDB(this, cmd);
 
                 case UPDATE_TORRENT -> Commands.updateTorrent(this, cmd);
+                case EXPORT_TORRENT -> Commands.exportTorrent(this, cmd);
 
                 default -> System.out.println("Unknown command: " + cmd.getFirst());
                 }
