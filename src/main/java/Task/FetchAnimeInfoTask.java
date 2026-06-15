@@ -4,11 +4,12 @@ import java.util.Map;
 import java.util.Set;
 
 import Database.Info.AnimeInfo;
+import Database.Info.BaseInfo;
 import Excel.TableData;
 import NetAccess.NetAccess;
 
 
-public class FetchAnimeInfoTask extends Task {
+public class FetchAnimeInfoTask extends FetchInfoTask {
 
     final Integer     ANI_ID;
     private AnimeInfo result = null;
@@ -41,6 +42,15 @@ public class FetchAnimeInfoTask extends Task {
         return info;
     }
 
+
+    @Override
+    public Set<? extends BaseInfo> GetInfoSet() {
+        if(result == null) return java.util.Set.of();
+
+        var infoSet = new java.util.HashSet<BaseInfo>();
+        infoSet.add(result);
+        return infoSet;
+    }
 
     public static Set<FetchAnimeInfoTask> ParseFetchAnimeInfoTaskByTableData(TableData tableData) {
 

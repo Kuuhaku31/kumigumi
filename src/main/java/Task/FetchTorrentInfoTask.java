@@ -1,20 +1,20 @@
 package Task;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.Set;
 
+import Database.Info.BaseInfo;
+import Database.Info.TorrentInfo;
 import Database.TorrentDownloader;
-import Excel.TableData;
 import NetAccess.NetAccess;
 
 
-public class FetchTorrentInfoTask extends Task {
+public class FetchTorrentInfoTask extends FetchInfoTask {
 
     final TorrentDownloader downloader;
-    private byte[]          result = null;
+    private TorrentInfo result = null;
 
     public FetchTorrentInfoTask(TorrentDownloader downloader) {
         this.downloader = downloader;
@@ -23,33 +23,34 @@ public class FetchTorrentInfoTask extends Task {
     public void execute() {
         start();
 
-        try {
-            var url_list = downloader.getUrlList();
-            for(var url : url_list) {
-                result = NetAccess.DownloadFile(url);
-                if(result != null && result.length > 0) break;
-            }
+        var url_list = downloader.getUrlList();
+        for(var url : url_list) {
 
-            if(result == null || result.length == 0) {
-                result = null;
-                throw new Exception("获取 TorrentInfo 失败");
-            }
-            complete();
+            byte[] file = null;
+            try { file = NetAccess.DownloadFile(url); }
+            catch (URISyntaxException | IOException _) {}
 
-        } catch(Exception _) {
-            fail();
+            if(file != null && file.length > 0) {
+                result = new TorrentInfo(file);
+                if(result != null) break;
+            }
         }
-    }
 
-    public byte[] getResult() {
-        return result;
+        if(result == null) fail();
+        else complete();
     }
 
     @Override
     public Map<String, Object> getInfo() {
         var info = super.getInfo();
         info.put("TOR_HASH", downloader);
-        info.put("ResultSize", result == null ? 0 : result.length);
+        info.put("ResultSize", result == null ? 0 : result.file_size);
         return info;
+    }
+
+    @Override
+    public Set<? extends BaseInfo> GetInfoSet() {
+        if(result == null) return java.util.Set.of();
+        return java.util.Set.of(result);
     }
 }

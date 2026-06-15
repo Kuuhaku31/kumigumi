@@ -42,6 +42,10 @@ class TaskTest {
         var torrentInfoTask = new FetchTorrentInfoTask(new TorrentDownloader("abc123", List.of("https://example.com/file.torrent")));
 
         assertAll(
+            () -> assertInstanceOf(FetchInfoTask.class, animeTask),
+            () -> assertInstanceOf(FetchInfoTask.class, episodeTask),
+            () -> assertInstanceOf(FetchInfoTask.class, torrentPageTask),
+            () -> assertInstanceOf(FetchInfoTask.class, torrentInfoTask),
             () -> assertTrue(animeTask.toPrintString(false).startsWith("FetchAnimeInfoTask:\n")),
             () -> assertTrue(animeTask.toPrintString(false).contains("ANI_ID:\t123")),
             () -> assertTrue(episodeTask.toPrintString(false).startsWith("FetchEpisodeInfoTask:\n")),

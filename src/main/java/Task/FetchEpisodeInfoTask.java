@@ -3,12 +3,13 @@ package Task;
 import java.util.Map;
 import java.util.Set;
 
+import Database.Info.BaseInfo;
 import Database.Info.EpisodeInfo;
 import Excel.TableData;
 import NetAccess.NetAccess;
 
 
-public class FetchEpisodeInfoTask extends Task {
+public class FetchEpisodeInfoTask extends FetchInfoTask {
 
     final Integer            ANI_ID;
     private Set<EpisodeInfo> result_set = null;
@@ -41,6 +42,13 @@ public class FetchEpisodeInfoTask extends Task {
         info.put("ResultSize", result_set == null ? 0 : result_set.size());
         return info;
     }
+
+    @Override
+    public Set<? extends BaseInfo> GetInfoSet() {
+        if(result_set == null) return java.util.Set.of();
+        return result_set;
+    }
+
 
     public static Set<FetchEpisodeInfoTask> ParseFetchEpisodeInfoTaskByTableData(TableData tableData) {
 

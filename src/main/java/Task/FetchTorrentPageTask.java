@@ -3,12 +3,13 @@ package Task;
 import java.util.Map;
 import java.util.Set;
 
+import Database.Info.BaseInfo;
 import Database.Info.TorrentPageInfo;
 import Excel.TableData;
 import NetAccess.NetAccess;
 
 
-public class FetchTorrentPageTask extends Task {
+public class FetchTorrentPageTask extends FetchInfoTask {
 
     final String                 URL_RSS;
     private Set<TorrentPageInfo> result_set = null;
@@ -40,6 +41,12 @@ public class FetchTorrentPageTask extends Task {
         info.put("URL_RSS", URL_RSS);
         info.put("ResultSize", result_set == null ? 0 : result_set.size());
         return info;
+    }
+
+    @Override
+    public Set<? extends BaseInfo> GetInfoSet() {
+        if(result_set == null) return java.util.Set.of();
+        return result_set;
     }
 
     public static Set<FetchTorrentPageTask> ParseFetchTorrentPageTaskByTableData(TableData tableData) {
