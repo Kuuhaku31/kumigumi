@@ -1,4 +1,4 @@
-package Task;
+package Main.FetchTask;
 
 import java.util.Map;
 import java.util.Set;

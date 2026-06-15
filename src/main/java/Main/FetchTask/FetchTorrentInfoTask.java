@@ -1,4 +1,4 @@
-package Task;
+package Main.FetchTask;
 
 import java.io.IOException;
 import java.net.URISyntaxException;

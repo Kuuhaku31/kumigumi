@@ -1,6 +1,6 @@
 # Excel 使用说明
 
-kumigumi 以 Excel 作为批量操作入口。程序会读取命令流，按命令从指定工作表的数据块中生成 `Database.Info.*Info` 对象、创建 `Task.*` 抓取任务，并最终通过 `_to_db` 写入 SQLite。
+kumigumi 以 Excel 作为批量操作入口。程序会读取命令流，按命令从指定工作表的数据块中生成 `Database.Info.*Info` 对象、创建 Main 内部 FetchTask 抓取任务，并最终通过 `_to_db` 写入 SQLite。
 
 ## 命令流控制
 

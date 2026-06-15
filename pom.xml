@@ -107,6 +107,7 @@
         <configuration>
           <source>25</source>
           <target>25</target>
+          <useIncrementalCompilation>false</useIncrementalCompilation>
         </configuration>
       </plugin>
 
@@ -117,7 +118,7 @@
         <version>3.1.2</version>
         <configuration>
           <argLine>--enable-native-access=ALL-UNNAMED</argLine>
-          <useModulePath>false</useModulePath>
+          <useModulePath>true</useModulePath>
         </configuration>
       </plugin>
     </plugins>

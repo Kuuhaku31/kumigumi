@@ -14,11 +14,11 @@ import Database.Info.RSSInfo;
 import Database.Info.TorrentPageInfo;
 import Database.SQLiteAccess;
 import Database.TorrentDownloader;
-import Task.FetchAnimeInfoTask;
-import Task.FetchEpisodeInfoTask;
-import Task.FetchInfoTask;
-import Task.FetchTorrentInfoTask;
-import Task.FetchTorrentPageTask;
+import Main.FetchTask.FetchAnimeInfoTask;
+import Main.FetchTask.FetchEpisodeInfoTask;
+import Main.FetchTask.FetchInfoTask;
+import Main.FetchTask.FetchTorrentInfoTask;
+import Main.FetchTask.FetchTorrentPageTask;
 import Utils.ColorCode;
 import Utils.Task;
 

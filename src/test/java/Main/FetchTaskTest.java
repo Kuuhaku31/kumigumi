@@ -1,4 +1,4 @@
-package Task;
+package Main;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -11,11 +11,16 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 import Database.TorrentDownloader;
+import Main.FetchTask.FetchAnimeInfoTask;
+import Main.FetchTask.FetchEpisodeInfoTask;
+import Main.FetchTask.FetchInfoTask;
+import Main.FetchTask.FetchTorrentInfoTask;
+import Main.FetchTask.FetchTorrentPageTask;
 import Utils.DataBlock;
 import Utils.Task;
 import Utils.TaskStatus;
 
-class TaskTest {
+class FetchTaskTest {
 
     @Test
     void parallelExecutionUpdatesTaskStatuses() {
@@ -70,10 +75,16 @@ class TaskTest {
             "101",    "B"
         }, 2);
         var animeTasks = FetchAnimeInfoTask.ParseFetchAnimeInfoTaskByDataBlock(animeDataBlock);
-        assertEquals(Set.of(100, 101), animeTasks.stream().map(task -> task.ANI_ID).collect(Collectors.toSet()));
+        assertEquals(
+            Set.of(100, 101),
+            animeTasks.stream().map(task -> (Integer)task.getInfo().get("ANI_ID")).collect(Collectors.toSet())
+        );
 
         var episodeTasks = FetchEpisodeInfoTask.ParseFetchEpisodeInfoTaskByDataBlock(animeDataBlock);
-        assertEquals(Set.of(100, 101), episodeTasks.stream().map(task -> task.ANI_ID).collect(Collectors.toSet()));
+        assertEquals(
+            Set.of(100, 101),
+            episodeTasks.stream().map(task -> (Integer)task.getInfo().get("ANI_ID")).collect(Collectors.toSet())
+        );
 
         var rssDataBlock = new DataBlock(new String[] {
             "URL_RSS", "name",
@@ -84,7 +95,7 @@ class TaskTest {
         var torrentPageTasks = FetchTorrentPageTask.ParseFetchTorrentPageTaskByDataBlock(rssDataBlock);
         assertEquals(
             Set.of("https://example.com/rss.xml", "https://example.com/other.xml"),
-            torrentPageTasks.stream().map(task -> task.URL_RSS).collect(Collectors.toSet())
+            torrentPageTasks.stream().map(task -> (String)task.getInfo().get("URL_RSS")).collect(Collectors.toSet())
         );
     }
 

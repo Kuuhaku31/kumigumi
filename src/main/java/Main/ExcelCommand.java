@@ -1,7 +1,7 @@
 package Main;
 
 
-public enum ExcelCommand {
+enum ExcelCommand {
 
     PRINT_MESSAGE("_print_message", "_pm"),
     PRINT_VARIABLE("_print_variable", "_pv"),

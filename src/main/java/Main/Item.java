@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 import Database.Info.BaseInfo;
-import Task.FetchInfoTask;
+import Main.FetchTask.FetchInfoTask;
 import Utils.Printable;
 import Utils.DataBlock;
 

@@ -26,19 +26,19 @@
         "type": "java",
         "name": "Kumigumi: Main (MetaData defaults)",
         "request": "launch",
-        "mainClass": "Main.Main",
+        "mainClass": "kumigumi/Main.Main",
         "projectName": "kumigumi",
         "cwd": "${workspaceFolder}",
         "console": "integratedTerminal",
         "vmArgs": [
-            "--enable-native-access=ALL-UNNAMED"
+            "--enable-native-access=org.xerial.sqlitejdbc"
         ]
     },
     {
         "type": "java",
         "name": "Kumigumi: Main",
         "request": "launch",
-        "mainClass": "Main.Main",
+        "mainClass": "kumigumi/Main.Main",
         "projectName": "kumigumi",
         "cwd": "${workspaceFolder}",
         "console": "integratedTerminal",
@@ -46,14 +46,14 @@
            "--use_config",
         ],
         "vmArgs": [
-            "--enable-native-access=ALL-UNNAMED"
+            "--enable-native-access=org.xerial.sqlitejdbc"
         ]
     },
     {
         "type": "java",
         "name": "Kumigumi: Export Torrent",
         "request": "launch",
-        "mainClass": "Main.ExportTorrent",
+        "mainClass": "kumigumi/Main.ExportTorrent",
         "projectName": "kumigumi",
         "cwd": "${workspaceFolder}",
         "console": "integratedTerminal",
@@ -63,7 +63,7 @@
             "${input:torrentOutputDir}"
         ],
         "vmArgs": [
-            "--enable-native-access=ALL-UNNAMED"
+            "--enable-native-access=org.xerial.sqlitejdbc"
         ]
     }
 ],

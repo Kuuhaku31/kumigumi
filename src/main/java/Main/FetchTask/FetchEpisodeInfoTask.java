@@ -1,20 +1,20 @@
-package Task;
+package Main.FetchTask;
 
 import java.util.Map;
 import java.util.Set;
 
-import Database.Info.AnimeInfo;
 import Database.Info.BaseInfo;
+import Database.Info.EpisodeInfo;
 import NetAccess.NetAccess;
 import Utils.DataBlock;
 
 
-public class FetchAnimeInfoTask extends FetchInfoTask {
+public class FetchEpisodeInfoTask extends FetchInfoTask {
 
-    final Integer     ANI_ID;
-    private AnimeInfo result = null;
+    final Integer            ANI_ID;
+    private Set<EpisodeInfo> result_set = null;
 
-    public FetchAnimeInfoTask(Integer ANI_ID) {
+    public FetchEpisodeInfoTask(Integer ANI_ID) {
         this.ANI_ID = ANI_ID;
     }
 
@@ -22,41 +22,39 @@ public class FetchAnimeInfoTask extends FetchInfoTask {
         start();
 
         try {
-            result = NetAccess.FetchAnimeInfo(ANI_ID);
-            if(result == null) throw new Exception("获取 AnimeInfo 失败");
+            result_set = NetAccess.FetchEpisodeInfoSet(ANI_ID);
+            if(result_set == null) throw new Exception("获取 EpisodeInfo 失败");
             complete();
         } catch(Exception _) {
             fail();
         }
     }
 
-    public AnimeInfo getResult() {
-        return result;
+    public Set<EpisodeInfo> getResult() {
+        return result_set;
     }
 
     @Override
     public Map<String, Object> getInfo() {
         var info = super.getInfo();
         info.put("ANI_ID", ANI_ID);
-        info.put("ResultType", result != null ? result.getClass().getSimpleName() : "null");
+        info.put("ResultType", result_set != null ? result_set.getClass().getSimpleName() : "null");
+        info.put("ResultSize", result_set == null ? 0 : result_set.size());
         return info;
     }
 
-
     @Override
     public Set<? extends BaseInfo> GetInfoSet() {
-        if(result == null) return java.util.Set.of();
-
-        var infoSet = new java.util.HashSet<BaseInfo>();
-        infoSet.add(result);
-        return infoSet;
+        if(result_set == null) return java.util.Set.of();
+        return result_set;
     }
 
-    public static Set<FetchAnimeInfoTask> ParseFetchAnimeInfoTaskByDataBlock(DataBlock dataBlock) {
+
+    public static Set<FetchEpisodeInfoTask> ParseFetchEpisodeInfoTaskByDataBlock(DataBlock dataBlock) {
 
         var ani_id_index = dataBlock.GetColumnIndex("ANI_ID");
 
-        Set<FetchAnimeInfoTask> taskSet = new java.util.HashSet<>();
+        Set<FetchEpisodeInfoTask> taskSet = new java.util.HashSet<>();
         for(var rowIndex = 0; rowIndex < dataBlock.GetRowSize(); rowIndex++) {
             Integer ani_id = null;
             var     row    = dataBlock.GetRow(rowIndex);
@@ -69,7 +67,7 @@ public class FetchAnimeInfoTask extends FetchInfoTask {
                 }
             }
 
-            if(ani_id != null) taskSet.add(new FetchAnimeInfoTask(ani_id));
+            if(ani_id != null) taskSet.add(new FetchEpisodeInfoTask(ani_id));
         }
         return taskSet;
     }
