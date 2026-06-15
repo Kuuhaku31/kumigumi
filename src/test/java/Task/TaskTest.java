@@ -33,21 +33,22 @@ class TaskTest {
     }
 
     @Test
-    void concreteTaskToStringIncludesClassNameAndTaskInfo() {
+    void concreteTaskToPrintStringIncludesClassNameAndTaskInfo() {
         var animeTask       = new FetchAnimeInfoTask(123);
         var episodeTask     = new FetchEpisodeInfoTask(456);
         var torrentPageTask = new FetchTorrentPageTask("https://example.com/rss");
         var torrentInfoTask = new FetchTorrentInfoTask(new TorrentDownloader("abc123", List.of("https://example.com/file.torrent")));
 
         assertAll(
-            () -> assertTrue(animeTask.toString().startsWith("FetchAnimeInfoTask{")),
-            () -> assertTrue(animeTask.toString().contains("ANI_ID: 123")),
-            () -> assertTrue(episodeTask.toString().startsWith("FetchEpisodeInfoTask{")),
-            () -> assertTrue(episodeTask.toString().contains("ANI_ID: 456")),
-            () -> assertTrue(torrentPageTask.toString().startsWith("FetchTorrentPageTask{")),
-            () -> assertTrue(torrentPageTask.toString().contains("URL_RSS: https://example.com/rss")),
-            () -> assertTrue(torrentInfoTask.toString().startsWith("FetchTorrentInfoTask{")),
-            () -> assertTrue(torrentInfoTask.toString().contains("abc123"))
+            () -> assertTrue(animeTask.toPrintString(false).startsWith("FetchAnimeInfoTask:\n")),
+            () -> assertTrue(animeTask.toPrintString(false).contains("ANI_ID:\t123")),
+            () -> assertTrue(episodeTask.toPrintString(false).startsWith("FetchEpisodeInfoTask:\n")),
+            () -> assertTrue(episodeTask.toPrintString(false).contains("ANI_ID:\t456")),
+            () -> assertTrue(torrentPageTask.toPrintString(false).startsWith("FetchTorrentPageTask:\n")),
+            () -> assertTrue(torrentPageTask.toPrintString(false).contains("URL_RSS:\thttps://example.com/rss")),
+            () -> assertTrue(torrentInfoTask.toPrintString(false).startsWith("FetchTorrentInfoTask:\n")),
+            () -> assertTrue(torrentInfoTask.toPrintString(false).contains("abc123")),
+            () -> assertEquals(animeTask.toPrintString(false), animeTask.toString())
         );
     }
 

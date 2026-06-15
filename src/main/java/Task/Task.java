@@ -12,7 +12,7 @@ import Utils.ColorCode;
 import Utils.UtilityFunctions;
 
 
-public abstract class Task {
+public abstract class Task implements Utils.Printable {
 
     Integer       totalTasks    = null;
     AtomicInteger startedCount  = null;
@@ -57,17 +57,64 @@ public abstract class Task {
     }
 
     public Map<String, Object> getInfo() {
-        var info = new java.util.HashMap<String, Object>();
+        var info = new java.util.LinkedHashMap<String, Object>();
         info.put("HashCode", Integer.toHexString(System.identityHashCode(this)));
         info.put("Status", status);
         return info;
     }
 
-    // 默认实现 toString 方法，输出任务实例HashCode和状态
+
+    @Override
+    public String toPrintString(String indent, boolean enable_color) {
+        return formatInfo(getClass().getSimpleName(), indent, enable_color, getInfo());
+    }
+
+    @Override
+    public String toPrintString() {
+        return toPrintString("", true);
+    }
+
+    @Override
+    public String toPrintString(String indent) {
+        return toPrintString(indent, true);
+    }
+
+    @Override
+    public String toPrintString(boolean enable_color) {
+        return toPrintString("", enable_color);
+    }
+
     @Override
     public String toString() {
-        var info = getInfo();
-        return getClass().getSimpleName() + UtilityFunctions.getInfoString(info);
+        return toPrintString("", false);
+    }
+
+    protected static String formatInfo(String typeName, String indent, boolean enable_color, Map<String, Object> fields) {
+        final var this_indent = "  ";
+        var sb = new StringBuilder();
+
+        sb.append(indent);
+        sb.append(color(typeName + ":\n", ColorCode.BOLD_GREEN, enable_color));
+
+        var index = 0;
+        for(var field : fields.entrySet()) {
+            sb.append(indent).append(this_indent);
+            sb.append(color(field.getKey() + ":\t", ColorCode.BOLD_CYAN, enable_color));
+            sb.append(color(printableValue(field.getValue(), enable_color), ColorCode.CYAN, enable_color));
+            if(index < fields.size() - 1) sb.append("\n");
+            index++;
+        }
+
+        return sb.toString();
+    }
+
+    private static String printableValue(Object value, boolean enable_color) {
+        if(value == null) return "null";
+        if(value instanceof TaskStatus status) {
+            return enable_color ? status.toPrintString() : status.toString();
+        }
+        if(value instanceof byte[] bytes) return "[binary data: " + bytes.length + " bytes]";
+        return UtilityFunctions.standardString(String.valueOf(value));
     }
 
 
