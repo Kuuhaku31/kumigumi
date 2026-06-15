@@ -102,6 +102,18 @@ mvn -q package
 java -jar target/kumigumi-<version>.jar --use_config
 ```
 
+使用jvm参数启用对 SQLite JDBC 的 native access：
+
+```
+--enable-native-access=ALL-UNNAMED
+```
+
+完整命令示例：
+
+```powershell
+java --enable-native-access=ALL-UNNAMED -jar target/kumigumi-<version>.jar --use_config
+```
+
 ## 标准工作流
 
 1. 在 Excel 中定义 `#define` 变量和 `#block` 数据块。
