@@ -1,10 +1,8 @@
-package Task;
+package Utils;
 
 import static Utils.ColorCode.BOLD_RED;
 import static Utils.ColorCode.GRAY;
 import static Utils.ColorCode.GREEN;
-
-import Utils.UtilityFunctions;
 
 
 public enum TaskStatus {

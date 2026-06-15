@@ -1,4 +1,4 @@
-package Task;
+package Utils;
 
 import static Utils.UtilityFunctions.color;
 
@@ -7,10 +7,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import Utils.ColorCode;
-import Utils.Printable;
-import Utils.UtilityFunctions;
 
 
 public abstract class Task implements Printable {

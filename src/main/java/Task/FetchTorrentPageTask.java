@@ -5,8 +5,8 @@ import java.util.Set;
 
 import Database.Info.BaseInfo;
 import Database.Info.TorrentPageInfo;
-import Excel.TableData;
 import NetAccess.NetAccess;
+import Utils.TableData;
 
 
 public class FetchTorrentPageTask extends FetchInfoTask {

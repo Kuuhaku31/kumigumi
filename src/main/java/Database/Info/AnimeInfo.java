@@ -7,8 +7,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import Excel.TableData;
 import Utils.DatabaseUtils;
+import Utils.TableData;
 
 
 public class AnimeInfo extends BaseInfo {

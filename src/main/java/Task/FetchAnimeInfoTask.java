@@ -5,8 +5,8 @@ import java.util.Set;
 
 import Database.Info.AnimeInfo;
 import Database.Info.BaseInfo;
-import Excel.TableData;
 import NetAccess.NetAccess;
+import Utils.TableData;
 
 
 public class FetchAnimeInfoTask extends FetchInfoTask {

@@ -11,7 +11,9 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 import Database.TorrentDownloader;
-import Excel.TableData;
+import Utils.TableData;
+import Utils.Task;
+import Utils.TaskStatus;
 
 class TaskTest {
 
