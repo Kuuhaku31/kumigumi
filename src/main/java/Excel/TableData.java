@@ -8,7 +8,7 @@ import static Utils.ColorCode.GREEN;
 import static Utils.UtilityFunctions.color;
 
 
-public class TableData {
+public class TableData implements Utils.Printable {
 
     private final int header_size;
     private final int row_size;
@@ -74,7 +74,26 @@ public class TableData {
         return row;
     }
 
+    // 根据列索引返回对应的数据列，如果索引越界则返回 null
+    public String[] GetColumn(int column_index) {
 
+        // 如果列索引越界则返回 null
+        if(column_index < 0 || column_index >= header_size) return null;
+
+        var column = new String[row_size];
+        for(var i = 0; i < row_size; i++) {
+            column[i] = data[header_size + i * header_size + column_index];
+        }
+        return column;
+    }
+
+    // 根据列名返回对应的数据列，如果列名不存在则返回 null
+    public String[] GetColumn(String column_name) {
+        return GetColumn(GetColumnIndex(column_name));
+    }
+
+
+    @Override
     public String toPrintString(String indent, boolean enable_color) {
 
         var sb = new StringBuilder();
@@ -99,14 +118,17 @@ public class TableData {
         return sb.toString();
     }
 
+    @Override
     public String toPrintString() {
         return toPrintString("", true);
     }
 
+    @Override
     public String toPrintString(String indent) {
         return toPrintString(indent, true);
     }
 
+    @Override
     public String toPrintString(boolean enable_color) {
         return toPrintString("", enable_color);
     }
