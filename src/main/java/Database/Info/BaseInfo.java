@@ -8,19 +8,24 @@ import java.util.Date;
 import Utils.ColorCode;
 import Utils.UtilityFunctions;
 
-public abstract class BaseInfo {
+public abstract class BaseInfo implements Utils.Printable {
+
     public abstract void setParams(PreparedStatement ps) throws SQLException;
 
+    @Override
     public abstract String toPrintString(String indent, boolean enable_color);
 
+    @Override
     public String toPrintString() {
         return toPrintString("", true);
     }
 
+    @Override
     public String toPrintString(String indent) {
         return toPrintString(indent, true);
     }
 
+    @Override
     public String toPrintString(boolean enable_color) {
         return toPrintString("", enable_color);
     }
