@@ -1,5 +1,3 @@
-// cSpell:words jdbc
-
 package Database;
 
 import java.io.Closeable;
@@ -17,14 +15,13 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import Database.Info.AnimeInfo;
 import Database.Info.BaseInfo;
+import Database.Info.EpisodeInfo;
+import Database.Info.EpisodeRecordInfo;
 import Database.Info.RSSInfo;
 import Database.Info.TorrentInfo;
 import Database.Info.TorrentPageInfo;
-import Database.Info.AnimeInfo;
-import Database.Info.EpisodeInfo;
-import Database.Info.EpisodeRecordInfo;
-import Utils.DatabaseUtils;
 
 
 public class SQLiteAccess implements Closeable {

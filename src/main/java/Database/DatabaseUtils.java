@@ -1,6 +1,4 @@
-package Utils;
-
-import static Utils.UtilityFunctions.getDateString;
+package Database;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -10,11 +8,14 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 
-public final class DatabaseUtils {
+import static Utils.UtilityFunctions.getDateString;
+
+
+final class DatabaseUtils {
 
     private DatabaseUtils() {}
 
-    public static void safeSetInt(PreparedStatement ps, int index, Integer value) throws SQLException {
+    static void safeSetInt(PreparedStatement ps, int index, Integer value) throws SQLException {
         if(value == null) {
             ps.setNull(index, java.sql.Types.INTEGER);
         } else {
@@ -22,7 +23,7 @@ public final class DatabaseUtils {
         }
     }
 
-    public static void safeSetLong(PreparedStatement ps, int index, Long value) throws SQLException {
+    static void safeSetLong(PreparedStatement ps, int index, Long value) throws SQLException {
         if(value == null) {
             ps.setNull(index, java.sql.Types.BIGINT);
         } else {
@@ -30,7 +31,7 @@ public final class DatabaseUtils {
         }
     }
 
-    public static void safeSetFloat(PreparedStatement ps, int index, Float value) throws SQLException {
+    static void safeSetFloat(PreparedStatement ps, int index, Float value) throws SQLException {
         if(value == null) {
             ps.setNull(index, java.sql.Types.REAL);
         } else {
@@ -38,7 +39,7 @@ public final class DatabaseUtils {
         }
     }
 
-    public static void safeSetDouble(PreparedStatement ps, int index, Double value) throws SQLException {
+    static void safeSetDouble(PreparedStatement ps, int index, Double value) throws SQLException {
         if(value == null) {
             ps.setNull(index, java.sql.Types.DOUBLE);
         } else {
@@ -46,7 +47,7 @@ public final class DatabaseUtils {
         }
     }
 
-    public static void safeSetString(PreparedStatement ps, int index, String value) throws SQLException {
+    static void safeSetString(PreparedStatement ps, int index, String value) throws SQLException {
         if(value == null) {
             ps.setNull(index, java.sql.Types.VARCHAR);
         } else {
@@ -54,7 +55,7 @@ public final class DatabaseUtils {
         }
     }
 
-    public static void safeSetDate(PreparedStatement ps, int index, java.util.Date value) throws SQLException {
+    static void safeSetDate(PreparedStatement ps, int index, java.util.Date value) throws SQLException {
         if(value == null) {
             ps.setNull(index, java.sql.Types.DATE);
         } else {
@@ -62,7 +63,7 @@ public final class DatabaseUtils {
         }
     }
 
-    public static void safeSetOffsetDateTime(PreparedStatement ps, int index, OffsetDateTime value) throws SQLException {
+    static void safeSetOffsetDateTime(PreparedStatement ps, int index, OffsetDateTime value) throws SQLException {
         if(value == null) {
             ps.setNull(index, java.sql.Types.TIMESTAMP);
         } else {
@@ -70,7 +71,7 @@ public final class DatabaseUtils {
         }
     }
 
-    public static void safeSetBytes(PreparedStatement ps, int index, byte[] value) throws SQLException {
+    static void safeSetBytes(PreparedStatement ps, int index, byte[] value) throws SQLException {
         if(value == null) {
             ps.setNull(index, java.sql.Types.BLOB);
         } else {
@@ -78,7 +79,7 @@ public final class DatabaseUtils {
         }
     }
 
-    public static LinkedHashSet<String> normalizeHashes(Collection<String> hashes) {
+    static LinkedHashSet<String> normalizeHashes(Collection<String> hashes) {
         var uniqueHashes = new LinkedHashSet<String>();
         if(hashes == null) return uniqueHashes;
 
@@ -88,7 +89,7 @@ public final class DatabaseUtils {
         return uniqueHashes;
     }
 
-    public static List<List<String>> chunks(Collection<String> values, int chunkSize) {
+    static List<List<String>> chunks(Collection<String> values, int chunkSize) {
         var input = new ArrayList<>(values);
         var res   = new ArrayList<List<String>>();
         for(var start = 0; start < input.size(); start += chunkSize) {
@@ -98,7 +99,7 @@ public final class DatabaseUtils {
         return res;
     }
 
-    public static void bindStrings(PreparedStatement ps, List<String> values) throws SQLException {
+    static void bindStrings(PreparedStatement ps, List<String> values) throws SQLException {
         for(var i = 0; i < values.size(); i++) {
             ps.setString(i + 1, values.get(i));
         }
