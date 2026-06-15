@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.Set;
 
 import Database.Info.TorrentPageInfo;
+import Excel.TableData;
 import NetAccess.NetAccess;
 
 
@@ -39,5 +40,24 @@ public class FetchTorrentPageTask extends Task {
         info.put("URL_RSS", URL_RSS);
         info.put("ResultSize", result_set == null ? 0 : result_set.size());
         return info;
+    }
+
+    public static Set<FetchTorrentPageTask> ParseFetchTorrentPageTaskByTableData(TableData tableData) {
+
+        var url_rss_index = tableData.GetColumnIndex("URL_RSS");
+
+        Set<FetchTorrentPageTask> taskSet = new java.util.HashSet<>();
+        for(var rowIndex = 0; rowIndex < tableData.GetRowSize(); rowIndex++) {
+            String url_rss = null;
+            var    row     = tableData.GetRow(rowIndex);
+
+            if(url_rss_index != -1) {
+                var url_rss_str = row[url_rss_index];
+                if(url_rss_str != null && !url_rss_str.isBlank()) url_rss = url_rss_str.trim();
+            }
+
+            if(url_rss != null) taskSet.add(new FetchTorrentPageTask(url_rss));
+        }
+        return taskSet;
     }
 }

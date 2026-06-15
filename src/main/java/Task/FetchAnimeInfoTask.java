@@ -1,8 +1,10 @@
 package Task;
 
 import java.util.Map;
+import java.util.Set;
 
 import Database.Info.AnimeInfo;
+import Excel.TableData;
 import NetAccess.NetAccess;
 
 
@@ -37,5 +39,28 @@ public class FetchAnimeInfoTask extends Task {
         info.put("ANI_ID", ANI_ID);
         info.put("ResultType", result != null ? result.getClass().getSimpleName() : "null");
         return info;
+    }
+
+
+    public static Set<FetchAnimeInfoTask> ParseFetchAnimeInfoTaskByTableData(TableData tableData) {
+
+        var ani_id_index = tableData.GetColumnIndex("ANI_ID");
+
+        Set<FetchAnimeInfoTask> taskSet = new java.util.HashSet<>();
+        for(var rowIndex = 0; rowIndex < tableData.GetRowSize(); rowIndex++) {
+            Integer ani_id = null;
+            var     row    = tableData.GetRow(rowIndex);
+
+            if(ani_id_index != -1) {
+                var ani_id_str = row[ani_id_index];
+                if(ani_id_str != null && !ani_id_str.isBlank()) {
+                    try { ani_id = Integer.parseInt(ani_id_str.trim()); }
+                    catch(NumberFormatException _) {}
+                }
+            }
+
+            if(ani_id != null) taskSet.add(new FetchAnimeInfoTask(ani_id));
+        }
+        return taskSet;
     }
 }

@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.Set;
 
 import Database.Info.EpisodeInfo;
+import Excel.TableData;
 import NetAccess.NetAccess;
 
 
@@ -39,5 +40,27 @@ public class FetchEpisodeInfoTask extends Task {
         info.put("ResultType", result_set != null ? result_set.getClass().getSimpleName() : "null");
         info.put("ResultSize", result_set == null ? 0 : result_set.size());
         return info;
+    }
+
+    public static Set<FetchEpisodeInfoTask> ParseFetchEpisodeInfoTaskByTableData(TableData tableData) {
+
+        var ani_id_index = tableData.GetColumnIndex("ANI_ID");
+
+        Set<FetchEpisodeInfoTask> taskSet = new java.util.HashSet<>();
+        for(var rowIndex = 0; rowIndex < tableData.GetRowSize(); rowIndex++) {
+            Integer ani_id = null;
+            var     row    = tableData.GetRow(rowIndex);
+
+            if(ani_id_index != -1) {
+                var ani_id_str = row[ani_id_index];
+                if(ani_id_str != null && !ani_id_str.isBlank()) {
+                    try { ani_id = Integer.parseInt(ani_id_str.trim()); }
+                    catch(NumberFormatException _) {}
+                }
+            }
+
+            if(ani_id != null) taskSet.add(new FetchEpisodeInfoTask(ani_id));
+        }
+        return taskSet;
     }
 }
