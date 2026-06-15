@@ -12,9 +12,18 @@
 ```powershell
 mvn -q test
 mvn -q -DskipTests compile
+mvn -q package
 ```
 
 测试启用了 Maven module path，并通过 `--enable-native-access=ALL-UNNAMED` 允许 SQLite JDBC 测试运行。
+
+`mvn package` 会通过 Maven Shade Plugin 生成可直接运行的发布 jar：
+
+```text
+target/kumigumi-<version>.jar
+```
+
+同目录下若出现 `original-kumigumi-<version>.jar`，它是 shade 处理前的普通 jar，通常不包含运行所需依赖，不作为发布包使用。
 
 ## 启动入口
 
@@ -24,7 +33,17 @@ mvn -q -DskipTests compile
 kumigumi/Main.Main
 ```
 
-从 IDE 启动时应使用模块化主类写法。命令行运行时推荐先用 Maven/IDE 生成 classpath 或后续补充 exec/shade 打包方式。
+从 IDE 启动时应使用模块化主类写法。打包后推荐通过发布 jar 运行：
+
+```powershell
+java -jar target/kumigumi-<version>.jar --use_config
+```
+
+发布版本为 `1.0.0` 时，对应命令为：
+
+```powershell
+java -jar target/kumigumi-1.0.0.jar --use_config
+```
 
 ## 参数
 
@@ -62,6 +81,8 @@ EXPORT_DIR=ignore/torrents/
 
 ## 推荐运行方式
 
+开发时先编译：
+
 ```powershell
 mvn -q -DskipTests compile
 ```
@@ -73,6 +94,13 @@ mvn -q -DskipTests compile
 ```
 
 该配置会读取工作区根目录下的 `kumigumi.ini`。
+
+发布或本地命令行运行时先打包：
+
+```powershell
+mvn -q package
+java -jar target/kumigumi-<version>.jar --use_config
+```
 
 ## 标准工作流
 
