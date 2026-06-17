@@ -68,7 +68,7 @@ public class RSSInfo extends BaseInfo {
             if(url_rss_index != -1) url_rss = row[url_rss_index];
             if(ani_id_index != -1) {
                 try {
-                    ani_id = Integer.parseInt(row[ani_id_index]);
+                    ani_id = (int) Double.parseDouble(row[ani_id_index]);
                 } catch(NumberFormatException _) {}
             }
 

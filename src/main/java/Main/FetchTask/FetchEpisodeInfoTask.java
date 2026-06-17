@@ -62,7 +62,7 @@ public class FetchEpisodeInfoTask extends FetchInfoTask {
             if(ani_id_index != -1) {
                 var ani_id_str = row[ani_id_index];
                 if(ani_id_str != null && !ani_id_str.isBlank()) {
-                    try { ani_id = Integer.parseInt(ani_id_str.trim()); }
+                    try { ani_id = (int) Double.parseDouble(ani_id_str.trim()); }
                     catch(NumberFormatException _) {}
                 }
             }
