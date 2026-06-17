@@ -39,10 +39,10 @@ kumigumi/Main.Main
 java -jar target/kumigumi-<version>.jar --use_config
 ```
 
-发布版本为 `1.0.0` 时，对应命令为：
+发布版本为 `1.0.1` 时，对应命令为：
 
 ```powershell
-java -jar target/kumigumi-1.0.0.jar --use_config
+java -jar target/kumigumi-1.0.1.jar --use_config
 ```
 
 ## 参数
