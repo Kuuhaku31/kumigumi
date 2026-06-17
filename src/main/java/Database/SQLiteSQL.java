@@ -3,13 +3,6 @@ package Database;
 import java.util.Collections;
 import java.util.List;
 
-import Database.Info.BaseInfo;
-import Database.Info.RSSInfo;
-import Database.Info.TorrentInfo;
-import Database.Info.TorrentPageInfo;
-import Database.Info.AnimeInfo;
-import Database.Info.EpisodeInfo;
-import Database.Info.EpisodeRecordInfo;
 
 final class SQLiteSQL {
 
@@ -37,6 +30,8 @@ final class SQLiteSQL {
     "episode_count"     integer,
     "url_official_site" text,
     "url_cover"         text,
+
+    "update_datetime"   text NOT NULL,
 
     PRIMARY KEY ("ANI_ID" DESC)
     );
@@ -153,9 +148,10 @@ final class SQLiteSQL {
         description,
         episode_count,
         url_official_site,
-        url_cover
+        url_cover,
+        update_datetime
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(ANI_ID) DO UPDATE SET
         air_date            = excluded.air_date,
         title               = excluded.title,
@@ -164,7 +160,8 @@ final class SQLiteSQL {
         description         = excluded.description,
         episode_count       = excluded.episode_count,
         url_official_site   = excluded.url_official_site,
-        url_cover           = excluded.url_cover;
+        url_cover           = excluded.url_cover,
+        update_datetime     = excluded.update_datetime;
     """;
 
     static final String UPSERT_EPISODE_INFO =
@@ -267,17 +264,6 @@ final class SQLiteSQL {
             CREATE_TORRENT_TABLE,
             CREATE_TORRENT_PAGE_TABLE
         );
-    }
-
-    static String upsertInfo(Class<? extends BaseInfo> infoType) {
-        if(infoType == AnimeInfo.class)         return UPSERT_ANIME_INFO;
-        if(infoType == EpisodeInfo.class)       return UPSERT_EPISODE_INFO;
-        if(infoType == EpisodeRecordInfo.class) return UPSERT_EPISODE_RECORD_INFO;
-        if(infoType == RSSInfo.class)           return UPSERT_RSS_INFO;
-        if(infoType == TorrentPageInfo.class)   return UPSERT_TORRENT_PAGE_INFO;
-        if(infoType == TorrentInfo.class)       return UPSERT_TORRENT_INFO;
-
-        throw new IllegalArgumentException("Unsupported Info type: " + infoType.getName());
     }
 
     static String selectTorrentFilesByHashCount(int count) {

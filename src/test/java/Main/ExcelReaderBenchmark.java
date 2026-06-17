@@ -34,7 +34,7 @@ public class ExcelReaderBenchmark {
 
         var times = new long[runs];
         var commandCount = 0;
-        var tableCount = 0;
+        var dataBlockCount = 0;
         for(var i = 0; i < runs; i++) {
             var start = System.nanoTime();
             var result = invokeQuietly(readMethod, filePath);
@@ -42,12 +42,12 @@ public class ExcelReaderBenchmark {
 
             if(result == null) throw new IllegalStateException("ExcelReader returned null");
             commandCount = collectionSize(result, "commands");
-            tableCount = collectionSize(result, "tableDataList", "blockDataList");
+            dataBlockCount = collectionSize(result, "dataBlockList");
             times[i] = elapsed;
             if(printRuns) System.out.printf("run %02d: %.3f ms%n", i + 1, elapsed / 1_000_000.0);
         }
 
-        printSummary(times, commandCount, tableCount);
+        printSummary(times, commandCount, dataBlockCount);
     }
 
     private static Method findReadMethod() throws NoSuchMethodException {
@@ -104,7 +104,7 @@ public class ExcelReaderBenchmark {
         return -1;
     }
 
-    private static void printSummary(long[] times, int commandCount, int tableCount) {
+    private static void printSummary(long[] times, int commandCount, int dataBlockCount) {
         Arrays.sort(times);
 
         long sum = 0;
@@ -114,7 +114,7 @@ public class ExcelReaderBenchmark {
         System.out.println();
         System.out.println("result:");
         System.out.println("commands: " + commandCount);
-        System.out.println("tables: " + tableCount);
+        System.out.println("data blocks: " + dataBlockCount);
         System.out.println();
         System.out.printf("avg: %.3f ms%n", sum / (double)runs / 1_000_000.0);
         System.out.printf("min: %.3f ms%n", times[0] / 1_000_000.0);

@@ -1,330 +1,408 @@
 package Main;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
+import Info.BaseInfo;
+import Info.EpisodeRecordInfo;
+import Info.RSSInfo;
+import Info.TorrentPageInfo;
 import Database.SQLiteAccess;
-import Database.Info.BaseInfo;
-import Database.Info.RSSInfo;
-import Database.Info.EpisodeRecordInfo;
-import Excel.TableData;
+import Database.TorrentDownloader;
+import Main.FetchTask.FetchAnimeInfoTask;
+import Main.FetchTask.FetchEpisodeInfoTask;
+import Main.FetchTask.FetchInfoTask;
+import Main.FetchTask.FetchTorrentInfoTask;
+import Main.FetchTask.FetchTorrentPageTask;
 import Utils.ColorCode;
+import Utils.Task;
 
 import static Utils.UtilityFunctions.color;
 
 
 final class Commands {
 
-    // private final ExcelResult excelResult;
-
-    // private final Map<String, DatabaseBatch> dbItemMap = new HashMap<>();
-    // private final Map<String, Set<Task>>     taskMap   = new HashMap<>();
-
     private Commands() {}
 
-    static void printBlock(MainApplication mainApp, List<String> cmd) {
 
+    static void printMessage(List<String> cmd) {
+
+        // 参数检查
         if(cmd.size() < 2) {
-            System.out.println("Invalid command format for PRINT_BLOCK. Expected: PRINT_BLOCK <block_name1> [<block_name2> ...]");
+            var msg = "Invalid command format for PRINT_MESSAGE. Expected: PRINT_MESSAGE <message>";
+            System.out.println(color(msg, ColorCode.BOLD_RED));
             return;
         }
 
-        var block_names = cmd.subList(1, cmd.size());
-        for(var blockName : block_names) {
-            var blockData = mainApp.excelResult.getBlockDataByName(blockName);
-            if(blockData != null) {
-                System.out.println(color("Block: " + blockName, ColorCode.BOLD_BLUE));
-                System.out.println(blockData.toPrintString());
-            } else {
-                System.out.println(color("Block not found: " + blockName, ColorCode.BOLD_RED));
-            }
+        // 输出内容
+        System.out.println(String.join(" ", cmd.subList(1, cmd.size())));
+    }
+
+    static void printVariable(MainApplication mainApp, List<String> cmd) {
+
+        // 参数检查
+        if(cmd.size() < 2) {
+            var msg = "Invalid command format for PRINT_VARIABLE. Expected: PRINT_VARIABLE <variable_name1> [<variable_name2> ...]";
+            System.out.println(color(msg, ColorCode.BOLD_RED));
+            return;
         }
 
+        // 构建输出内容
+        var requested_variable_names = cmd.subList(1, cmd.size());
+        var str                      = mainApp.getVariableAsString(requested_variable_names, true);
+
+        // 输出内容
+        System.out.println(str);
+    }
+
+    static void saveLog(MainApplication mainApp, List<String> cmd) {
+
+        // 参数检查
+        if(cmd.size() < 3) {
+            var msg = "Invalid command format for SAVE_LOG. Expected: SAVE_LOG <log_file_name> <var_name1> [<var_name2> ...]";
+            System.out.println(color(msg, ColorCode.BOLD_RED));
+            return;
+        }
+
+        // 路径解析
+        Path logPath;
+        {
+            // 获取日志根目录绝对路径
+            // 解析日志文件路径并规范化
+            var logRoot = Path.of(mainApp.LOG_PATH).toAbsolutePath().normalize();
+            logPath     = logRoot.resolve(cmd.get(1)).normalize();
+
+            // 安全检查：确保日志文件路径在日志根目录下，防止路径遍历攻击
+            if(!logPath.startsWith(logRoot)) {
+                System.out.println(color("Unsafe log path rejected: " + cmd.get(1), ColorCode.BOLD_RED));
+                logPath = null;
+            }
+        }
+        if(logPath == null) {
+            System.out.println(color("Invalid log file name: " + cmd.get(1), ColorCode.BOLD_RED));
+            return;
+        }
+
+        // 构建日志内容
+        var requested_variable_names = cmd.subList(2, cmd.size());
+        var str                      = mainApp.getVariableAsString(requested_variable_names, false);
+
+        // 写入日志文件
+        try {
+            var parent = logPath.getParent();
+            if(parent != null) Files.createDirectories(parent);
+            Files.writeString(logPath, str);
+            System.out.println(color("Log written to: " + logPath, ColorCode.BOLD_GREEN));
+        } catch(IOException e) {
+            System.err.println(color("Failed to write log: " + e.getMessage(), ColorCode.BOLD_RED));
+        }
     }
 
     static void makeEpisodeRecordItem(MainApplication mainApp, List<String> cmd) {
 
+        // 参数检查
         if(cmd.size() < 3) {
-            System.out.println("Invalid command format for MAKE_EPISODE_RECORD_ITEM. Expected: MAKE_EPISODE_RECORD_ITEM <item_name> <block_name1> [<block_name2> ...]");
+            var msg = "Invalid command format for MAKE_INFO_EPISODE_RECORD. Expected: MAKE_INFO_EPISODE_RECORD <item_name> <variable_name1> [<variable_name2> ...]";
+            System.out.println(color(msg, ColorCode.BOLD_RED));
             return;
         }
 
-        var item_name      = cmd.get(1);
-        var block_names    = cmd.subList(2, cmd.size());
-        var requiredBlocks = mainApp.getBlockDataByNames(block_names, mainApp.excelResult.tableDataList());
+        // 创建 InfoSetItem 并合并数据
+        var item = new InfoSetItem();
+        for(var dataBlock : mainApp.getDataBlockByNames(cmd.subList(2, cmd.size()))) {
+            item.data.addAll(EpisodeRecordInfo.ParseEpisodeRecordInfoByDataBlock(dataBlock));
+        }
 
-        // 解析表格数据并创建 EpisodeRecordInfo 对象
-        Set<EpisodeRecordInfo> episodeRecords = new java.util.HashSet<>();
-        for(var blockData : requiredBlocks)
-            episodeRecords.addAll(EpisodeRecordInfo.ParseEpisodeRecordInfoByTableData(blockData));
-        mainApp.variables.put(item_name, episodeRecords);
+        // 合并到变量
+        mainApp.putOrMergeItem(cmd.get(1), item);
     }
 
     static void makeRSSItem(MainApplication mainApp, List<String> cmd) {
 
+        // 参数检查
         if(cmd.size() < 3) {
-            System.out.println("Invalid command format for MAKE_RSS_ITEM. Expected: MAKE_RSS_ITEM <item_name> <block_name1> [<block_name2> ...]");
+            var msg = "Invalid command format for MAKE_INFO_RSS. Expected: MAKE_INFO_RSS <item_name> <variable_name1> [<variable_name2> ...]";
+            System.out.println(color(msg, ColorCode.BOLD_RED));
             return;
         }
 
-        var item_name      = cmd.get(1);
-        var block_names    = cmd.subList(2, cmd.size());
-        var requiredBlocks = mainApp.getBlockDataByNames(block_names, mainApp.excelResult.tableDataList());
+        // 创建 InfoSetItem 并合并数据
+        var item = new InfoSetItem();
+        for(var dataBlock : mainApp.getDataBlockByNames(cmd.subList(2, cmd.size()))) {
+            item.data.addAll(RSSInfo.ParseRSSInfoByDataBlock(dataBlock));
+        }
 
-        // 解析表格数据并创建 RSSInfo 对象
-        Set<RSSInfo> rssItems = new java.util.HashSet<>();
-        for(var blockData : requiredBlocks)
-            rssItems.addAll(RSSInfo.ParseRSSInfoByTableData(blockData));
-        mainApp.variables.put(item_name, rssItems);
+        // 合并到变量
+        mainApp.putOrMergeItem(cmd.get(1), item);
+    }
+
+    static void makeFetchTaskAnime(MainApplication mainApp, List<String> cmd) {
+
+        // 参数检查
+        if(cmd.size() < 3) {
+            var msg = "Invalid command format for MAKE_TASK_FETCH_ANIME. Expected: MAKE_TASK_FETCH_ANIME <item_name> <variable_name1> [<variable_name2> ...]";
+            System.out.println(color(msg, ColorCode.BOLD_RED));
+            return;
+        }
+
+        // 创建任务集合
+        var item = new TaskSetItem();
+        for(var dataBlock : mainApp.getDataBlockByNames(cmd.subList(2, cmd.size()))) {
+            item.data.addAll(FetchAnimeInfoTask.ParseFetchAnimeInfoTaskByDataBlock(dataBlock));
+        }
+
+        // 合并到变量
+        mainApp.putOrMergeItem(cmd.get(1), item);
+    }
+
+    static void makeFetchTaskEpisode(MainApplication mainApp, List<String> cmd) {
+
+        // 参数检查
+        if(cmd.size() < 3) {
+            var msg = "Invalid command format for MAKE_TASK_FETCH_EPISODE. Expected: MAKE_TASK_FETCH_EPISODE <item_name> <variable_name1> [<variable_name2> ...]";
+            System.out.println(color(msg, ColorCode.BOLD_RED));
+            return;
+        }
+
+        // 创建任务集合
+        var item = new TaskSetItem();
+        for(var dataBlock : mainApp.getDataBlockByNames(cmd.subList(2, cmd.size()))) {
+            item.data.addAll(FetchEpisodeInfoTask.ParseFetchEpisodeInfoTaskByDataBlock(dataBlock));
+        }
+
+        // 合并到变量
+        mainApp.putOrMergeItem(cmd.get(1), item);
+    }
+
+    static void makeFetchTaskTorrentPage(MainApplication mainApp, List<String> cmd) {
+
+        // 参数检查
+        if(cmd.size() < 3) {
+            var msg = "Invalid command format for MAKE_TASK_FETCH_TORRENT_PAGE. Expected: MAKE_TASK_FETCH_TORRENT_PAGE <item_name> <variable_name1> [<variable_name2> ...]";
+            System.out.println(color(msg, ColorCode.BOLD_RED));
+            return;
+        }
+
+        // 创建任务集合
+        var item = new TaskSetItem();
+        for(var dataBlock : mainApp.getDataBlockByNames(cmd.subList(2, cmd.size()))) {
+            item.data.addAll(FetchTorrentPageTask.ParseFetchTorrentPageTaskByDataBlock(dataBlock));
+        }
+
+        // 合并到变量
+        mainApp.putOrMergeItem(cmd.get(1), item);
+    }
+
+    static void runTask(MainApplication mainApp, List<String> cmd) {
+
+        // 参数检查
+        if(cmd.size() < 3) {
+            var msg = "Invalid command format for RUN_TASK. Expected: RUN_TASK <result_item_name> <variable_name1> [<variable_name2> ...]";
+            System.out.println(color(msg, ColorCode.BOLD_RED));
+            return;
+        }
+        var result_item_name         = cmd.get(1);
+        var requested_variable_names = cmd.subList(2, cmd.size());
+
+        // 构建任务集合
+        var tasks = new LinkedHashSet<FetchInfoTask>();
+        for(var variable_name : requested_variable_names) {
+
+            // 不存在
+            if(!mainApp.variables.containsKey(variable_name)) {
+                System.out.println(color("Variable not found: " + variable_name, ColorCode.BOLD_RED));
+                continue;
+            }
+
+            // 确保类型正确
+            var item = mainApp.variables.get(variable_name);
+            if(!(item instanceof TaskSetItem i))
+                System.out.println(color("Variable " + variable_name + " is not TaskSetItem; skipped.", ColorCode.BOLD_RED));
+            else
+                tasks.addAll(i.data);
+        }
+
+        // 执行任务
+        try {
+            Task.ParallelExecution(tasks);
+        } catch(Exception e) {
+            System.out.println(color("Error running tasks: " + e.getMessage(), ColorCode.BOLD_RED));
+        }
+
+        // 收集结果
+        var result = new InfoSetItem();
+        for(var task : tasks) result.data.addAll(task.GetInfoSet());
+
+        // 合并到变量
+        mainApp.putOrMergeItem(result_item_name, result);
     }
 
     static void toDB(MainApplication mainApp, List<String> cmd) {
+
+        // 参数检查
         if(cmd.size() < 2) {
-            System.out.println("Invalid command format for TO_DB. Expected: TO_DB <item_name1> [<item_name2> ...]");
+            var msg = "Invalid command format for TO_DB. Expected: TO_DB <variable_name1> [<variable_name2> ...]";
+            System.out.println(color(msg, ColorCode.BOLD_RED));
             return;
         }
 
-        var item_names = cmd.subList(1, cmd.size());
+        // 构建待同步数据集合
+        var to_db_info_set = new LinkedHashSet<BaseInfo>();
+        for(var variable_name : cmd.subList(1, cmd.size())) {
 
-        Set<BaseInfo> to_db_info_set = new java.util.HashSet<>();
+            // 不存在
+            if(!mainApp.variables.containsKey(variable_name)) {
+                System.out.println(color("Variable not found: " + variable_name, ColorCode.BOLD_RED));
+                continue;
+            }
 
-        for(var item_name : item_names) {
-            var item = mainApp.variables.get(item_name);
-            if(item instanceof Set<?> itemSet) {
-                for(var obj : itemSet) {
-                    if(obj instanceof BaseInfo info) to_db_info_set.add(info);
-                }
+            // 确保类型正确
+            if(mainApp.variables.get(variable_name) instanceof InfoSetItem i)
+                to_db_info_set.addAll(i.data);
+            else {
+                System.out.println(color("Variable " + variable_name + " is not InfoSetItem; command skipped.", ColorCode.BOLD_RED));
             }
         }
+        if(to_db_info_set.isEmpty()) {
+            System.out.println(color("No valid InfoSetItem data found to synchronize to database.", ColorCode.YELLOW));
+            return;
+        }
 
+        // 同步到数据库
         try(var db = new SQLiteAccess(mainApp.DATABASE_PATH)) {
-            var episodeRecordCount = to_db_info_set.stream().filter(obj -> obj instanceof EpisodeRecordInfo).count();
-            var rssItemCount       = to_db_info_set.stream().filter(obj -> obj instanceof RSSInfo).count();
-
             db.UpsertInfo(to_db_info_set);
-
-            System.out.println("Database synchronization completed for " + episodeRecordCount + " episode records and " + rssItemCount + " RSS items.");
+            System.out.println("Database synchronization completed for variables: " + cmd.subList(1, cmd.size()));
         } catch(Exception e) {
             System.err.println("Database operation error: " + e.getMessage());
         }
     }
 
-    // void run(List<String> cmd) {
-    //     switch(cmd.get(0)) {
-    //     case "_item_ani", "_item_anime"                 -> itemAnime(cmd);
-    //     case "_item_epi", "_item_episode"               -> itemEpisode(cmd);
-    //     case "_item_episode_record"                     -> itemEpisodeRecord(cmd);
-    //     case "_item_rss"                                -> itemRSS(cmd);
-    //     case "_item_torrent_page"                       -> itemTorrentPage(cmd);
-    //     case "_fetch_task_ani", "_fetch_anime"          -> fetchAnime(cmd);
-    //     case "_fetch_task_epi", "_fetch_episode"        -> fetchEpisode(cmd);
-    //     case "_fetch_task_tor", "_fetch_torrent_page"   -> fetchTorrentPage(cmd);
-    //     case "_run_fetch_task"                          -> runTaskSet(cmd);
-    //     case "_download_torrent"                        -> downloadTorrent(cmd);
-    //     case "_to_db"                                   -> toDatabase(cmd);
-    //     case "_item_ani_store", "_item_epi_store", "_item_tor_store" -> unsupportedLegacyCommand(cmd);
-    //     default                                         -> unknownCommand(cmd);
-    //     }
-    // }
+    static void updateTorrent(MainApplication mainApp, List<String> cmd) {
 
-    // static void itemAnime(ExcelResult excelResult, List<String> cmd) {
-    //     var batch = buildBatchFromBlocks(excelResult, cmd.subList(2, cmd.size()), Commands::toAnimeInfo);
-    //     putBatch(cmd.get(1), batch);
-    // }
+        // 参数检查
+        if(cmd.size() < 2) {
+            System.out.println(color("Invalid command format for UPDATE_TORRENT. Expected: UPDATE_TORRENT <block_name1> [<block_name2> ...]", ColorCode.BOLD_RED));
+            return;
+        }
 
-    // private void itemEpisode(List<String> cmd) {
-    //     var batch = buildBatchFromBlocks(cmd.subList(2, cmd.size()), Commands::toEpisodeInfo);
-    //     putBatch(cmd.get(1), batch);
-    // }
+        // 构建待更新的种子哈希集合
+        var requested_tor_hash_set = new HashSet<String>();
+        {
+            var requested_variable_names = cmd.subList(1, cmd.size());
+            var requested_items          = mainApp.getItemsByNames(requested_variable_names);
+            for(var item : requested_items) {
+                if(!(item instanceof InfoSetItem set_item)) {
+                    System.out.println(color("Variable " + cmd.get(1) + " is not InfoSetItem; skipped.", ColorCode.BOLD_RED));
+                    continue;
+                } else for(var info : set_item.data) {
+                    if(info instanceof TorrentPageInfo tor_info) {
+                        requested_tor_hash_set.add(tor_info.TOR_HASH);
+                    }
+                }
+            }
+        }
 
-    // private void itemEpisodeRecord(List<String> cmd) {
-    //     var batch = new DatabaseBatch();
-    //     for(var blockData : excelResult.getBlockDataByNames(cmd.subList(2, cmd.size()))) {
-    //         batch.episodeRecords.addAll(EpisodeRecordInfo.ParseEpisodeRecordInfoByTableData(blockData));
-    //     }
-    //     putBatch(cmd.get(1), batch);
-    // }
+        // 获取数据库中不存在的种子哈希集合
+        Set<TorrentDownloader> not_exist_torrent_downloader_set = null;
+        try(var db = new SQLiteAccess(mainApp.DATABASE_PATH)) {
+            var not_exist_hash_set = db.GetTorrentHashNotExist(requested_tor_hash_set);
+            not_exist_torrent_downloader_set = db.GetDownloaderByHash(not_exist_hash_set);
+        } catch(Exception e) {
+            System.err.println("Database operation error: " + e.getMessage());
+        }
+        if(not_exist_torrent_downloader_set == null || not_exist_torrent_downloader_set.isEmpty()) {
+            System.out.println(color("No new torrents to update.", ColorCode.YELLOW));
+            return;
+        }
 
-    // private void itemRSS(List<String> cmd) {
-    //     var batch = new DatabaseBatch();
-    //     for(var blockData : excelResult.getBlockDataByNames(cmd.subList(2, cmd.size()))) {
-    //         batch.rssItems.addAll(RSSInfo.ParseRSSInfoByTableData(blockData));
-    //     }
-    //     putBatch(cmd.get(1), batch);
-    // }
+        // 构建下载任务
+        var tasks = new LinkedHashSet<FetchInfoTask>();
+        for(var downloader : not_exist_torrent_downloader_set) {
+            var task = new FetchTorrentInfoTask(downloader);
+            tasks.add(task);
+        }
 
-    // private void itemTorrentPage(List<String> cmd) {
-    //     var batch = buildBatchFromBlocks(cmd.subList(2, cmd.size()), Commands::toTorrentPageInfo);
-    //     putBatch(cmd.get(1), batch);
-    // }
+        // 执行任务
+        try {
+            Task.ParallelExecution(tasks);
+        } catch(Exception e) {
+            System.out.println(color("Error running tasks: " + e.getMessage(), ColorCode.BOLD_RED));
+        }
 
-    // static DatabaseBatch buildBatchFromBlocks(ExcelResult excelResult, List<String> blockNames, RowMapper mapper) {
-    //     var batch = new DatabaseBatch();
-    //     for(var blockData : excelResult.getBlockDataByNames(blockNames)) {
-    //         for(var rowIndex = 0; rowIndex < blockData.GetRowSize(); rowIndex++) {
-    //             mapper.map(TableDataRows.rowToMap(blockData, rowIndex), batch);
-    //         }
-    //     }
-    //     return batch;
-    // }
+        // 收集结果
+        var result = new InfoSetItem();
+        for(var task : tasks) result.data.addAll(task.GetInfoSet());
 
-    // private static void toAnimeInfo(Map<String, String> row, DatabaseBatch batch) {
-    //     try {
-    //         batch.animeItems.add(new AnimeInfo(row));
-    //     } catch(IllegalArgumentException _) {
-    //         // Ignore rows that do not contain a valid anime record.
-    //     }
-    // }
+        // 更新到数据库
+        try(var db = new SQLiteAccess(mainApp.DATABASE_PATH)) {
+            db.UpsertInfo(result.data);
+            System.out.println("Database update completed for " + result.data.size() + " torrents.");
+        } catch(Exception e) {
+            System.err.println("Database operation error: " + e.getMessage());
+        }
+    }
 
-    // private static void toEpisodeInfo(Map<String, String> row, DatabaseBatch batch) {
-    //     try {
-    //         batch.episodeItems.add(new EpisodeInfo(row));
-    //     } catch(IllegalArgumentException _) {
-    //         // Ignore rows that do not contain a valid episode record.
-    //     }
-    // }
+    static void exportTorrent(MainApplication mainApp, List<String> cmd) {
 
-    // private static void toTorrentPageInfo(Map<String, String> row, DatabaseBatch batch) {
-    //     try {
-    //         batch.torrentPageItems.add(new TorrentPageInfo(row));
-    //     } catch(IllegalArgumentException _) {
-    //         // Ignore rows that do not contain a valid torrent page record.
-    //     }
-    // }
+        // 参数检查
+        if(cmd.size() < 2) {
+            System.out.println(color("Invalid command format for EXPORT_TORRENT. Expected: EXPORT_TORRENT <block_name1> [<block_name2> ...]", ColorCode.BOLD_RED));
+            return;
+        }
 
-    // private void fetchAnime(List<String> cmd) {
-    //     var tasks = new LinkedHashSet<Task>();
-    //     for(var blockData : excelResult.getBlockDataByNames(cmd.subList(2, cmd.size()))) {
-    //         for(var aniId : TableDataRows.getAnimeIds(blockData)) tasks.add(new FetchAnimeInfoTask(aniId));
-    //     }
-    //     putTasks(cmd.get(1), tasks);
-    // }
+        // 构建待导出的种子哈希集合
+        var requested_tor_hash_set = new HashSet<String>();
+        {
+            var requested_variable_names = cmd.subList(1, cmd.size());
+            var requested_items          = mainApp.getItemsByNames(requested_variable_names);
+            for(var item : requested_items) {
+                if(!(item instanceof DataBlockItem set_item)) {
+                    System.out.println(color("Variable " + cmd.get(1) + " is not DataBlockItem; skipped.", ColorCode.BOLD_RED));
+                    continue;
+                } else {
+                    var block = set_item.data;
+                    var tor_hash_str_list = block.GetColumn("TOR_HASH");
+                    if(tor_hash_str_list == null) {
+                        System.out.println(color("DataBlock in variable " + cmd.get(1) + " does not contain 'TOR_HASH' column; skipped.", ColorCode.BOLD_RED));
+                        continue;
+                    }
+                    for(var tor_hash_str : tor_hash_str_list) {
+                        requested_tor_hash_set.add(tor_hash_str.trim());
+                    }
+                }
+            }
+        }
+        if(requested_tor_hash_set.isEmpty()) {
+            System.out.println(color("No valid TOR_HASH found for export.", ColorCode.YELLOW));
+            return;
+        }
 
-    // private void fetchEpisode(List<String> cmd) {
-    //     var tasks = new LinkedHashSet<Task>();
-    //     for(var blockData : excelResult.getBlockDataByNames(cmd.subList(2, cmd.size()))) {
-    //         for(var aniId : TableDataRows.getAnimeIds(blockData)) tasks.add(new FetchEpisodeInfoTask(aniId));
-    //     }
-    //     putTasks(cmd.get(1), tasks);
-    // }
+        // 确保导出目录存在
+        var exportDirPath = Path.of(mainApp.EXPORT_DIR);
+        try {
+            if(!Files.exists(exportDirPath)) {
+                Files.createDirectories(exportDirPath);
+                System.out.println(color("Created export directory: " + mainApp.EXPORT_DIR, ColorCode.BOLD_GREEN));
+            } else if(!Files.isDirectory(exportDirPath)) {
+                System.out.println(color("Export path exists but is not a directory: " + mainApp.EXPORT_DIR, ColorCode.BOLD_RED));
+                return;
+            }
+        } catch(IOException e) {
+            System.err.println("Failed to create export directory: " + e.getMessage());
+            return;
+        }
 
-    // private void fetchTorrentPage(List<String> cmd) {
-    //     var tasks = new LinkedHashSet<Task>();
-    //     for(var blockData : excelResult.getBlockDataByNames(cmd.subList(2, cmd.size()))) {
-    //         for(var rssUrl : TableDataRows.getRSSUrls(blockData)) tasks.add(new FetchTorrentPageTask(rssUrl));
-    //     }
-    //     putTasks(cmd.get(1), tasks);
-    // }
-
-    // private void runTaskSet(List<String> cmd) {
-    //     var varName = cmd.get(1);
-    //     var batch   = new DatabaseBatch();
-
-    //     for(var i = 2; i < cmd.size(); i++) {
-    //         var taskName = cmd.get(i);
-    //         var tasks    = taskMap.get(taskName);
-    //         if(tasks == null || tasks.isEmpty()) continue;
-
-    //         System.out.println("Running Task Set: " + taskName);
-    //         Task.ParallelExecution(tasks);
-    //         collectTaskResults(tasks, batch);
-    //         UtilityFunctions.WriteItemListToFile(new ArrayList<>(tasks), ARGS.LOG_PATH + taskName + "_task_log.txt");
-    //     }
-
-    //     putBatch(varName, batch);
-    //     UtilityFunctions.WriteItemListToFile(batch.allItems(), ARGS.LOG_PATH + varName + "_fetch_result.txt");
-    // }
-
-    // private void downloadTorrent(List<String> cmd) {
-    //     var varName = cmd.get(1);
-    //     var hashes  = new LinkedHashSet<String>();
-
-    //     for(var i = 2; i < cmd.size(); i++) {
-    //         var batch = dbItemMap.get(cmd.get(i));
-    //         if(batch == null) continue;
-    //         for(var torrentPageInfo : batch.torrentPageItems) {
-    //             if(torrentPageInfo.TOR_HASH != null && !torrentPageInfo.TOR_HASH.isBlank()) hashes.add(torrentPageInfo.TOR_HASH);
-    //         }
-    //     }
-
-    //     if(hashes.isEmpty()) return;
-
-    //     try(var db = new SQLiteAccess(ARGS.DATABASE_PATH)) {
-    //         var notExistHashes = db.GetTorrentHashNotExist(hashes);
-    //         var downloaders    = db.GetDownloaderByHash(notExistHashes);
-    //         var tasks          = new LinkedHashSet<Task>();
-    //         for(TorrentDownloader downloader : downloaders) {
-    //             if(downloader.getUrlList() != null && !downloader.getUrlList().isEmpty()) {
-    //                 tasks.add(new FetchTorrentInfoTask(downloader));
-    //             }
-    //         }
-
-    //         Task.ParallelExecution(tasks);
-
-    //         var batch = new DatabaseBatch();
-    //         collectTaskResults(tasks, batch);
-    //         putBatch(varName, batch);
-    //         UtilityFunctions.WriteItemListToFile(batch.torrentItems, ARGS.LOG_PATH + varName + "_torrent_result.txt");
-    //     } catch(SQLException e) {
-    //         System.err.println("数据库操作失败: " + e.getMessage());
-    //     }
-    // }
-
-    // private void toDatabase(List<String> cmd) {
-    //     var batch = new DatabaseBatch();
-    //     for(var i = 1; i < cmd.size(); i++) {
-    //         var items = dbItemMap.get(cmd.get(i));
-    //         if(items != null) batch.addAll(items);
-    //     }
-
-    //     try(var db = new SQLiteAccess(ARGS.DATABASE_PATH)) {
-    //         var infoSet = new java.util.HashSet<Info>(batch.allItems());
-    //         db.UpsertInfo(infoSet);
-    //     } catch(SQLException e) {
-    //         System.err.println("Database operation error: " + e.getMessage());
-    //     }
-
-    //     UtilityFunctions.WriteItemListToFile(batch.allItems(), ARGS.LOG_PATH + "db_upsert.txt");
-    //     System.out.println("数据库同步完成");
-    // }
-
-    // private static void collectTaskResults(Set<Task> tasks, DatabaseBatch batch) {
-    //     for(var task : tasks) {
-    //         if(task instanceof FetchAnimeInfoTask fetchAnimeTask) {
-    //             var result = fetchAnimeTask.getResult();
-    //             if(result != null) batch.animeItems.add(result);
-    //         } else if(task instanceof FetchEpisodeInfoTask fetchEpisodeTask) {
-    //             var result = fetchEpisodeTask.getResult();
-    //             if(result != null) batch.episodeItems.addAll(result);
-    //         } else if(task instanceof FetchTorrentPageTask fetchTorrentPageTask) {
-    //             var result = fetchTorrentPageTask.getResultSet();
-    //             if(result != null) batch.torrentPageItems.addAll(result);
-    //         } else if(task instanceof FetchTorrentInfoTask fetchTorrentInfoTask) {
-    //             var result = fetchTorrentInfoTask.getResult();
-    //             if(result != null && result.length > 0) batch.torrentItems.add(new TorrentInfo(result));
-    //         }
-    //     }
-    // }
-
-    // private void putBatch(String varName, DatabaseBatch batch) {
-    //     if(batch != null && !batch.isEmpty()) dbItemMap.put(varName, batch);
-    // }
-
-    // private void putTasks(String varName, Set<Task> tasks) {
-    //     if(tasks != null && !tasks.isEmpty()) taskMap.put(varName, tasks);
-    // }
-
-    // private static void unsupportedLegacyCommand(List<String> cmd) {
-    //     System.err.println("Unsupported legacy command after schema migration: " + cmd.get(0));
-    // }
-
-    // private static void unknownCommand(List<String> cmd) {
-    //     System.out.println("Unknown Command: " + cmd.get(0));
-    // }
-
-    // @FunctionalInterface
-    // private interface RowMapper {
-    //     void map(Map<String, String> row, DatabaseBatch batch);
-    // }
+        // 导出种子文件
+        try(var db = new SQLiteAccess(mainApp.DATABASE_PATH)) {
+            db.ExportTorrentFiles(requested_tor_hash_set, mainApp.EXPORT_DIR);
+            System.out.println("Torrent export completed for " + requested_tor_hash_set.size() + " torrents.");
+        } catch(Exception e) {
+            System.err.println("Database operation error: " + e.getMessage());
+        }
+    }
 }

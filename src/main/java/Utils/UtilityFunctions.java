@@ -11,8 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.nio.file.Path;
 
-import Excel.TableData;
-
 public class UtilityFunctions {
 
     // 私有构造函数，防止实例化
@@ -50,7 +48,7 @@ public class UtilityFunctions {
         System.out.println();
     }
 
-    public static void SaveDataList(List<TableData> data_list) {
+    public static void SaveDataList(List<DataBlock> data_list) {
         var path = Paths.get("D:/repositories/kumigumi/ignore/DataBuffer.txt");
 
         try {
@@ -155,5 +153,10 @@ public class UtilityFunctions {
         var res = str.replace("\033[0m", colorCode.getCode()); // 先替换掉字符串中已有的重置代码，避免颜色被重置
         res     = colorCode.getCode() + res + "\033[0m";
         return res;
+    }
+
+    public static String color(String str, ColorCode colorCode, boolean enable) {
+        if(enable) return color(str, colorCode);
+        else return str;
     }
 }

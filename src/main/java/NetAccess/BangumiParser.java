@@ -13,8 +13,8 @@ import Utils.UtilityFunctions;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import Database.Info.AnimeInfo;
-import Database.Info.EpisodeInfo;
+import Info.AnimeInfo;
+import Info.EpisodeInfo;
 
 
 final class BangumiParser {
