@@ -167,7 +167,7 @@ class SQLiteAccessTest {
     @Test
     void rejectsExistingDatabaseWithMissingView() throws Exception {
         var dbPath = tempDir.resolve("missing-view.db").toString();
-        try(var ignored = new SQLiteAccess(dbPath)) {}
+        try(var _ = new SQLiteAccess(dbPath)) {}
 
         try(var conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
             var stmt = conn.createStatement()) {
@@ -181,7 +181,7 @@ class SQLiteAccessTest {
     @Test
     void rejectsExistingDatabaseWithIncorrectTableStructure() throws Exception {
         var dbPath = tempDir.resolve("incorrect-table.db").toString();
-        try(var ignored = new SQLiteAccess(dbPath)) {}
+        try(var _ = new SQLiteAccess(dbPath)) {}
 
         try(var conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
             var stmt = conn.createStatement()) {
