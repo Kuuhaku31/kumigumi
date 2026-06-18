@@ -142,6 +142,14 @@ anime -> episode -> episode_record -> rss -> torrent_page -> torrent
 
 ## view 表格
 
+以下视图可通过 `Utils.CreateDatabaseViews` 入口创建。该入口会删除已有的同名视图，并按照本节定义重新创建：
+
+```powershell
+java --enable-native-access=ALL-UNNAMED `
+  -cp target/kumigumi-<version>.jar `
+  Utils.CreateDatabaseViews <database-path>
+```
+
 ### view_anime
 
 | 字段                       | 源字段                    | 说明              |

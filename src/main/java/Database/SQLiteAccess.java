@@ -96,6 +96,18 @@ public class SQLiteAccess implements Closeable {
         finally { connect.setAutoCommit(prev_auto); }
     }
 
+    public void CreateViews() throws SQLException {
+        var prev_auto = connect.getAutoCommit();
+        connect.setAutoCommit(false);
+        try(var st = connect.createStatement()) {
+            for(var sql : SQLiteSQL.dropViewStatements()) st.execute(sql);
+            for(var sql : SQLiteSQL.createViewStatements()) st.execute(sql);
+            connect.commit();
+        }
+        catch(SQLException | RuntimeException e) { connect.rollback(); throw e; }
+        finally { connect.setAutoCommit(prev_auto); }
+    }
+
     public void ExportTorrentFiles(Set<String> torHashList, String safePath) {
         if(torHashList == null || torHashList.isEmpty()) return;
 
