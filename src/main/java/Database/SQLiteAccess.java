@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -14,7 +13,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 
 import Info.AnimeInfo;
 import Info.BaseInfo;
@@ -59,7 +57,8 @@ public class SQLiteAccess implements Closeable {
             System.out.println("创建数据库...");
         }
 
-        connect = DriverManager.getConnection(db_url);
+        connect = DriverManager.getConnection(db_url); // 建立数据库连接
+
         try {
 
             // 应用PRAGMA设置以优化性能和安全性
@@ -67,11 +66,16 @@ public class SQLiteAccess implements Closeable {
                 for(var sql : SQLiteSQL.PRAGMA_SETTINGS) st.execute(sql);
             }
 
-            // 如果数据库文件已存在，则验证表结构；如果不存在，则创建表结构后再验证
-            if(!db_exists) DatabaseUtils.initialize_database_schema(connect); // 创建数据库表和视图
-            DatabaseUtils.validate_database_schema(connect);   // 再次验证以确保结构正确
+            // 如果数据库文件不存在，则创建表结构
+            if(!db_exists) DatabaseUtils.initialize_database_schema(connect);
 
-        } catch(SQLException | RuntimeException e) {
+            // 验证以确保结构正确
+            DatabaseUtils.validate_database_schema(connect);
+
+        }
+
+        // 捕获SQLException和RuntimeException，确保在发生任何异常时都能正确关闭数据库连接
+        catch(SQLException | RuntimeException e) {
             try { connect.close(); }
             catch(SQLException close_error) { e.addSuppressed(close_error); }
             throw e;
@@ -92,8 +96,6 @@ public class SQLiteAccess implements Closeable {
         var torrentInfoSet       = new LinkedHashSet<TorrentInfo>();
         for(var info : info_set) {
 
-            if(info == null) continue;
-
             if     (info instanceof AnimeInfo         i) animeInfoSet        .add(i);
             else if(info instanceof EpisodeInfo       i) episodeInfoSet      .add(i);
             else if(info instanceof EpisodeRecordInfo i) episodeRecordInfoSet.add(i);
@@ -104,16 +106,16 @@ public class SQLiteAccess implements Closeable {
             else throw new IllegalArgumentException("Unsupported Info type: " + info.getClass().getName());
         }
 
-        // 事务处理，确保批量插入的原子性和性能
+        // 事务处理
         var prev_auto = connect.getAutoCommit();
         connect.setAutoCommit(false);
         try {
-            run_info_batch(animeInfoSet,         SQLiteSQL.UPSERT_ANIME_INFO,          DatabaseUtils::set_params_anime_info         );
-            run_info_batch(episodeInfoSet,       SQLiteSQL.UPSERT_EPISODE_INFO,        DatabaseUtils::set_params_episode_info       );
-            run_info_batch(episodeRecordInfoSet, SQLiteSQL.UPSERT_EPISODE_RECORD_INFO, DatabaseUtils::set_params_episode_record_info);
-            run_info_batch(rssInfoSet,           SQLiteSQL.UPSERT_RSS_INFO,            DatabaseUtils::set_params_rss_info           );
-            run_info_batch(torrentPageInfoSet,   SQLiteSQL.UPSERT_TORRENT_PAGE_INFO,   DatabaseUtils::set_params_torrent_page_info  );
-            run_info_batch(torrentInfoSet,       SQLiteSQL.UPSERT_TORRENT_INFO,        DatabaseUtils::set_params_torrent_info       );
+            Transactions.upsertInfoAnimeInfo        (connect, animeInfoSet,         SQL_PARAM_CHUNK_SIZE);
+            Transactions.upsertInfoEpisodeInfo      (connect, episodeInfoSet,       SQL_PARAM_CHUNK_SIZE);
+            Transactions.upsertInfoEpisodeRecordInfo(connect, episodeRecordInfoSet, SQL_PARAM_CHUNK_SIZE);
+            Transactions.upsertInfoRSSInfo          (connect, rssInfoSet,           SQL_PARAM_CHUNK_SIZE);
+            Transactions.upsertInfoTorrentPageInfo  (connect, torrentPageInfoSet,   SQL_PARAM_CHUNK_SIZE);
+            Transactions.upsertInfoTorrentInfo      (connect, torrentInfoSet,       SQL_PARAM_CHUNK_SIZE);
             connect.commit();
         }
         catch(SQLException | RuntimeException e) { connect.rollback(); throw e; }
@@ -121,28 +123,9 @@ public class SQLiteAccess implements Closeable {
     }
 
     // 替换required_anime_id表中的ANI_ID列表，先删除原有数据再批量插入新数据
-    public void ReplaceRequiredAnimeIds(Set<Integer> aniIdSet) throws SQLException {
+    public void ReplaceRequiredAnimeIds(Set<Integer> ani_id_set) throws SQLException {
 
-        // 参数检查
-        if(aniIdSet == null) throw new IllegalArgumentException("ANI_ID set cannot be null");
-        for(var aniId : aniIdSet) {
-            if(aniId == null) throw new IllegalArgumentException("ANI_ID set cannot contain null");
-        }
-
-        var prev_auto = connect.getAutoCommit();
-        connect.setAutoCommit(false);
-        try(var deleteStatement = connect.createStatement();
-            var insertStatement = connect.prepareStatement(SQLiteSQL.INSERT_REQUIRED_ANIME_ID)) {
-            deleteStatement.executeUpdate(SQLiteSQL.DELETE_REQUIRED_ANIME_IDS);
-            for(var aniId : new TreeSet<>(aniIdSet)) {
-                insertStatement.setInt(1, aniId);
-                insertStatement.addBatch();
-            }
-            insertStatement.executeBatch();
-            connect.commit();
-        }
-        catch(SQLException | RuntimeException e) { connect.rollback(); throw e; }
-        finally { connect.setAutoCommit(prev_auto); }
+        Transactions.replaceAniIds(connect, ani_id_set);
     }
 
     public void ExportTorrentFiles(Set<String> torHashList, String safePath) {
@@ -228,135 +211,6 @@ public class SQLiteAccess implements Closeable {
         }
         return downloaderSet;
     }
-
-
-    @FunctionalInterface
-    private interface InfoParamSetter<T extends BaseInfo> {
-        void set_params(PreparedStatement ps, T info) throws SQLException;
-    }
-
-    // 用于批量处理的内部类，封装了Info对象及其在批处理中的索引
-    private record InfoBatchItem<T extends BaseInfo>(int index, T info) {}
-
-    private <T extends BaseInfo> void run_info_batch(Set<T> items, String sql_str, InfoParamSetter<T> set_params) throws SQLException {
-
-        // 参数检查
-        if(items.isEmpty()) return;
-
-        // 获取对应的PreparedStatement，并为每个Info对象设置参数并添加到批处理中
-        try(var ps = connect.prepareStatement(sql_str)) {
-
-            var item_index = 0;
-            var batch_items = new ArrayList<InfoBatchItem<T>>();
-            for(var item : items) {
-                if(item == null) continue;
-                item_index++;
-
-                try {
-                    set_params.set_params(ps, item);
-                    ps.addBatch();
-                    batch_items.add(new InfoBatchItem<>(item_index, item));
-                } catch(SQLException | RuntimeException e) {
-                    print_info_item_failure("设置数据库参数", item_index, item, e);
-                    throw e;
-                }
-
-                if(batch_items.size() == SQL_PARAM_CHUNK_SIZE) {
-                    execute_info_batch(ps, sql_str, set_params, batch_items);
-                    batch_items.clear();
-                }
-            }
-
-            // 执行剩余的批处理
-            if(!batch_items.isEmpty()) execute_info_batch(ps, sql_str, set_params, batch_items);
-        }
-    }
-
-    // 执行批量操作，并在失败时尝试逐条定位问题数据项
-    private <T extends BaseInfo> void execute_info_batch(
-        PreparedStatement      ps,          // PreparedStatement对象
-        String                 sql_str,     // SQL语句字符串
-        InfoParamSetter<T>     set_params,  // 参数设置器，用于为每个Info对象设置PreparedStatement参数
-        List<InfoBatchItem<T>> batch_items  // 批处理的Info对象列表，每个对象包含其在批处理中的索引和对应的Info对象
-    ) throws SQLException {
-
-        SQLException batch_error = null; // 用于捕获批量执行时的异常
-        try { ps.executeBatch(); }
-        catch(SQLException e) {
-            batch_error = e;
-            System.err.println("数据库批量写入失败，正在定位问题数据项...");
-
-            // 如果逐条定位失败，则打印整个批次的候选数据项
-            if(!print_individual_info_failures(sql_str, set_params, batch_items)) {
-                print_info_batch_candidates(batch_items, e);
-            }
-
-            throw e;
-        } finally {
-            try { ps.clearBatch(); }
-            catch(SQLException e) {
-                if(batch_error != null) batch_error.addSuppressed(e);
-                else throw e;
-            }
-        }
-    }
-
-    // 执行逐条写入操作，并在失败时打印问题数据项的详细信息
-    private <T extends BaseInfo> boolean print_individual_info_failures(
-        String sql_str,
-        InfoParamSetter<T> set_params,
-        List<InfoBatchItem<T>> batch_items
-    ) {
-
-        var found_failure = false;
-        try(var ps = connect.prepareStatement(sql_str)) {
-            for(var batch_item : batch_items) {
-                try {
-                    set_params.set_params(ps, batch_item.info());
-                    ps.executeUpdate();
-                } catch(SQLException | RuntimeException e) {
-                    found_failure = true;
-                    print_info_item_failure("执行数据库写入", batch_item.index(), batch_item.info(), e);
-                } finally {
-                    try { ps.clearParameters(); }
-                    catch(SQLException _) {}
-                }
-            }
-        } catch(SQLException e) {
-            System.err.println("数据库写入失败: 无法逐条定位问题数据项: " + e.getMessage());
-        }
-        return found_failure;
-    }
-
-    private static <T extends BaseInfo> void print_info_batch_candidates(List<InfoBatchItem<T>> batch_items, SQLException e) {
-        System.err.println("数据库写入失败: 未能定位单个失败项，以下批次数据可能相关");
-        System.err.println("错误信息: " + e.getMessage());
-        for(var batch_item : batch_items) {
-            print_info_item("候选数据项", batch_item.index(), batch_item.info());
-        }
-    }
-
-    private static void print_info_item_failure(String action, int item_index, BaseInfo item, Exception e) {
-        System.err.println("数据库写入失败: " + action);
-        System.err.println("错误信息: " + e.getMessage());
-        print_info_item("问题数据项", item_index, item);
-    }
-
-    private static void print_info_item(String title, int item_index, BaseInfo item) {
-        System.err.println(title + " #" + item_index + ": " + info_type_name(item));
-        System.err.println(info_to_log_string(item));
-    }
-
-    private static String info_type_name(BaseInfo item) {
-        return item == null ? "null" : item.getClass().getSimpleName();
-    }
-
-    private static String info_to_log_string(BaseInfo item) {
-        if(item == null) return "null";
-        try { return item.toPrintString("", false); }
-        catch(RuntimeException _) { return String.valueOf(item); }
-    }
-
 
     @Override
     public void close() {

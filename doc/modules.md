@@ -122,7 +122,7 @@ Info
 | `TorrentPageInfo`   | `torrent_page`   | RSS 中的 torrent 页面 |
 | `TorrentInfo`       | `torrent`        | torrent 文件与元信息  |
 
-`Info` 不保存 SQL，不直接操作 JDBC。字段绑定由 `Database.SQLiteAccess` 完成。
+`Info` 不保存 SQL，不直接操作 JDBC。字段绑定与批处理执行由 `Database.Transactions` 完成。
 
 ## `Database`
 
@@ -139,10 +139,11 @@ Info
 
 包内实现：
 
-| 类              | 说明                               |
-| --------------- | ---------------------------------- |
-| `SQLiteSQL`     | 建表、PRAGMA、upsert 和查询 SQL    |
-| `DatabaseUtils` | JDBC 参数绑定、hash 去重、分块查询 |
+| 类              | 说明                                        |
+| --------------- | ------------------------------------------- |
+| `SQLiteSQL`     | 建表、PRAGMA、upsert 和查询 SQL             |
+| `Transactions`  | Info 参数绑定、批量写入和失败数据定位       |
+| `DatabaseUtils` | JDBC 空值绑定、hash 去重、分块和 schema 校验 |
 
 ## `NetAccess`
 

@@ -12,7 +12,7 @@
 
 1. 更新 `Database.SQLiteSQL` 的建表 SQL。
 2. 更新对应 `Info.*Info` 字段、构造器和打印输出。
-3. 更新 `SQLiteAccess` 中对应类型的参数绑定顺序。
+3. 更新 `Transactions` 中对应类型的参数绑定顺序。
 4. 更新 [SQLite Schema](schema.md)。
 5. 更新 [Excel 指令与数据块](excel.md) 中相关字段说明。
 6. 补充或更新 `SQLiteAccessTest` / `InfoTest`。
@@ -23,8 +23,9 @@
 2. 在 `SQLiteSQL` 中新增建表 SQL 和 upsert SQL。
 3. 在 `SQLiteSQL.createTableStatements()` 中加入建表语句。
 4. 在 `SQLiteAccess.UpsertInfo` 中增加分类集合、类型分支和批量写入顺序。
-5. 增加对应测试。
-6. 更新 `doc/schema.md` 和 `doc/modules.md`。
+5. 在 `Transactions` 中增加对应的批量写入入口和参数绑定。
+6. 增加对应测试。
+7. 更新 `doc/schema.md` 和 `doc/modules.md`。
 
 ## 测试布局
 

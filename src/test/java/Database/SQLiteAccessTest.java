@@ -139,20 +139,22 @@ class SQLiteAccessTest {
     }
 
     @Test
-    void printsFailingInfoWhenUpsertFails() throws Exception {
+    void printsFailingInfoAndRollsBackWhenUpsertFails() throws Exception {
         var dbPath = tempDir.resolve("kumigumi-fail-test.db").toString();
         var errBuffer = new ByteArrayOutputStream();
         var prevErr = System.err;
 
         System.setErr(new PrintStream(errBuffer, true, StandardCharsets.UTF_8));
-        try(var db = new SQLiteAccess(dbPath)) {
-            var badEpisode = new EpisodeInfo(Map.of(
-                "EPI_ID", "999",
-                "ANI_ID", "404",
-                "title", "Missing anime"
-            ));
+        try {
+            try(var db = new SQLiteAccess(dbPath)) {
+                var badEpisode = new EpisodeInfo(Map.of(
+                    "EPI_ID", "999",
+                    "ANI_ID", "404",
+                    "title", "Missing anime"
+                ));
 
-            assertThrows(SQLException.class, () -> db.UpsertInfo(Set.of(badEpisode)));
+                assertThrows(SQLException.class, () -> db.UpsertInfo(Set.of(badEpisode)));
+            }
         } finally {
             System.setErr(prevErr);
         }
@@ -162,6 +164,11 @@ class SQLiteAccessTest {
         assertTrue(errOutput.contains("问题数据项 #1: EpisodeInfo"));
         assertTrue(errOutput.contains("EPI_ID:\t999"));
         assertTrue(errOutput.contains("ANI_ID:\t404"));
+
+        try(var conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
+            var stmt = conn.createStatement()) {
+            assertEquals(0, count(stmt, "episode"));
+        }
     }
 
     @Test
