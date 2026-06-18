@@ -1,6 +1,6 @@
 # SQLite Schema
 
-Schema 由 `Database.SQLiteSQL` 创建，并由 `Database.SQLiteAccess` 在数据库文件不存在时初始化。字段和 Java 数据对象位于 `Info.*Info`。
+Schema 由 `Database.SQLiteSQL` 创建，并由 `Database.SQLiteAccess` 在数据库文件不存在时初始化。数据库文件已存在时会严格校验所有预期表和视图；对象缺失或 SQL 定义不一致会直接抛出异常，不会自动修复。字段和 Java 数据对象位于 `Info.*Info`。
 
 ## 统一约定
 

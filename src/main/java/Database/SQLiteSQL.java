@@ -145,10 +145,6 @@ final class SQLiteSQL {
     );
     """;
 
-    static final String DROP_VIEW_ANIME        = "DROP VIEW IF EXISTS view_anime;";
-    static final String DROP_VIEW_EPISODE      = "DROP VIEW IF EXISTS view_episode;";
-    static final String DROP_VIEW_TORRENT_PAGE = "DROP VIEW IF EXISTS view_torrent_page;";
-
     static final String CREATE_VIEW_ANIME =
     """
     CREATE VIEW view_anime AS
@@ -221,13 +217,23 @@ final class SQLiteSQL {
     static final String DELETE_REQUIRED_ANIME_IDS = "DELETE FROM required_anime_id;";
     static final String INSERT_REQUIRED_ANIME_ID  = "INSERT INTO required_anime_id (ANI_ID) VALUES (?);";
 
-    static final String COUNT_CURRENT_VIEW_DEFINITIONS =
+    static final String SELECT_SCHEMA_OBJECTS =
     """
-    SELECT count(*)
+    SELECT type, name, sql
     FROM sqlite_schema
-    WHERE type = 'view'
-      AND name IN ('view_anime', 'view_episode', 'view_torrent_page')
-      AND instr(lower(sql), 'required_anime_id') > 0;
+    WHERE type IN ('table', 'view')
+      AND name IN (
+          'anime',
+          'episode',
+          'episode_record',
+          'rss',
+          'torrent',
+          'torrent_page',
+          'required_anime_id',
+          'view_anime',
+          'view_episode',
+          'view_torrent_page'
+      );
     """;
 
     static final String UPSERT_ANIME_INFO =
@@ -357,14 +363,6 @@ final class SQLiteSQL {
             CREATE_TORRENT_TABLE,
             CREATE_TORRENT_PAGE_TABLE,
             CREATE_REQUIRED_ANIME_ID_TABLE
-        );
-    }
-
-    static List<String> dropViewStatements() {
-        return List.of(
-            DROP_VIEW_TORRENT_PAGE,
-            DROP_VIEW_EPISODE,
-            DROP_VIEW_ANIME
         );
     }
 

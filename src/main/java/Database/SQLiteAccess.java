@@ -31,44 +31,50 @@ public class SQLiteAccess implements Closeable {
 
     private final Connection connect;
 
-    public SQLiteAccess(String dbPath) throws SQLException {
+    /**
+     * 构造函数，建立数据库连接并确保数据库文件和表结构存在
+     * @param db_path
+     * @throws SQLException
+     * <hr>
+     * 先检查数据库文件是否存在
+     * <p>
+     * - 不存在：如果不存在则创建新数据库并执行表结构初始化SQL语句
+     * <p>
+     * - 存在：检查各个表和视图是否存在且结构正确
+     * <p>
+     * - 如果表或视图缺失或结构不正确，直接报错并退出程序
+     */
+    public SQLiteAccess(String db_path) throws SQLException {
 
-        // 建立数据库连接，如果数据库文件不存在则创建新数据库并初始化表结构
-        var db_url = "jdbc:sqlite:" + dbPath;
-        if(!new File(dbPath).exists()) {
-            System.out.println("该数据库文件不存在: " + dbPath);
+        // 参数检查
+        var db_file = new File(db_path);
+        var db_exists = db_file.exists();
+        if(db_exists && !db_file.isFile()) {
+            throw new SQLException("数据库路径不是文件: " + db_path);
+        }
+
+        var db_url = "jdbc:sqlite:" + db_path;
+        if(!db_exists) {
+            System.out.println("该数据库文件不存在: " + db_path);
             System.out.println("创建数据库...");
-            try(var conn = DriverManager.getConnection(db_url)) {
-                for(var sql : SQLiteSQL.createTableStatements()) {
-                    conn.prepareStatement(sql).execute();
-                }
-            }
-            System.out.println("数据库创建完成");
         }
+
         connect = DriverManager.getConnection(db_url);
+        try {
 
-        // 应用PRAGMA设置以优化性能和安全性
-        try(var st = connect.createStatement()) {
-            for(var sql : SQLiteSQL.PRAGMA_SETTINGS) st.execute(sql);
-        } catch(SQLException e) {
-            System.err.println("Failed to apply PRAGMA settings: " + e.getMessage());
-        }
-
-        // 检查视图定义数量，如果不为3则重新创建视图
-        try(var st = connect.createStatement()) {
-            st.execute(SQLiteSQL.CREATE_REQUIRED_ANIME_ID_TABLE);
-            try(var rs = st.executeQuery(SQLiteSQL.COUNT_CURRENT_VIEW_DEFINITIONS)) {
-                if(rs.next() && rs.getInt(1) == 3) return;
-                else {
-                    // 视图定义数量不正确，可能是数据库版本较旧或被意外修改，重新创建视图以确保结构正确
-                    var prev_auto = connect.getAutoCommit();
-                    connect.setAutoCommit(false);
-                    for(var sql : SQLiteSQL.dropViewStatements()) st.execute(sql);
-                    for(var sql : SQLiteSQL.createViewStatements()) st.execute(sql);
-                    connect.commit();
-                    connect.setAutoCommit(prev_auto);
-                }
+            // 应用PRAGMA设置以优化性能和安全性
+            try(var st = connect.createStatement()) {
+                for(var sql : SQLiteSQL.PRAGMA_SETTINGS) st.execute(sql);
             }
+
+            // 如果数据库文件已存在，则验证表结构；如果不存在，则创建表结构后再验证
+            if(!db_exists) DatabaseUtils.initialize_database_schema(connect); // 创建数据库表和视图
+            DatabaseUtils.validate_database_schema(connect);   // 再次验证以确保结构正确
+
+        } catch(SQLException | RuntimeException e) {
+            try { connect.close(); }
+            catch(SQLException close_error) { e.addSuppressed(close_error); }
+            throw e;
         }
     }
 

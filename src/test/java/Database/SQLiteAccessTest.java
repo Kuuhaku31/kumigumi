@@ -164,6 +164,34 @@ class SQLiteAccessTest {
         assertTrue(errOutput.contains("ANI_ID:\t404"));
     }
 
+    @Test
+    void rejectsExistingDatabaseWithMissingView() throws Exception {
+        var dbPath = tempDir.resolve("missing-view.db").toString();
+        try(var ignored = new SQLiteAccess(dbPath)) {}
+
+        try(var conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
+            var stmt = conn.createStatement()) {
+            stmt.execute("DROP VIEW view_episode");
+        }
+
+        var error = assertThrows(SQLException.class, () -> new SQLiteAccess(dbPath));
+        assertTrue(error.getMessage().contains("缺失 view: view_episode"));
+    }
+
+    @Test
+    void rejectsExistingDatabaseWithIncorrectTableStructure() throws Exception {
+        var dbPath = tempDir.resolve("incorrect-table.db").toString();
+        try(var ignored = new SQLiteAccess(dbPath)) {}
+
+        try(var conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
+            var stmt = conn.createStatement()) {
+            stmt.execute("ALTER TABLE anime ADD COLUMN unexpected text");
+        }
+
+        var error = assertThrows(SQLException.class, () -> new SQLiteAccess(dbPath));
+        assertTrue(error.getMessage().contains("结构不正确 table: anime"));
+    }
+
     private static int count(java.sql.Statement stmt, String table) throws Exception {
         try(var rs = stmt.executeQuery("select count(*) from " + table)) {
             assertTrue(rs.next());
