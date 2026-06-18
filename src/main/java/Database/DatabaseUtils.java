@@ -13,6 +13,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import Info.AnimeInfo;
+import Info.EpisodeInfo;
+import Info.EpisodeRecordInfo;
+import Info.RSSInfo;
+import Info.TorrentInfo;
+import Info.TorrentPageInfo;
+
 import static Utils.UtilityFunctions.getDateString;
 
 
@@ -166,5 +173,62 @@ final class DatabaseUtils {
     private static String normalize_schema_sql(String sql) {
         if(sql == null) return "";
         return sql.replaceAll("\\s+", "").toLowerCase(Locale.ROOT);
+    }
+
+    static void set_params_anime_info(PreparedStatement ps, AnimeInfo info) throws SQLException {
+        DatabaseUtils.safeSetInt            (ps,  1, info.ANI_ID           );
+        DatabaseUtils.safeSetDate           (ps,  2, info.air_date         );
+        DatabaseUtils.safeSetString         (ps,  3, info.title            );
+        DatabaseUtils.safeSetString         (ps,  4, info.title_cn         );
+        DatabaseUtils.safeSetString         (ps,  5, info.aliases          );
+        DatabaseUtils.safeSetString         (ps,  6, info.description      );
+        DatabaseUtils.safeSetInt            (ps,  7, info.episode_count    );
+        DatabaseUtils.safeSetString         (ps,  8, info.url_official_site);
+        DatabaseUtils.safeSetString         (ps,  9, info.url_cover        );
+        DatabaseUtils.safeSetOffsetDateTime (ps, 10, info.update_datetime  );
+    }
+
+    static void set_params_episode_info(PreparedStatement ps, EpisodeInfo info) throws SQLException {
+        DatabaseUtils.safeSetInt            (ps,  1, info.EPI_ID         );
+        DatabaseUtils.safeSetInt            (ps,  2, info.ANI_ID         );
+        DatabaseUtils.safeSetInt            (ps,  3, info.ep             );
+        DatabaseUtils.safeSetDouble         (ps,  4, info.sort           );
+        DatabaseUtils.safeSetDate           (ps,  5, info.air_date       );
+        DatabaseUtils.safeSetInt            (ps,  6, info.duration       );
+        DatabaseUtils.safeSetString         (ps,  7, info.title          );
+        DatabaseUtils.safeSetString         (ps,  8, info.title_cn       );
+        DatabaseUtils.safeSetString         (ps,  9, info.description    );
+        DatabaseUtils.safeSetOffsetDateTime (ps, 10, info.update_datetime);
+    }
+
+    static void set_params_episode_record_info(PreparedStatement ps, EpisodeRecordInfo info) throws SQLException {
+        DatabaseUtils.safeSetInt            (ps, 1, info.EPI_ID       );
+        DatabaseUtils.safeSetOffsetDateTime (ps, 2, info.view_datetime);
+        DatabaseUtils.safeSetInt            (ps, 3, info.rating       );
+        DatabaseUtils.safeSetString         (ps, 4, info.comment      );
+    }
+
+    static void set_params_rss_info(PreparedStatement ps, RSSInfo info) throws SQLException {
+        DatabaseUtils.safeSetString (ps, 1, info.URL_RSS);
+        DatabaseUtils.safeSetInt    (ps, 2, info.ANI_ID );
+    }
+
+    static void set_params_torrent_page_info(PreparedStatement ps, TorrentPageInfo info) throws SQLException {
+        DatabaseUtils.safeSetString         (ps, 1, info.URL_RSS        );
+        DatabaseUtils.safeSetString         (ps, 2, info.TOR_HASH       );
+        DatabaseUtils.safeSetOffsetDateTime (ps, 3, info.air_datetime   );
+        DatabaseUtils.safeSetString         (ps, 4, info.url_download   );
+        DatabaseUtils.safeSetString         (ps, 5, info.url_page       );
+        DatabaseUtils.safeSetString         (ps, 6, info.title          );
+        DatabaseUtils.safeSetString         (ps, 7, info.subtitle_group );
+        DatabaseUtils.safeSetString         (ps, 8, info.description    );
+        DatabaseUtils.safeSetOffsetDateTime (ps, 9, info.update_datetime);
+    }
+
+    static void set_params_torrent_info(PreparedStatement ps, TorrentInfo info) throws SQLException {
+        DatabaseUtils.safeSetString (ps, 1, info.TOR_HASH    );
+        DatabaseUtils.safeSetString (ps, 2, info.file_name   );
+        DatabaseUtils.safeSetLong   (ps, 3, info.file_size   );
+        DatabaseUtils.safeSetBytes  (ps, 4, info.torrent_file);
     }
 }

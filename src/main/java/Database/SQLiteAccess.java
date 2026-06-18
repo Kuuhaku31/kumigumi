@@ -108,12 +108,12 @@ public class SQLiteAccess implements Closeable {
         var prev_auto = connect.getAutoCommit();
         connect.setAutoCommit(false);
         try {
-            run_info_batch(animeInfoSet,         SQLiteSQL.UPSERT_ANIME_INFO,          SQLiteAccess::set_params_anime_info         );
-            run_info_batch(episodeInfoSet,       SQLiteSQL.UPSERT_EPISODE_INFO,        SQLiteAccess::set_params_episode_info       );
-            run_info_batch(episodeRecordInfoSet, SQLiteSQL.UPSERT_EPISODE_RECORD_INFO, SQLiteAccess::set_params_episode_record_info);
-            run_info_batch(rssInfoSet,           SQLiteSQL.UPSERT_RSS_INFO,            SQLiteAccess::set_params_rss_info           );
-            run_info_batch(torrentPageInfoSet,   SQLiteSQL.UPSERT_TORRENT_PAGE_INFO,   SQLiteAccess::set_params_torrent_page_info  );
-            run_info_batch(torrentInfoSet,       SQLiteSQL.UPSERT_TORRENT_INFO,        SQLiteAccess::set_params_torrent_info       );
+            run_info_batch(animeInfoSet,         SQLiteSQL.UPSERT_ANIME_INFO,          DatabaseUtils::set_params_anime_info         );
+            run_info_batch(episodeInfoSet,       SQLiteSQL.UPSERT_EPISODE_INFO,        DatabaseUtils::set_params_episode_info       );
+            run_info_batch(episodeRecordInfoSet, SQLiteSQL.UPSERT_EPISODE_RECORD_INFO, DatabaseUtils::set_params_episode_record_info);
+            run_info_batch(rssInfoSet,           SQLiteSQL.UPSERT_RSS_INFO,            DatabaseUtils::set_params_rss_info           );
+            run_info_batch(torrentPageInfoSet,   SQLiteSQL.UPSERT_TORRENT_PAGE_INFO,   DatabaseUtils::set_params_torrent_page_info  );
+            run_info_batch(torrentInfoSet,       SQLiteSQL.UPSERT_TORRENT_INFO,        DatabaseUtils::set_params_torrent_info       );
             connect.commit();
         }
         catch(SQLException | RuntimeException e) { connect.rollback(); throw e; }
@@ -355,63 +355,6 @@ public class SQLiteAccess implements Closeable {
         if(item == null) return "null";
         try { return item.toPrintString("", false); }
         catch(RuntimeException _) { return String.valueOf(item); }
-    }
-
-    private static void set_params_anime_info(PreparedStatement ps, AnimeInfo info) throws SQLException {
-        DatabaseUtils.safeSetInt            (ps,  1, info.ANI_ID           );
-        DatabaseUtils.safeSetDate           (ps,  2, info.air_date         );
-        DatabaseUtils.safeSetString         (ps,  3, info.title            );
-        DatabaseUtils.safeSetString         (ps,  4, info.title_cn         );
-        DatabaseUtils.safeSetString         (ps,  5, info.aliases          );
-        DatabaseUtils.safeSetString         (ps,  6, info.description      );
-        DatabaseUtils.safeSetInt            (ps,  7, info.episode_count    );
-        DatabaseUtils.safeSetString         (ps,  8, info.url_official_site);
-        DatabaseUtils.safeSetString         (ps,  9, info.url_cover        );
-        DatabaseUtils.safeSetOffsetDateTime (ps, 10, info.update_datetime  );
-    }
-
-    private static void set_params_episode_info(PreparedStatement ps, EpisodeInfo info) throws SQLException {
-        DatabaseUtils.safeSetInt            (ps,  1, info.EPI_ID         );
-        DatabaseUtils.safeSetInt            (ps,  2, info.ANI_ID         );
-        DatabaseUtils.safeSetInt            (ps,  3, info.ep             );
-        DatabaseUtils.safeSetDouble         (ps,  4, info.sort           );
-        DatabaseUtils.safeSetDate           (ps,  5, info.air_date       );
-        DatabaseUtils.safeSetInt            (ps,  6, info.duration       );
-        DatabaseUtils.safeSetString         (ps,  7, info.title          );
-        DatabaseUtils.safeSetString         (ps,  8, info.title_cn       );
-        DatabaseUtils.safeSetString         (ps,  9, info.description    );
-        DatabaseUtils.safeSetOffsetDateTime (ps, 10, info.update_datetime);
-    }
-
-    private static void set_params_episode_record_info(PreparedStatement ps, EpisodeRecordInfo info) throws SQLException {
-        DatabaseUtils.safeSetInt            (ps, 1, info.EPI_ID       );
-        DatabaseUtils.safeSetOffsetDateTime (ps, 2, info.view_datetime);
-        DatabaseUtils.safeSetInt            (ps, 3, info.rating       );
-        DatabaseUtils.safeSetString         (ps, 4, info.comment      );
-    }
-
-    private static void set_params_rss_info(PreparedStatement ps, RSSInfo info) throws SQLException {
-        DatabaseUtils.safeSetString (ps, 1, info.URL_RSS);
-        DatabaseUtils.safeSetInt    (ps, 2, info.ANI_ID );
-    }
-
-    private static void set_params_torrent_page_info(PreparedStatement ps, TorrentPageInfo info) throws SQLException {
-        DatabaseUtils.safeSetString         (ps, 1, info.URL_RSS        );
-        DatabaseUtils.safeSetString         (ps, 2, info.TOR_HASH       );
-        DatabaseUtils.safeSetOffsetDateTime (ps, 3, info.air_datetime   );
-        DatabaseUtils.safeSetString         (ps, 4, info.url_download   );
-        DatabaseUtils.safeSetString         (ps, 5, info.url_page       );
-        DatabaseUtils.safeSetString         (ps, 6, info.title          );
-        DatabaseUtils.safeSetString         (ps, 7, info.subtitle_group );
-        DatabaseUtils.safeSetString         (ps, 8, info.description    );
-        DatabaseUtils.safeSetOffsetDateTime (ps, 9, info.update_datetime);
-    }
-
-    private static void set_params_torrent_info(PreparedStatement ps, TorrentInfo info) throws SQLException {
-        DatabaseUtils.safeSetString (ps, 1, info.TOR_HASH    );
-        DatabaseUtils.safeSetString (ps, 2, info.file_name   );
-        DatabaseUtils.safeSetLong   (ps, 3, info.file_size   );
-        DatabaseUtils.safeSetBytes  (ps, 4, info.torrent_file);
     }
 
 
