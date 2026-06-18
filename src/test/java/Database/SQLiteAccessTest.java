@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.io.TempDir;
 import Info.RSSInfo;
 import Info.TorrentInfo;
 import Info.TorrentPageInfo;
+import Utils.CreateDatabaseViews;
 import Info.AnimeInfo;
 import Info.EpisodeInfo;
 import Info.EpisodeRecordInfo;
@@ -76,7 +78,22 @@ class SQLiteAccessTest {
             var downloader = downloaders.iterator().next();
             assertEquals(torrent.TOR_HASH, downloader.TOR_HASH());
             assertEquals(List.of("https://example.com/download.torrent"), downloader.url_download_list());
+
+            db.ReplaceRequiredAnimeIds(Set.of());
+            db.ReplaceRequiredAnimeIds(Set.of(999));
         }
+
+        try(var conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
+            var stmt = conn.createStatement()) {
+            assertEquals(0, count(stmt, "view_anime"));
+            assertEquals(0, count(stmt, "view_episode"));
+            assertEquals(0, count(stmt, "view_torrent_page"));
+        }
+
+        var aniIdFile = tempDir.resolve("ani-ids.txt");
+        Files.writeString(aniIdFile, "100, 100;\n100");
+        assertEquals(Set.of(100), CreateDatabaseViews.ReadAnimeIds(aniIdFile.toString()));
+        CreateDatabaseViews.Create(dbPath, aniIdFile.toString());
 
         try(var conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
             var stmt = conn.createStatement()) {
@@ -86,6 +103,38 @@ class SQLiteAccessTest {
             assertEquals(1, count(stmt, "rss"));
             assertEquals(1, count(stmt, "torrent_page"));
             assertEquals(1, count(stmt, "torrent"));
+            assertEquals(1, count(stmt, "required_anime_id"));
+
+            try(var rs = stmt.executeQuery("SELECT * FROM view_anime WHERE ANI_ID = 100")) {
+                assertTrue(rs.next());
+                assertEquals("Anime", rs.getString("ani_title"));
+                assertEquals("https://example.com/feed.xml", rs.getString("ani_rss_list"));
+                assertEquals("https://bgm.tv/subject/100", rs.getString("ani_bgm_site"));
+            }
+
+            try(var rs = stmt.executeQuery("SELECT * FROM view_episode WHERE EPI_ID = 200")) {
+                assertTrue(rs.next());
+                assertEquals("Episode", rs.getString("epi_title"));
+                assertEquals("Anime", rs.getString("ani_title"));
+            }
+
+            try(var rs = stmt.executeQuery("SELECT * FROM view_torrent_page WHERE TOR_HASH = '" + torrent.TOR_HASH + "'")) {
+                assertTrue(rs.next());
+                assertEquals("Title", rs.getString("title"));
+                assertEquals("Anime", rs.getString("ani_title"));
+                assertEquals(torrent.file_name, rs.getString("tor_file_name"));
+                assertEquals(torrent.file_size, rs.getObject("tor_file_size", Long.class));
+            }
+        }
+
+        Files.writeString(aniIdFile, "999");
+        CreateDatabaseViews.Create(dbPath, aniIdFile.toString());
+        try(var conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
+            var stmt = conn.createStatement()) {
+            assertEquals(1, count(stmt, "required_anime_id"));
+            assertEquals(0, count(stmt, "view_anime"));
+            assertEquals(0, count(stmt, "view_episode"));
+            assertEquals(0, count(stmt, "view_torrent_page"));
         }
     }
 
