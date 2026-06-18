@@ -7,7 +7,7 @@
         "request": "launch",
         "mainClass": "kumigumi/Utils.CreateDatabaseViews",
         "projectName": "kumigumi",
-        "args": "${workspaceFolder}/_out/kumigumi_test.db",
+        "args": "${workspaceFolder}/_out/kumigumi_test.db ${workspaceFolder}/_out/ani_id_list.txt",
         "vmArgs": [
             "--enable-native-access=org.xerial.sqlitejdbc"
         ]

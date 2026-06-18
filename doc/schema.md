@@ -140,15 +140,27 @@ anime -> episode -> episode_record -> rss -> torrent_page -> torrent
 
 该顺序保证 `episode`、`episode_record`、`rss`、`torrent_page` 的外键依赖尽量先满足。任何 `SQLException` 或运行时异常都会 rollback。
 
+## `required_anime_id`
+
+`required_anime_id` 保存视图需要查询的番剧 ID，由 `Utils.CreateDatabaseViews` 从 ANI_ID 文件读取后整表替换。
+
+| 字段     | 类型    | 必需 | 说明                  |
+| -------- | ------- | ---- | --------------------- |
+| `ANI_ID` | integer | 是   | 视图需要查询的番剧 ID |
+
+主键：`ANI_ID DESC`
+
 ## view 表格
 
-以下视图可通过 `Utils.CreateDatabaseViews` 入口创建。该入口会删除已有的同名视图，并按照本节定义重新创建：
+以下视图由 `SQLiteAccess` 初始化和维护。`Utils.CreateDatabaseViews` 入口只从文件读取 `ANI_ID` 集合，并事务化替换 `required_anime_id` 表中的数据：
 
 ```powershell
 java --enable-native-access=ALL-UNNAMED `
   -cp target/kumigumi-<version>.jar `
-  Utils.CreateDatabaseViews <database-path>
+  Utils.CreateDatabaseViews <database-path> <ani-id-file>
 ```
+
+ANI_ID 文件可使用换行、空白、逗号或分号分隔整数；重复值会被自动去除。三个视图都通过 `required_anime_id` 表过滤数据，空表对应空视图。更新该表后无需重新创建视图。
 
 ### view_anime
 

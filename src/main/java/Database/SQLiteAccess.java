@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import Info.AnimeInfo;
 import Info.BaseInfo;
@@ -51,6 +52,23 @@ public class SQLiteAccess implements Closeable {
             for(var sql : SQLiteSQL.PRAGMA_SETTINGS) st.execute(sql);
         } catch(SQLException e) {
             System.err.println("Failed to apply PRAGMA settings: " + e.getMessage());
+        }
+
+        // 检查视图定义数量，如果不为3则重新创建视图
+        try(var st = connect.createStatement()) {
+            st.execute(SQLiteSQL.CREATE_REQUIRED_ANIME_ID_TABLE);
+            try(var rs = st.executeQuery(SQLiteSQL.COUNT_CURRENT_VIEW_DEFINITIONS)) {
+                if(rs.next() && rs.getInt(1) == 3) return;
+                else {
+                    // 视图定义数量不正确，可能是数据库版本较旧或被意外修改，重新创建视图以确保结构正确
+                    var prev_auto = connect.getAutoCommit();
+                    connect.setAutoCommit(false);
+                    for(var sql : SQLiteSQL.dropViewStatements()) st.execute(sql);
+                    for(var sql : SQLiteSQL.createViewStatements()) st.execute(sql);
+                    connect.commit();
+                    connect.setAutoCommit(prev_auto);
+                }
+            }
         }
     }
 
@@ -96,12 +114,25 @@ public class SQLiteAccess implements Closeable {
         finally { connect.setAutoCommit(prev_auto); }
     }
 
-    public void CreateViews() throws SQLException {
+    // 替换required_anime_id表中的ANI_ID列表，先删除原有数据再批量插入新数据
+    public void ReplaceRequiredAnimeIds(Set<Integer> aniIdSet) throws SQLException {
+
+        // 参数检查
+        if(aniIdSet == null) throw new IllegalArgumentException("ANI_ID set cannot be null");
+        for(var aniId : aniIdSet) {
+            if(aniId == null) throw new IllegalArgumentException("ANI_ID set cannot contain null");
+        }
+
         var prev_auto = connect.getAutoCommit();
         connect.setAutoCommit(false);
-        try(var st = connect.createStatement()) {
-            for(var sql : SQLiteSQL.dropViewStatements()) st.execute(sql);
-            for(var sql : SQLiteSQL.createViewStatements()) st.execute(sql);
+        try(var deleteStatement = connect.createStatement();
+            var insertStatement = connect.prepareStatement(SQLiteSQL.INSERT_REQUIRED_ANIME_ID)) {
+            deleteStatement.executeUpdate(SQLiteSQL.DELETE_REQUIRED_ANIME_IDS);
+            for(var aniId : new TreeSet<>(aniIdSet)) {
+                insertStatement.setInt(1, aniId);
+                insertStatement.addBatch();
+            }
+            insertStatement.executeBatch();
             connect.commit();
         }
         catch(SQLException | RuntimeException e) { connect.rollback(); throw e; }

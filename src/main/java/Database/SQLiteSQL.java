@@ -137,6 +137,14 @@ final class SQLiteSQL {
     );
     """;
 
+    static final String CREATE_REQUIRED_ANIME_ID_TABLE =
+    """
+    CREATE TABLE IF NOT EXISTS "required_anime_id" (
+        "ANI_ID" integer NOT NULL,
+        PRIMARY KEY ("ANI_ID" DESC)
+    );
+    """;
+
     static final String DROP_VIEW_ANIME        = "DROP VIEW IF EXISTS view_anime;";
     static final String DROP_VIEW_EPISODE      = "DROP VIEW IF EXISTS view_episode;";
     static final String DROP_VIEW_TORRENT_PAGE = "DROP VIEW IF EXISTS view_torrent_page;";
@@ -161,7 +169,8 @@ final class SQLiteSQL {
             WHERE r.ANI_ID = a.ANI_ID
         ) AS ani_rss_list,
         'https://bgm.tv/subject/' || a.ANI_ID AS ani_bgm_site
-    FROM anime AS a;
+    FROM anime AS a
+    WHERE a.ANI_ID IN (SELECT ANI_ID FROM required_anime_id);
     """;
 
     static final String CREATE_VIEW_EPISODE =
@@ -181,7 +190,8 @@ final class SQLiteSQL {
         a.title           AS ani_title,
         a.title_cn        AS ani_title_cn
     FROM episode AS e
-    INNER JOIN anime AS a ON a.ANI_ID = e.ANI_ID;
+    INNER JOIN anime AS a ON a.ANI_ID = e.ANI_ID
+    WHERE e.ANI_ID IN (SELECT ANI_ID FROM required_anime_id);
     """;
 
     static final String CREATE_VIEW_TORRENT_PAGE =
@@ -204,7 +214,20 @@ final class SQLiteSQL {
     FROM torrent_page AS tp
     LEFT JOIN rss AS r ON r.URL_RSS = tp.URL_RSS
     LEFT JOIN anime AS a ON a.ANI_ID = r.ANI_ID
-    LEFT JOIN torrent AS t ON t.TOR_HASH = tp.TOR_HASH;
+    LEFT JOIN torrent AS t ON t.TOR_HASH = tp.TOR_HASH
+    WHERE r.ANI_ID IN (SELECT ANI_ID FROM required_anime_id);
+    """;
+
+    static final String DELETE_REQUIRED_ANIME_IDS = "DELETE FROM required_anime_id;";
+    static final String INSERT_REQUIRED_ANIME_ID  = "INSERT INTO required_anime_id (ANI_ID) VALUES (?);";
+
+    static final String COUNT_CURRENT_VIEW_DEFINITIONS =
+    """
+    SELECT count(*)
+    FROM sqlite_schema
+    WHERE type = 'view'
+      AND name IN ('view_anime', 'view_episode', 'view_torrent_page')
+      AND instr(lower(sql), 'required_anime_id') > 0;
     """;
 
     static final String UPSERT_ANIME_INFO =
@@ -332,7 +355,8 @@ final class SQLiteSQL {
             CREATE_EPISODE_RECORD_TABLE,
             CREATE_RSS_TABLE,
             CREATE_TORRENT_TABLE,
-            CREATE_TORRENT_PAGE_TABLE
+            CREATE_TORRENT_PAGE_TABLE,
+            CREATE_REQUIRED_ANIME_ID_TABLE
         );
     }
 
