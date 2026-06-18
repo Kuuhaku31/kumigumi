@@ -186,6 +186,9 @@ public class SQLiteAccess implements Closeable {
         void set_params(PreparedStatement ps, T info) throws SQLException;
     }
 
+    // 用于批量处理的内部类，封装了Info对象及其在批处理中的索引
+    private record InfoBatchItem<T extends BaseInfo>(int index, T info) {}
+
     private <T extends BaseInfo> void run_info_batch(Set<T> items, String sql_str, InfoParamSetter<T> set_params) throws SQLException {
 
         // 参数检查
@@ -194,18 +197,115 @@ public class SQLiteAccess implements Closeable {
         // 获取对应的PreparedStatement，并为每个Info对象设置参数并添加到批处理中
         try(var ps = connect.prepareStatement(sql_str)) {
 
-            var count = 0;
+            var item_index = 0;
+            var batch_items = new ArrayList<InfoBatchItem<T>>();
             for(var item : items) {
                 if(item == null) continue;
-                set_params.set_params(ps, item);
-                ps.addBatch();
-                count++;
-                if(count % SQL_PARAM_CHUNK_SIZE == 0) ps.executeBatch();
+                item_index++;
+
+                try {
+                    set_params.set_params(ps, item);
+                    ps.addBatch();
+                    batch_items.add(new InfoBatchItem<>(item_index, item));
+                } catch(SQLException | RuntimeException e) {
+                    print_info_item_failure("设置数据库参数", item_index, item, e);
+                    throw e;
+                }
+
+                if(batch_items.size() == SQL_PARAM_CHUNK_SIZE) {
+                    execute_info_batch(ps, sql_str, set_params, batch_items);
+                    batch_items.clear();
+                }
             }
 
             // 执行剩余的批处理
-            if(count > 0) ps.executeBatch();
+            if(!batch_items.isEmpty()) execute_info_batch(ps, sql_str, set_params, batch_items);
         }
+    }
+
+    // 执行批量操作，并在失败时尝试逐条定位问题数据项
+    private <T extends BaseInfo> void execute_info_batch(
+        PreparedStatement      ps,          // PreparedStatement对象
+        String                 sql_str,     // SQL语句字符串
+        InfoParamSetter<T>     set_params,  // 参数设置器，用于为每个Info对象设置PreparedStatement参数
+        List<InfoBatchItem<T>> batch_items  // 批处理的Info对象列表，每个对象包含其在批处理中的索引和对应的Info对象
+    ) throws SQLException {
+
+        SQLException batch_error = null; // 用于捕获批量执行时的异常
+        try { ps.executeBatch(); }
+        catch(SQLException e) {
+            batch_error = e;
+            System.err.println("数据库批量写入失败，正在定位问题数据项...");
+
+            // 如果逐条定位失败，则打印整个批次的候选数据项
+            if(!print_individual_info_failures(sql_str, set_params, batch_items)) {
+                print_info_batch_candidates(batch_items, e);
+            }
+
+            throw e;
+        } finally {
+            try { ps.clearBatch(); }
+            catch(SQLException e) {
+                if(batch_error != null) batch_error.addSuppressed(e);
+                else throw e;
+            }
+        }
+    }
+
+    // 执行逐条写入操作，并在失败时打印问题数据项的详细信息
+    private <T extends BaseInfo> boolean print_individual_info_failures(
+        String sql_str,
+        InfoParamSetter<T> set_params,
+        List<InfoBatchItem<T>> batch_items
+    ) {
+
+        var found_failure = false;
+        try(var ps = connect.prepareStatement(sql_str)) {
+            for(var batch_item : batch_items) {
+                try {
+                    set_params.set_params(ps, batch_item.info());
+                    ps.executeUpdate();
+                } catch(SQLException | RuntimeException e) {
+                    found_failure = true;
+                    print_info_item_failure("执行数据库写入", batch_item.index(), batch_item.info(), e);
+                } finally {
+                    try { ps.clearParameters(); }
+                    catch(SQLException _) {}
+                }
+            }
+        } catch(SQLException e) {
+            System.err.println("数据库写入失败: 无法逐条定位问题数据项: " + e.getMessage());
+        }
+        return found_failure;
+    }
+
+    private static <T extends BaseInfo> void print_info_batch_candidates(List<InfoBatchItem<T>> batch_items, SQLException e) {
+        System.err.println("数据库写入失败: 未能定位单个失败项，以下批次数据可能相关");
+        System.err.println("错误信息: " + e.getMessage());
+        for(var batch_item : batch_items) {
+            print_info_item("候选数据项", batch_item.index(), batch_item.info());
+        }
+    }
+
+    private static void print_info_item_failure(String action, int item_index, BaseInfo item, Exception e) {
+        System.err.println("数据库写入失败: " + action);
+        System.err.println("错误信息: " + e.getMessage());
+        print_info_item("问题数据项", item_index, item);
+    }
+
+    private static void print_info_item(String title, int item_index, BaseInfo item) {
+        System.err.println(title + " #" + item_index + ": " + info_type_name(item));
+        System.err.println(info_to_log_string(item));
+    }
+
+    private static String info_type_name(BaseInfo item) {
+        return item == null ? "null" : item.getClass().getSimpleName();
+    }
+
+    private static String info_to_log_string(BaseInfo item) {
+        if(item == null) return "null";
+        try { return item.toPrintString("", false); }
+        catch(RuntimeException _) { return String.valueOf(item); }
     }
 
     private static void set_params_anime_info(PreparedStatement ps, AnimeInfo info) throws SQLException {

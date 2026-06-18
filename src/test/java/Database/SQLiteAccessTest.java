@@ -2,7 +2,12 @@ package Database;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -18,8 +23,6 @@ import Info.AnimeInfo;
 import Info.EpisodeInfo;
 import Info.EpisodeRecordInfo;
 import Info.InfoTest;
-
-import java.nio.file.Path;
 
 class SQLiteAccessTest {
 
@@ -84,6 +87,32 @@ class SQLiteAccessTest {
             assertEquals(1, count(stmt, "torrent_page"));
             assertEquals(1, count(stmt, "torrent"));
         }
+    }
+
+    @Test
+    void printsFailingInfoWhenUpsertFails() throws Exception {
+        var dbPath = tempDir.resolve("kumigumi-fail-test.db").toString();
+        var errBuffer = new ByteArrayOutputStream();
+        var prevErr = System.err;
+
+        System.setErr(new PrintStream(errBuffer, true, StandardCharsets.UTF_8));
+        try(var db = new SQLiteAccess(dbPath)) {
+            var badEpisode = new EpisodeInfo(Map.of(
+                "EPI_ID", "999",
+                "ANI_ID", "404",
+                "title", "Missing anime"
+            ));
+
+            assertThrows(SQLException.class, () -> db.UpsertInfo(Set.of(badEpisode)));
+        } finally {
+            System.setErr(prevErr);
+        }
+
+        var errOutput = errBuffer.toString(StandardCharsets.UTF_8);
+        assertTrue(errOutput.contains("数据库写入失败"));
+        assertTrue(errOutput.contains("问题数据项 #1: EpisodeInfo"));
+        assertTrue(errOutput.contains("EPI_ID:\t999"));
+        assertTrue(errOutput.contains("ANI_ID:\t404"));
     }
 
     private static int count(java.sql.Statement stmt, String table) throws Exception {
