@@ -1,12 +1,13 @@
 package Database;
 
+import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -30,27 +31,56 @@ public class SQLiteAccess implements Closeable {
 
     private final Connection connect;
 
-    public SQLiteAccess(String dbPath) throws SQLException {
+    /**
+     * 构造函数，建立数据库连接并确保数据库文件和表结构存在
+     * @param db_path
+     * @throws SQLException
+     * <hr>
+     * 先检查数据库文件是否存在
+     * <p>
+     * - 不存在：如果不存在则创建新数据库并执行表结构初始化SQL语句
+     * <p>
+     * - 存在：检查各个表和视图是否存在且结构正确
+     * <p>
+     * - 如果表或视图缺失或结构不正确，直接报错并退出程序
+     */
+    public SQLiteAccess(String db_path) throws SQLException {
 
-        // 建立数据库连接，如果数据库文件不存在则创建新数据库并初始化表结构
-        var db_url = "jdbc:sqlite:" + dbPath;
-        if(!new File(dbPath).exists()) {
-            System.out.println("该数据库文件不存在: " + dbPath);
-            System.out.println("创建数据库...");
-            try(var conn = DriverManager.getConnection(db_url)) {
-                for(var sql : SQLiteSQL.createTableStatements()) {
-                    conn.prepareStatement(sql).execute();
-                }
-            }
-            System.out.println("数据库创建完成");
+        // 参数检查
+        var db_file = new File(db_path);
+        var db_exists = db_file.exists();
+        if(db_exists && !db_file.isFile()) {
+            throw new SQLException("数据库路径不是文件: " + db_path);
         }
-        connect = DriverManager.getConnection(db_url);
 
-        // 应用PRAGMA设置以优化性能和安全性
-        try(var st = connect.createStatement()) {
-            for(var sql : SQLiteSQL.PRAGMA_SETTINGS) st.execute(sql);
-        } catch(SQLException e) {
-            System.err.println("Failed to apply PRAGMA settings: " + e.getMessage());
+        var db_url = "jdbc:sqlite:" + db_path;
+        if(!db_exists) {
+            System.out.println("该数据库文件不存在: " + db_path);
+            System.out.println("创建数据库...");
+        }
+
+        connect = DriverManager.getConnection(db_url); // 建立数据库连接
+
+        try {
+
+            // 应用PRAGMA设置以优化性能和安全性
+            try(var st = connect.createStatement()) {
+                for(var sql : SQLiteSQL.PRAGMA_SETTINGS) st.execute(sql);
+            }
+
+            // 如果数据库文件不存在，则创建表结构
+            if(!db_exists) DatabaseUtils.initialize_database_schema(connect);
+
+            // 验证以确保结构正确
+            DatabaseUtils.validate_database_schema(connect);
+
+        }
+
+        // 捕获SQLException和RuntimeException，确保在发生任何异常时都能正确关闭数据库连接
+        catch(SQLException | RuntimeException e) {
+            try { connect.close(); }
+            catch(SQLException close_error) { e.addSuppressed(close_error); }
+            throw e;
         }
     }
 
@@ -68,8 +98,6 @@ public class SQLiteAccess implements Closeable {
         var torrentInfoSet       = new LinkedHashSet<TorrentInfo>();
         for(var info : info_set) {
 
-            if(info == null) continue;
-
             if     (info instanceof AnimeInfo         i) animeInfoSet        .add(i);
             else if(info instanceof EpisodeInfo       i) episodeInfoSet      .add(i);
             else if(info instanceof EpisodeRecordInfo i) episodeRecordInfoSet.add(i);
@@ -80,20 +108,82 @@ public class SQLiteAccess implements Closeable {
             else throw new IllegalArgumentException("Unsupported Info type: " + info.getClass().getName());
         }
 
-        // 事务处理，确保批量插入的原子性和性能
+        // 事务处理
         var prev_auto = connect.getAutoCommit();
         connect.setAutoCommit(false);
         try {
-            run_info_batch(animeInfoSet,         SQLiteSQL.UPSERT_ANIME_INFO,          SQLiteAccess::set_params_anime_info         );
-            run_info_batch(episodeInfoSet,       SQLiteSQL.UPSERT_EPISODE_INFO,        SQLiteAccess::set_params_episode_info       );
-            run_info_batch(episodeRecordInfoSet, SQLiteSQL.UPSERT_EPISODE_RECORD_INFO, SQLiteAccess::set_params_episode_record_info);
-            run_info_batch(rssInfoSet,           SQLiteSQL.UPSERT_RSS_INFO,            SQLiteAccess::set_params_rss_info           );
-            run_info_batch(torrentPageInfoSet,   SQLiteSQL.UPSERT_TORRENT_PAGE_INFO,   SQLiteAccess::set_params_torrent_page_info  );
-            run_info_batch(torrentInfoSet,       SQLiteSQL.UPSERT_TORRENT_INFO,        SQLiteAccess::set_params_torrent_info       );
-            connect.commit();
+            var failures = new ArrayList<Transactions.UpsertFailure>();
+
+            System.out.println("正在更新数据库，AnimeInfo: " + animeInfoSet.size());
+            Transactions.upsertInfoAnimeInfo        (connect, animeInfoSet, failures);
+            System.out.println("正在更新数据库，EpisodeInfo: " + episodeInfoSet.size());
+            Transactions.upsertInfoEpisodeInfo      (connect, episodeInfoSet, failures);
+            System.out.println("正在更新数据库，EpisodeRecordInfo: " + episodeRecordInfoSet.size());
+            Transactions.upsertInfoEpisodeRecordInfo(connect, episodeRecordInfoSet, failures);
+            System.out.println("正在更新数据库，RSSInfo: " + rssInfoSet.size());
+            Transactions.upsertInfoRSSInfo          (connect, rssInfoSet, failures);
+            System.out.println("正在更新数据库，TorrentPageInfo: " + torrentPageInfoSet.size());
+            Transactions.upsertInfoTorrentPageInfo  (connect, torrentPageInfoSet, failures);
+            System.out.println("正在更新数据库，TorrentInfo: " + torrentInfoSet.size());
+            Transactions.upsertInfoTorrentInfo      (connect, torrentInfoSet, failures);
+
+            if(failures.isEmpty()) {
+                connect.commit();
+                System.out.println("数据库更新完成");
+            } else {
+                System.err.println("数据库写入完成，共有 " + failures.size() + " 个数据项写入失败：");
+                for(var i = 0; i < failures.size(); i++) {
+                    var failure = failures.get(i);
+                    var info = failure.info();
+                    var type_name = info == null ? "null" : info.getClass().getSimpleName();
+                    System.err.println("问题数据项 #" + (i + 1) + ": " + type_name);
+                    System.err.println("错误信息: " + failure.error().getMessage());
+                    if(info == null) System.err.println("null");
+                    else try { System.err.println(info.toPrintString("", false)); }
+                    catch(RuntimeException _) { System.err.println(info); }
+                }
+
+                var reader = new BufferedReader(new InputStreamReader(System.in));
+                var commit_successful_items = false;
+                while(true) {
+                    System.out.print("是否提交其他插入成功的数据？[y/n]: ");
+                    System.out.flush();
+
+                    final String answer;
+                    try { answer = reader.readLine(); }
+                    catch(IOException e) { throw new SQLException("读取提交确认失败", e); }
+
+                    if(answer == null) {
+                        System.out.println("未读取到用户输入，默认不提交。");
+                        break;
+                    }
+
+                    var normalized_answer = answer.trim().toLowerCase();
+                    if(normalized_answer.equals("y") || normalized_answer.equals("yes")) {
+                        commit_successful_items = true;
+                        break;
+                    }
+                    if(normalized_answer.equals("n") || normalized_answer.equals("no")) break;
+                    System.out.println("请输入 y 或 n。");
+                }
+
+                if(commit_successful_items) {
+                    connect.commit();
+                    System.out.println("已提交其他插入成功的数据。");
+                } else {
+                    connect.rollback();
+                    System.out.println("已取消提交，本次数据库更新已全部回滚。");
+                }
+            }
         }
         catch(SQLException | RuntimeException e) { connect.rollback(); throw e; }
         finally { connect.setAutoCommit(prev_auto); }
+    }
+
+    // 替换required_anime_id表中的ANI_ID列表，先删除原有数据再逐条插入新数据
+    public void ReplaceRequiredAnimeIds(Set<Integer> ani_id_set) throws SQLException {
+
+        Transactions.replaceAniIds(connect, ani_id_set);
     }
 
     public void ExportTorrentFiles(Set<String> torHashList, String safePath) {
@@ -179,92 +269,6 @@ public class SQLiteAccess implements Closeable {
         }
         return downloaderSet;
     }
-
-
-    @FunctionalInterface
-    private interface InfoParamSetter<T extends BaseInfo> {
-        void set_params(PreparedStatement ps, T info) throws SQLException;
-    }
-
-    private <T extends BaseInfo> void run_info_batch(Set<T> items, String sql_str, InfoParamSetter<T> set_params) throws SQLException {
-
-        // 参数检查
-        if(items.isEmpty()) return;
-
-        // 获取对应的PreparedStatement，并为每个Info对象设置参数并添加到批处理中
-        try(var ps = connect.prepareStatement(sql_str)) {
-
-            var count = 0;
-            for(var item : items) {
-                if(item == null) continue;
-                set_params.set_params(ps, item);
-                ps.addBatch();
-                count++;
-                if(count % SQL_PARAM_CHUNK_SIZE == 0) ps.executeBatch();
-            }
-
-            // 执行剩余的批处理
-            if(count > 0) ps.executeBatch();
-        }
-    }
-
-    private static void set_params_anime_info(PreparedStatement ps, AnimeInfo info) throws SQLException {
-        DatabaseUtils.safeSetInt            (ps,  1, info.ANI_ID           );
-        DatabaseUtils.safeSetDate           (ps,  2, info.air_date         );
-        DatabaseUtils.safeSetString         (ps,  3, info.title            );
-        DatabaseUtils.safeSetString         (ps,  4, info.title_cn         );
-        DatabaseUtils.safeSetString         (ps,  5, info.aliases          );
-        DatabaseUtils.safeSetString         (ps,  6, info.description      );
-        DatabaseUtils.safeSetInt            (ps,  7, info.episode_count    );
-        DatabaseUtils.safeSetString         (ps,  8, info.url_official_site);
-        DatabaseUtils.safeSetString         (ps,  9, info.url_cover        );
-        DatabaseUtils.safeSetOffsetDateTime (ps, 10, info.update_datetime  );
-    }
-
-    private static void set_params_episode_info(PreparedStatement ps, EpisodeInfo info) throws SQLException {
-        DatabaseUtils.safeSetInt            (ps,  1, info.EPI_ID         );
-        DatabaseUtils.safeSetInt            (ps,  2, info.ANI_ID         );
-        DatabaseUtils.safeSetInt            (ps,  3, info.ep             );
-        DatabaseUtils.safeSetDouble         (ps,  4, info.sort           );
-        DatabaseUtils.safeSetDate           (ps,  5, info.air_date       );
-        DatabaseUtils.safeSetInt            (ps,  6, info.duration       );
-        DatabaseUtils.safeSetString         (ps,  7, info.title          );
-        DatabaseUtils.safeSetString         (ps,  8, info.title_cn       );
-        DatabaseUtils.safeSetString         (ps,  9, info.description    );
-        DatabaseUtils.safeSetOffsetDateTime (ps, 10, info.update_datetime);
-    }
-
-    private static void set_params_episode_record_info(PreparedStatement ps, EpisodeRecordInfo info) throws SQLException {
-        DatabaseUtils.safeSetInt            (ps, 1, info.EPI_ID       );
-        DatabaseUtils.safeSetOffsetDateTime (ps, 2, info.view_datetime);
-        DatabaseUtils.safeSetInt            (ps, 3, info.rating       );
-        DatabaseUtils.safeSetString         (ps, 4, info.comment      );
-    }
-
-    private static void set_params_rss_info(PreparedStatement ps, RSSInfo info) throws SQLException {
-        DatabaseUtils.safeSetString (ps, 1, info.URL_RSS);
-        DatabaseUtils.safeSetInt    (ps, 2, info.ANI_ID );
-    }
-
-    private static void set_params_torrent_page_info(PreparedStatement ps, TorrentPageInfo info) throws SQLException {
-        DatabaseUtils.safeSetString         (ps, 1, info.URL_RSS        );
-        DatabaseUtils.safeSetString         (ps, 2, info.TOR_HASH       );
-        DatabaseUtils.safeSetOffsetDateTime (ps, 3, info.air_datetime   );
-        DatabaseUtils.safeSetString         (ps, 4, info.url_download   );
-        DatabaseUtils.safeSetString         (ps, 5, info.url_page       );
-        DatabaseUtils.safeSetString         (ps, 6, info.title          );
-        DatabaseUtils.safeSetString         (ps, 7, info.subtitle_group );
-        DatabaseUtils.safeSetString         (ps, 8, info.description    );
-        DatabaseUtils.safeSetOffsetDateTime (ps, 9, info.update_datetime);
-    }
-
-    private static void set_params_torrent_info(PreparedStatement ps, TorrentInfo info) throws SQLException {
-        DatabaseUtils.safeSetString (ps, 1, info.TOR_HASH    );
-        DatabaseUtils.safeSetString (ps, 2, info.file_name   );
-        DatabaseUtils.safeSetLong   (ps, 3, info.file_size   );
-        DatabaseUtils.safeSetBytes  (ps, 4, info.torrent_file);
-    }
-
 
     @Override
     public void close() {
