@@ -140,6 +140,8 @@ final class MainApplication {
 
                 case UPDATE_TORRENT -> Commands.updateTorrent(this, cmd);
                 case EXPORT_TORRENT -> Commands.exportTorrent(this, cmd);
+                case FLUSH_DB_VIEW -> Commands.flushDBView(this, cmd);
+                case FLUSH_DB_VIEW_REQUIRED -> Commands.flushDBViewRequired(this, cmd);
 
                 default -> System.out.println("Unknown command: " + cmd.getFirst());
                 }

@@ -18,7 +18,10 @@ enum ExcelCommand {
     TO_DB("_to_db"),
 
     UPDATE_TORRENT("_update_torrent"),
-    EXPORT_TORRENT("_export_torrent");
+    EXPORT_TORRENT("_export_torrent"),
+
+    FLUSH_DB_VIEW("_flush_db_view"),
+    FLUSH_DB_VIEW_REQUIRED("_flush_db_view_required");
 
 
     private final String[] aliases;
