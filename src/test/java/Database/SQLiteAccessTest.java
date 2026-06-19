@@ -2,6 +2,7 @@ package Database;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -139,11 +140,13 @@ class SQLiteAccessTest {
     }
 
     @Test
-    void printsFailingInfoAndRollsBackWhenUpsertFails() throws Exception {
+    void printsFailingInfoAndRollsBackWhenPartialCommitIsRejected() throws Exception {
         var dbPath = tempDir.resolve("kumigumi-fail-test.db").toString();
         var errBuffer = new ByteArrayOutputStream();
+        var prevIn = System.in;
         var prevErr = System.err;
 
+        System.setIn(new ByteArrayInputStream("n\n".getBytes(StandardCharsets.UTF_8)));
         System.setErr(new PrintStream(errBuffer, true, StandardCharsets.UTF_8));
         try {
             try(var db = new SQLiteAccess(dbPath)) {
@@ -157,14 +160,15 @@ class SQLiteAccessTest {
                     "title", "Missing anime"
                 ));
 
-                assertThrows(SQLException.class, () -> db.UpsertInfo(Set.of(goodAnime, badEpisode)));
+                db.UpsertInfo(Set.of(goodAnime, badEpisode));
             }
         } finally {
+            System.setIn(prevIn);
             System.setErr(prevErr);
         }
 
         var errOutput = errBuffer.toString(StandardCharsets.UTF_8);
-        assertTrue(errOutput.contains("数据库写入失败"));
+        assertTrue(errOutput.contains("共有 1 个数据项写入失败"));
         assertTrue(errOutput.contains("问题数据项 #1: EpisodeInfo"));
         assertTrue(errOutput.contains("EPI_ID:\t999"));
         assertTrue(errOutput.contains("ANI_ID:\t404"));
@@ -173,6 +177,51 @@ class SQLiteAccessTest {
             var stmt = conn.createStatement()) {
             assertEquals(0, count(stmt, "anime"));
             assertEquals(0, count(stmt, "episode"));
+        }
+    }
+
+    @Test
+    void continuesAfterFailuresAndCommitsSuccessfulInfoWhenConfirmed() throws Exception {
+        var dbPath = tempDir.resolve("kumigumi-partial-commit-test.db").toString();
+        var torrent = new TorrentInfo(InfoTest.sampleTorrent());
+        var errBuffer = new ByteArrayOutputStream();
+        var prevIn = System.in;
+        var prevErr = System.err;
+
+        System.setIn(new ByteArrayInputStream("y\n".getBytes(StandardCharsets.UTF_8)));
+        System.setErr(new PrintStream(errBuffer, true, StandardCharsets.UTF_8));
+        try {
+            try(var db = new SQLiteAccess(dbPath)) {
+                db.UpsertInfo(Set.of(
+                    new AnimeInfo(Map.of(
+                        "ANI_ID", "100",
+                        "title", "Committed anime"
+                    )),
+                    new EpisodeInfo(Map.of(
+                        "EPI_ID", "999",
+                        "ANI_ID", "404",
+                        "title", "Missing anime"
+                    )),
+                    new RSSInfo("https://example.com/missing-feed.xml", 405),
+                    torrent
+                ));
+            }
+        } finally {
+            System.setIn(prevIn);
+            System.setErr(prevErr);
+        }
+
+        var errOutput = errBuffer.toString(StandardCharsets.UTF_8);
+        assertTrue(errOutput.contains("共有 2 个数据项写入失败"));
+        assertTrue(errOutput.contains("EpisodeInfo"));
+        assertTrue(errOutput.contains("RSSInfo"));
+
+        try(var conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
+            var stmt = conn.createStatement()) {
+            assertEquals(1, count(stmt, "anime"));
+            assertEquals(0, count(stmt, "episode"));
+            assertEquals(0, count(stmt, "rss"));
+            assertEquals(1, count(stmt, "torrent"));
         }
     }
 

@@ -145,6 +145,8 @@ Info
 | `Transactions`  | Info 参数绑定、逐条写入和失败数据打印       |
 | `DatabaseUtils` | JDBC 空值绑定、hash 去重、分块和 schema 校验 |
 
+`UpsertInfo` 在同一个事务中依次执行所有 Info 类型。单条数据写入失败时会记录错误并继续；全部类型处理完成后统一打印失败数据，由用户决定提交其余成功数据或回滚本次全部写入。没有失败项时直接提交。
+
 ## `NetAccess`
 
 公开接口：

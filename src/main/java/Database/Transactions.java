@@ -2,6 +2,7 @@ package Database;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Set;
 
 import Info.AnimeInfo;
@@ -16,6 +17,8 @@ import Info.TorrentPageInfo;
 final class Transactions {
 
     private Transactions() {}
+
+    record UpsertFailure(BaseInfo info, SQLException error) {}
 
     static void replaceAniIds(Connection connect, Set<Integer> newAniIDs) throws SQLException {
 
@@ -48,8 +51,9 @@ final class Transactions {
     }
 
     static void upsertInfoAnimeInfo(
-        Connection     connect,
-        Set<AnimeInfo> info_set
+        Connection          connect,
+        Set<AnimeInfo>      info_set,
+        List<UpsertFailure> failures
     ) throws SQLException {
 
         final String UPSERT_SQL =
@@ -72,9 +76,7 @@ final class Transactions {
         """;
 
         try(var ps = connect.prepareStatement(UPSERT_SQL)) {
-            var index = 0;
             for(var info : info_set) {
-                index++;
                 try {
                     DatabaseUtils.safeSetInt            (ps,  1, info.ANI_ID           );
                     DatabaseUtils.safeSetDate           (ps,  2, info.air_date         );
@@ -88,16 +90,16 @@ final class Transactions {
                     DatabaseUtils.safeSetOffsetDateTime (ps, 10, info.update_datetime  );
                     ps.executeUpdate();
                 } catch(SQLException e) {
-                    print_info_failure(index, info, e);
-                    throw e;
+                    failures.add(new UpsertFailure(info, e));
                 }
             }
         }
     }
 
     static void upsertInfoEpisodeInfo(
-        Connection      connect,
-        Set<EpisodeInfo> info_set
+        Connection          connect,
+        Set<EpisodeInfo>    info_set,
+        List<UpsertFailure> failures
     ) throws SQLException {
 
         final String UPSERT_SQL =
@@ -120,9 +122,7 @@ final class Transactions {
         """;
 
         try(var ps = connect.prepareStatement(UPSERT_SQL)) {
-            var index = 0;
             for(var info : info_set) {
-                index++;
                 try {
                     DatabaseUtils.safeSetInt            (ps,  1, info.EPI_ID         );
                     DatabaseUtils.safeSetInt            (ps,  2, info.ANI_ID         );
@@ -136,16 +136,16 @@ final class Transactions {
                     DatabaseUtils.safeSetOffsetDateTime (ps, 10, info.update_datetime);
                     ps.executeUpdate();
                 } catch(SQLException e) {
-                    print_info_failure(index, info, e);
-                    throw e;
+                    failures.add(new UpsertFailure(info, e));
                 }
             }
         }
     }
 
     static void upsertInfoEpisodeRecordInfo(
-        Connection            connect,
-        Set<EpisodeRecordInfo> info_set
+        Connection                connect,
+        Set<EpisodeRecordInfo>    info_set,
+        List<UpsertFailure>       failures
     ) throws SQLException {
 
         final String UPSERT_SQL =
@@ -158,9 +158,7 @@ final class Transactions {
         """;
 
         try(var ps = connect.prepareStatement(UPSERT_SQL)) {
-            var index = 0;
             for(var info : info_set) {
-                index++;
                 try {
                     DatabaseUtils.safeSetInt            (ps, 1, info.EPI_ID       );
                     DatabaseUtils.safeSetOffsetDateTime (ps, 2, info.view_datetime);
@@ -168,16 +166,16 @@ final class Transactions {
                     DatabaseUtils.safeSetString         (ps, 4, info.comment      );
                     ps.executeUpdate();
                 } catch(SQLException e) {
-                    print_info_failure(index, info, e);
-                    throw e;
+                    failures.add(new UpsertFailure(info, e));
                 }
             }
         }
     }
 
     static void upsertInfoRSSInfo(
-        Connection   connect,
-        Set<RSSInfo> info_set
+        Connection          connect,
+        Set<RSSInfo>        info_set,
+        List<UpsertFailure> failures
     ) throws SQLException {
 
         final String UPSERT_SQL =
@@ -189,16 +187,13 @@ final class Transactions {
         """;
 
         try(var ps = connect.prepareStatement(UPSERT_SQL)) {
-            var index = 0;
             for(var info : info_set) {
-                index++;
                 try {
                     DatabaseUtils.safeSetString (ps, 1, info.URL_RSS);
                     DatabaseUtils.safeSetInt    (ps, 2, info.ANI_ID );
                     ps.executeUpdate();
                 } catch(SQLException e) {
-                    print_info_failure(index, info, e);
-                    throw e;
+                    failures.add(new UpsertFailure(info, e));
                 }
             }
         }
@@ -206,7 +201,8 @@ final class Transactions {
 
     static void upsertInfoTorrentPageInfo(
         Connection           connect,
-        Set<TorrentPageInfo> info_set
+        Set<TorrentPageInfo> info_set,
+        List<UpsertFailure>  failures
     ) throws SQLException {
 
         final String UPSERT_SQL =
@@ -227,9 +223,7 @@ final class Transactions {
         """;
 
         try(var ps = connect.prepareStatement(UPSERT_SQL)) {
-            var index = 0;
             for(var info : info_set) {
-                index++;
                 try {
                     DatabaseUtils.safeSetString         (ps, 1, info.URL_RSS        );
                     DatabaseUtils.safeSetString         (ps, 2, info.TOR_HASH       );
@@ -242,16 +236,16 @@ final class Transactions {
                     DatabaseUtils.safeSetOffsetDateTime (ps, 9, info.update_datetime);
                     ps.executeUpdate();
                 } catch(SQLException e) {
-                    print_info_failure(index, info, e);
-                    throw e;
+                    failures.add(new UpsertFailure(info, e));
                 }
             }
         }
     }
 
     static void upsertInfoTorrentInfo(
-        Connection       connect,
-        Set<TorrentInfo> info_set
+        Connection          connect,
+        Set<TorrentInfo>    info_set,
+        List<UpsertFailure> failures
     ) throws SQLException {
 
         final String UPSERT_SQL =
@@ -265,9 +259,7 @@ final class Transactions {
         """;
 
         try(var ps = connect.prepareStatement(UPSERT_SQL)) {
-            var index = 0;
             for(var info : info_set) {
-                index++;
                 try {
                     DatabaseUtils.safeSetString (ps, 1, info.TOR_HASH    );
                     DatabaseUtils.safeSetString (ps, 2, info.file_name   );
@@ -275,23 +267,9 @@ final class Transactions {
                     DatabaseUtils.safeSetBytes  (ps, 4, info.torrent_file);
                     ps.executeUpdate();
                 } catch(SQLException e) {
-                    print_info_failure(index, info, e);
-                    throw e;
+                    failures.add(new UpsertFailure(info, e));
                 }
             }
         }
-    }
-
-    private static void print_info_failure(int index, BaseInfo info, SQLException error) {
-        System.err.println("数据库写入失败");
-        System.err.println("错误信息: " + error.getMessage());
-        var type_name = info == null ? "null" : info.getClass().getSimpleName();
-        System.err.println("问题数据项 #" + index + ": " + type_name);
-        if(info == null) {
-            System.err.println("null");
-            return;
-        }
-        try { System.err.println(info.toPrintString("", false)); }
-        catch(RuntimeException _) { System.err.println(info); }
     }
 }

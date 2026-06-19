@@ -276,7 +276,6 @@ final class Commands {
         // 同步到数据库
         try(var db = new SQLiteAccess(mainApp.DATABASE_PATH)) {
             db.UpsertInfo(to_db_info_set);
-            System.out.println("Database synchronization completed for variables: " + cmd.subList(1, cmd.size()));
         } catch(Exception e) {
             System.err.println("Database operation error: " + e.getMessage());
         }
@@ -341,7 +340,6 @@ final class Commands {
         // 更新到数据库
         try(var db = new SQLiteAccess(mainApp.DATABASE_PATH)) {
             db.UpsertInfo(result.data);
-            System.out.println("Database update completed for " + result.data.size() + " torrents.");
         } catch(Exception e) {
             System.err.println("Database operation error: " + e.getMessage());
         }

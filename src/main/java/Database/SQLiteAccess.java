@@ -1,9 +1,11 @@
 package Database;
 
+import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -110,20 +112,69 @@ public class SQLiteAccess implements Closeable {
         var prev_auto = connect.getAutoCommit();
         connect.setAutoCommit(false);
         try {
+            var failures = new ArrayList<Transactions.UpsertFailure>();
+
             System.out.println("正在更新数据库，AnimeInfo: " + animeInfoSet.size());
-            Transactions.upsertInfoAnimeInfo        (connect, animeInfoSet);
+            Transactions.upsertInfoAnimeInfo        (connect, animeInfoSet, failures);
             System.out.println("正在更新数据库，EpisodeInfo: " + episodeInfoSet.size());
-            Transactions.upsertInfoEpisodeInfo      (connect, episodeInfoSet);
+            Transactions.upsertInfoEpisodeInfo      (connect, episodeInfoSet, failures);
             System.out.println("正在更新数据库，EpisodeRecordInfo: " + episodeRecordInfoSet.size());
-            Transactions.upsertInfoEpisodeRecordInfo(connect, episodeRecordInfoSet);
+            Transactions.upsertInfoEpisodeRecordInfo(connect, episodeRecordInfoSet, failures);
             System.out.println("正在更新数据库，RSSInfo: " + rssInfoSet.size());
-            Transactions.upsertInfoRSSInfo          (connect, rssInfoSet);
+            Transactions.upsertInfoRSSInfo          (connect, rssInfoSet, failures);
             System.out.println("正在更新数据库，TorrentPageInfo: " + torrentPageInfoSet.size());
-            Transactions.upsertInfoTorrentPageInfo  (connect, torrentPageInfoSet);
+            Transactions.upsertInfoTorrentPageInfo  (connect, torrentPageInfoSet, failures);
             System.out.println("正在更新数据库，TorrentInfo: " + torrentInfoSet.size());
-            Transactions.upsertInfoTorrentInfo      (connect, torrentInfoSet);
-            connect.commit();
-            System.out.println("数据库更新完成");
+            Transactions.upsertInfoTorrentInfo      (connect, torrentInfoSet, failures);
+
+            if(failures.isEmpty()) {
+                connect.commit();
+                System.out.println("数据库更新完成");
+            } else {
+                System.err.println("数据库写入完成，共有 " + failures.size() + " 个数据项写入失败：");
+                for(var i = 0; i < failures.size(); i++) {
+                    var failure = failures.get(i);
+                    var info = failure.info();
+                    var type_name = info == null ? "null" : info.getClass().getSimpleName();
+                    System.err.println("问题数据项 #" + (i + 1) + ": " + type_name);
+                    System.err.println("错误信息: " + failure.error().getMessage());
+                    if(info == null) System.err.println("null");
+                    else try { System.err.println(info.toPrintString("", false)); }
+                    catch(RuntimeException _) { System.err.println(info); }
+                }
+
+                var reader = new BufferedReader(new InputStreamReader(System.in));
+                var commit_successful_items = false;
+                while(true) {
+                    System.out.print("是否提交其他插入成功的数据？[y/n]: ");
+                    System.out.flush();
+
+                    final String answer;
+                    try { answer = reader.readLine(); }
+                    catch(IOException e) { throw new SQLException("读取提交确认失败", e); }
+
+                    if(answer == null) {
+                        System.out.println("未读取到用户输入，默认不提交。");
+                        break;
+                    }
+
+                    var normalized_answer = answer.trim().toLowerCase();
+                    if(normalized_answer.equals("y") || normalized_answer.equals("yes")) {
+                        commit_successful_items = true;
+                        break;
+                    }
+                    if(normalized_answer.equals("n") || normalized_answer.equals("no")) break;
+                    System.out.println("请输入 y 或 n。");
+                }
+
+                if(commit_successful_items) {
+                    connect.commit();
+                    System.out.println("已提交其他插入成功的数据。");
+                } else {
+                    connect.rollback();
+                    System.out.println("已取消提交，本次数据库更新已全部回滚。");
+                }
+            }
         }
         catch(SQLException | RuntimeException e) { connect.rollback(); throw e; }
         finally { connect.setAutoCommit(prev_auto); }
