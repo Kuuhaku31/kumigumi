@@ -110,19 +110,26 @@ public class SQLiteAccess implements Closeable {
         var prev_auto = connect.getAutoCommit();
         connect.setAutoCommit(false);
         try {
-            Transactions.upsertInfoAnimeInfo        (connect, animeInfoSet,         SQL_PARAM_CHUNK_SIZE);
-            Transactions.upsertInfoEpisodeInfo      (connect, episodeInfoSet,       SQL_PARAM_CHUNK_SIZE);
-            Transactions.upsertInfoEpisodeRecordInfo(connect, episodeRecordInfoSet, SQL_PARAM_CHUNK_SIZE);
-            Transactions.upsertInfoRSSInfo          (connect, rssInfoSet,           SQL_PARAM_CHUNK_SIZE);
-            Transactions.upsertInfoTorrentPageInfo  (connect, torrentPageInfoSet,   SQL_PARAM_CHUNK_SIZE);
-            Transactions.upsertInfoTorrentInfo      (connect, torrentInfoSet,       SQL_PARAM_CHUNK_SIZE);
+            System.out.println("正在更新数据库，AnimeInfo: " + animeInfoSet.size());
+            Transactions.upsertInfoAnimeInfo        (connect, animeInfoSet);
+            System.out.println("正在更新数据库，EpisodeInfo: " + episodeInfoSet.size());
+            Transactions.upsertInfoEpisodeInfo      (connect, episodeInfoSet);
+            System.out.println("正在更新数据库，EpisodeRecordInfo: " + episodeRecordInfoSet.size());
+            Transactions.upsertInfoEpisodeRecordInfo(connect, episodeRecordInfoSet);
+            System.out.println("正在更新数据库，RSSInfo: " + rssInfoSet.size());
+            Transactions.upsertInfoRSSInfo          (connect, rssInfoSet);
+            System.out.println("正在更新数据库，TorrentPageInfo: " + torrentPageInfoSet.size());
+            Transactions.upsertInfoTorrentPageInfo  (connect, torrentPageInfoSet);
+            System.out.println("正在更新数据库，TorrentInfo: " + torrentInfoSet.size());
+            Transactions.upsertInfoTorrentInfo      (connect, torrentInfoSet);
             connect.commit();
+            System.out.println("数据库更新完成");
         }
         catch(SQLException | RuntimeException e) { connect.rollback(); throw e; }
         finally { connect.setAutoCommit(prev_auto); }
     }
 
-    // 替换required_anime_id表中的ANI_ID列表，先删除原有数据再批量插入新数据
+    // 替换required_anime_id表中的ANI_ID列表，先删除原有数据再逐条插入新数据
     public void ReplaceRequiredAnimeIds(Set<Integer> ani_id_set) throws SQLException {
 
         Transactions.replaceAniIds(connect, ani_id_set);

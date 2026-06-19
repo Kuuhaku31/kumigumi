@@ -20,10 +20,10 @@
 ## 新增一种 Info 类型
 
 1. 在 `src/main/java/Info/` 下新增 `*Info` 类并继承 `BaseInfo`。
-2. 在 `SQLiteSQL` 中新增建表 SQL 和 upsert SQL。
+2. 在 `SQLiteSQL` 中新增建表 SQL。
 3. 在 `SQLiteSQL.createTableStatements()` 中加入建表语句。
-4. 在 `SQLiteAccess.UpsertInfo` 中增加分类集合、类型分支和批量写入顺序。
-5. 在 `Transactions` 中增加对应的批量写入入口和参数绑定。
+4. 在 `SQLiteAccess.UpsertInfo` 中增加分类集合、类型分支和写入顺序。
+5. 在 `Transactions` 中增加对应的 upsert SQL、逐条写入入口和参数绑定。
 6. 增加对应测试。
 7. 更新 `doc/schema.md` 和 `doc/modules.md`。
 

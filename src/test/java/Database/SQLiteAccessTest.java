@@ -147,13 +147,17 @@ class SQLiteAccessTest {
         System.setErr(new PrintStream(errBuffer, true, StandardCharsets.UTF_8));
         try {
             try(var db = new SQLiteAccess(dbPath)) {
+                var goodAnime = new AnimeInfo(Map.of(
+                    "ANI_ID", "100",
+                    "title", "Will be rolled back"
+                ));
                 var badEpisode = new EpisodeInfo(Map.of(
                     "EPI_ID", "999",
                     "ANI_ID", "404",
                     "title", "Missing anime"
                 ));
 
-                assertThrows(SQLException.class, () -> db.UpsertInfo(Set.of(badEpisode)));
+                assertThrows(SQLException.class, () -> db.UpsertInfo(Set.of(goodAnime, badEpisode)));
             }
         } finally {
             System.setErr(prevErr);
@@ -167,6 +171,7 @@ class SQLiteAccessTest {
 
         try(var conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
             var stmt = conn.createStatement()) {
+            assertEquals(0, count(stmt, "anime"));
             assertEquals(0, count(stmt, "episode"));
         }
     }
