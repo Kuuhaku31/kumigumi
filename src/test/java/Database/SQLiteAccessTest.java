@@ -80,8 +80,8 @@ class SQLiteAccessTest {
             assertEquals(torrent.TOR_HASH, downloader.TOR_HASH());
             assertEquals(List.of("https://example.com/download.torrent"), downloader.url_download_list());
 
-            db.ReplaceRequiredAnimeIds(Set.of());
-            db.ReplaceRequiredAnimeIds(Set.of(999));
+            db.ReplaceRequiredViewFilters(Set.of(), Set.of());
+            db.ReplaceRequiredViewFilters(Set.of(999), Set.of());
         }
 
         try(var conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
@@ -92,9 +92,15 @@ class SQLiteAccessTest {
         }
 
         var aniIdFile = tempDir.resolve("ani-ids.txt");
+        var rssURLFile = tempDir.resolve("rss-urls.txt");
         Files.writeString(aniIdFile, "100, 100;\n100");
+        Files.writeString(rssURLFile, "https://example.com/feed.xml\n\nhttps://example.com/feed.xml");
         assertEquals(Set.of(100), CreateDatabaseViews.ReadAnimeIds(aniIdFile.toString()));
-        CreateDatabaseViews.Create(dbPath, aniIdFile.toString());
+        assertEquals(
+            Set.of("https://example.com/feed.xml"),
+            CreateDatabaseViews.ReadRssURLs(rssURLFile.toString())
+        );
+        CreateDatabaseViews.Create(dbPath, aniIdFile.toString(), rssURLFile.toString());
 
         try(var conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
             var stmt = conn.createStatement()) {
@@ -105,6 +111,7 @@ class SQLiteAccessTest {
             assertEquals(1, count(stmt, "torrent_page"));
             assertEquals(1, count(stmt, "torrent"));
             assertEquals(1, count(stmt, "required_anime_id"));
+            assertEquals(1, count(stmt, "required_rss"));
 
             try(var rs = stmt.executeQuery("SELECT * FROM view_anime WHERE ANI_ID = 100")) {
                 assertTrue(rs.next());
@@ -128,11 +135,22 @@ class SQLiteAccessTest {
             }
         }
 
+        Files.writeString(rssURLFile, "https://example.com/other-feed.xml");
+        CreateDatabaseViews.Create(dbPath, aniIdFile.toString(), rssURLFile.toString());
+        try(var conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
+            var stmt = conn.createStatement()) {
+            assertEquals(1, count(stmt, "view_anime"));
+            assertEquals(1, count(stmt, "view_episode"));
+            assertEquals(0, count(stmt, "view_torrent_page"));
+        }
+
         Files.writeString(aniIdFile, "999");
-        CreateDatabaseViews.Create(dbPath, aniIdFile.toString());
+        Files.writeString(rssURLFile, "https://example.com/feed.xml");
+        CreateDatabaseViews.Create(dbPath, aniIdFile.toString(), rssURLFile.toString());
         try(var conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
             var stmt = conn.createStatement()) {
             assertEquals(1, count(stmt, "required_anime_id"));
+            assertEquals(1, count(stmt, "required_rss"));
             assertEquals(0, count(stmt, "view_anime"));
             assertEquals(0, count(stmt, "view_episode"));
             assertEquals(0, count(stmt, "view_torrent_page"));
@@ -226,7 +244,7 @@ class SQLiteAccessTest {
     }
 
     @Test
-    void rejectsExistingDatabaseWithMissingView() throws Exception {
+    void allowsExistingDatabaseWithMissingViewAndCanRecreateViews() throws Exception {
         var dbPath = tempDir.resolve("missing-view.db").toString();
         try(var _ = new SQLiteAccess(dbPath)) {}
 
@@ -235,8 +253,18 @@ class SQLiteAccessTest {
             stmt.execute("DROP VIEW view_episode");
         }
 
-        var error = assertThrows(SQLException.class, () -> new SQLiteAccess(dbPath));
-        assertTrue(error.getMessage().contains("缺失 view: view_episode"));
+        try(var db = new SQLiteAccess(dbPath)) {
+            db.FlushDatabaseViews();
+        }
+
+        try(var conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
+            var stmt = conn.createStatement();
+            var rs = stmt.executeQuery(
+                "SELECT COUNT(*) FROM sqlite_schema WHERE type = 'view' AND name = 'view_episode'"
+            )) {
+            assertTrue(rs.next());
+            assertEquals(1, rs.getInt(1));
+        }
     }
 
     @Test

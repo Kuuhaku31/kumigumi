@@ -122,6 +122,18 @@ final class DatabaseUtils {
         finally { conn.setAutoCommit(prev_auto); }
     }
 
+    static void recreate_database_views(Connection conn) throws SQLException {
+        var prev_auto = conn.getAutoCommit();
+        conn.setAutoCommit(false);
+        try(var st = conn.createStatement()) {
+            for(var sql : SQLiteSQL.dropViewStatements()) st.execute(sql);
+            for(var sql : SQLiteSQL.createViewStatements()) st.execute(sql);
+            conn.commit();
+        }
+        catch(SQLException | RuntimeException e) { conn.rollback(); throw e; }
+        finally { conn.setAutoCommit(prev_auto); }
+    }
+
     private record SchemaObject(String type, String sql) {}
 
     static void validate_database_schema(Connection conn) throws SQLException {
@@ -131,10 +143,12 @@ final class DatabaseUtils {
             expected = read_schema_objects(expected_conn);
         }
 
+        // 读取实际数据库的 schema 信息，并与预期进行对比，检查缺失或结构不正确的对象
         var actual = read_schema_objects(conn);
         var errors = new ArrayList<String>();
         for(var entry : expected.entrySet()) {
             var name = entry.getKey();
+            if(name.startsWith("view_")) continue; // 跳过视图的结构校验，因为它们会根据筛选条件动态变化
             var expected_object = entry.getValue();
             var actual_object = actual.get(name);
 
