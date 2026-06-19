@@ -122,7 +122,7 @@ Info
 | `TorrentPageInfo`   | `torrent_page`   | RSS 中的 torrent 页面 |
 | `TorrentInfo`       | `torrent`        | torrent 文件与元信息  |
 
-`Info` 不保存 SQL，不直接操作 JDBC。字段绑定由 `Database.SQLiteAccess` 完成。
+`Info` 不保存 SQL，不直接操作 JDBC。字段绑定与逐条写入由 `Database.Transactions` 完成。
 
 ## `Database`
 
@@ -131,7 +131,7 @@ Info
 | 类                  | 接口                                      | 说明                           |
 | ------------------- | ----------------------------------------- | ------------------------------ |
 | `SQLiteAccess`      | `SQLiteAccess(String dbPath)`             | 打开或创建 SQLite 数据库       |
-| `SQLiteAccess`      | `UpsertInfo(Set<? extends BaseInfo>)`     | 批量写入 Info 对象             |
+| `SQLiteAccess`      | `UpsertInfo(Set<? extends BaseInfo>)`     | 在单个事务中写入 Info 对象集合 |
 | `SQLiteAccess`      | `GetTorrentHashNotExist(Set<String>)`     | 查询缺失 torrent blob 的 hash  |
 | `SQLiteAccess`      | `GetDownloaderByHash(Set<String>)`        | 查询 hash 对应下载地址         |
 | `SQLiteAccess`      | `ExportTorrentFiles(Set<String>, String)` | 导出 torrent blob              |
@@ -139,10 +139,13 @@ Info
 
 包内实现：
 
-| 类              | 说明                               |
-| --------------- | ---------------------------------- |
-| `SQLiteSQL`     | 建表、PRAGMA、upsert 和查询 SQL    |
-| `DatabaseUtils` | JDBC 参数绑定、hash 去重、分块查询 |
+| 类              | 说明                                        |
+| --------------- | ------------------------------------------- |
+| `SQLiteSQL`     | 建表、PRAGMA 和查询 SQL                     |
+| `Transactions`  | Info 参数绑定、逐条写入和失败数据打印       |
+| `DatabaseUtils` | JDBC 空值绑定、hash 去重、分块和 schema 校验 |
+
+`UpsertInfo` 在同一个事务中依次执行所有 Info 类型。单条数据写入失败时会记录错误并继续；全部类型处理完成后统一打印失败数据，由用户决定提交其余成功数据或回滚本次全部写入。没有失败项时直接提交。
 
 ## `NetAccess`
 

@@ -1,12 +1,17 @@
 package Database;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import static Utils.UtilityFunctions.getDateString;
 
@@ -104,4 +109,63 @@ final class DatabaseUtils {
             ps.setString(i + 1, values.get(i));
         }
     }
+
+    static void initialize_database_schema(Connection conn) throws SQLException {
+        var prev_auto = conn.getAutoCommit();
+        conn.setAutoCommit(false);
+        try(var st = conn.createStatement()) {
+            for(var sql : SQLiteSQL.createTableStatements()) st.execute(sql);
+            for(var sql : SQLiteSQL.createViewStatements()) st.execute(sql);
+            conn.commit();
+        }
+        catch(SQLException | RuntimeException e) { conn.rollback(); throw e; }
+        finally { conn.setAutoCommit(prev_auto); }
+    }
+
+    private record SchemaObject(String type, String sql) {}
+
+    static void validate_database_schema(Connection conn) throws SQLException {
+        Map<String, SchemaObject> expected;
+        try(var expected_conn = DriverManager.getConnection("jdbc:sqlite::memory:")) {
+            initialize_database_schema(expected_conn);
+            expected = read_schema_objects(expected_conn);
+        }
+
+        var actual = read_schema_objects(conn);
+        var errors = new ArrayList<String>();
+        for(var entry : expected.entrySet()) {
+            var name = entry.getKey();
+            var expected_object = entry.getValue();
+            var actual_object = actual.get(name);
+
+            if(actual_object == null) {
+                errors.add("缺失 " + expected_object.type() + ": " + name);
+            } else if(!expected_object.type().equals(actual_object.type())) {
+                errors.add("对象类型错误: " + name + "，预期 " + expected_object.type() + "，实际 " + actual_object.type());
+            } else if(!normalize_schema_sql(expected_object.sql()).equals(normalize_schema_sql(actual_object.sql()))) {
+                errors.add("结构不正确 " + expected_object.type() + ": " + name);
+            }
+        }
+
+        if(!errors.isEmpty()) {
+            throw new SQLException("数据库结构校验失败:\n- " + String.join("\n- ", errors));
+        }
+    }
+
+       private static Map<String, SchemaObject> read_schema_objects(Connection conn) throws SQLException {
+        Map<String, SchemaObject> result = new LinkedHashMap<>();
+        try(var st = conn.createStatement();
+            var rs = st.executeQuery(SQLiteSQL.SELECT_SCHEMA_OBJECTS)) {
+            while(rs.next()) {
+                result.put(rs.getString("name"), new SchemaObject(rs.getString("type"), rs.getString("sql")));
+            }
+        }
+        return result;
+    }
+
+    private static String normalize_schema_sql(String sql) {
+        if(sql == null) return "";
+        return sql.replaceAll("\\s+", "").toLowerCase(Locale.ROOT);
+    }
+
 }

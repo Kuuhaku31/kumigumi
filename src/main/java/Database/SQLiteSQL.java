@@ -137,122 +137,103 @@ final class SQLiteSQL {
     );
     """;
 
-    static final String UPSERT_ANIME_INFO =
+    static final String CREATE_REQUIRED_ANIME_ID_TABLE =
     """
-    INSERT INTO anime (
-        ANI_ID,
-        air_date,
-        title,
-        title_cn,
-        aliases,
-        description,
-        episode_count,
-        url_official_site,
-        url_cover,
-        update_datetime
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(ANI_ID) DO UPDATE SET
-        air_date            = excluded.air_date,
-        title               = excluded.title,
-        title_cn            = excluded.title_cn,
-        aliases             = excluded.aliases,
-        description         = excluded.description,
-        episode_count       = excluded.episode_count,
-        url_official_site   = excluded.url_official_site,
-        url_cover           = excluded.url_cover,
-        update_datetime     = excluded.update_datetime;
+    CREATE TABLE IF NOT EXISTS "required_anime_id" (
+        "ANI_ID" integer NOT NULL,
+        PRIMARY KEY ("ANI_ID" DESC)
+    );
     """;
 
-    static final String UPSERT_EPISODE_INFO =
+    static final String CREATE_VIEW_ANIME =
     """
-    INSERT INTO episode (
-        EPI_ID,
-        ANI_ID,
-        ep,
-        sort,
-        air_date,
-        duration,
-        title,
-        title_cn,
-        description,
-        update_datetime
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(EPI_ID) DO UPDATE SET
-        ANI_ID              = excluded.ANI_ID,
-        ep                  = excluded.ep,
-        sort                = excluded.sort,
-        air_date            = excluded.air_date,
-        duration            = excluded.duration,
-        title               = excluded.title,
-        title_cn            = excluded.title_cn,
-        description         = excluded.description,
-        update_datetime     = excluded.update_datetime;
+    CREATE VIEW view_anime AS
+    SELECT
+        a.ANI_ID,
+        a.air_date          AS ani_air_date,
+        a.title             AS ani_title,
+        a.title_cn          AS ani_title_cn,
+        a.aliases           AS ani_aliases,
+        a.description       AS ani_description,
+        a.episode_count     AS ani_episode_count,
+        a.url_official_site AS ani_official_site,
+        a.url_cover         AS ani_cover,
+        a.update_datetime   AS ani_info_update_datetime,
+        (
+            SELECT group_concat(r.URL_RSS, '; ')
+            FROM rss AS r
+            WHERE r.ANI_ID = a.ANI_ID
+        ) AS ani_rss_list,
+        'https://bgm.tv/subject/' || a.ANI_ID AS ani_bgm_site
+    FROM anime AS a
+    WHERE a.ANI_ID IN (SELECT ANI_ID FROM required_anime_id);
     """;
 
-    static final String UPSERT_EPISODE_RECORD_INFO =
+    static final String CREATE_VIEW_EPISODE =
     """
-    INSERT INTO episode_record (
-        EPI_ID,
-        view_datetime,
-        rating,
-        comment
-    )
-    VALUES (?, ?, ?, ?)
-    ON CONFLICT(EPI_ID, view_datetime) DO UPDATE SET
-        rating      = excluded.rating,
-        comment     = excluded.comment;
+    CREATE VIEW view_episode AS
+    SELECT
+        e.EPI_ID,
+        e.ANI_ID,
+        e.ep              AS epi_index,
+        e.sort            AS epi_sort,
+        e.air_date        AS epi_air_date,
+        e.duration        AS epi_duration,
+        e.title           AS epi_title,
+        e.title_cn        AS epi_title_cn,
+        e.description     AS epi_description,
+        e.update_datetime AS epi_info_update_datetime,
+        a.title           AS ani_title,
+        a.title_cn        AS ani_title_cn
+    FROM episode AS e
+    INNER JOIN anime AS a ON a.ANI_ID = e.ANI_ID
+    WHERE e.ANI_ID IN (SELECT ANI_ID FROM required_anime_id);
     """;
 
-    static final String UPSERT_RSS_INFO =
+    static final String CREATE_VIEW_TORRENT_PAGE =
     """
-    INSERT INTO rss (
-        URL_RSS,
-        ANI_ID
-    )
-    VALUES (?, ?)
-    ON CONFLICT(URL_RSS) DO UPDATE SET
-        ANI_ID = excluded.ANI_ID;
+    CREATE VIEW view_torrent_page AS
+    SELECT
+        tp.URL_RSS,
+        tp.TOR_HASH,
+        tp.air_datetime,
+        tp.url_download,
+        tp.url_page,
+        tp.title,
+        tp.subtitle_group,
+        tp.description,
+        tp.update_datetime,
+        a.title     AS ani_title,
+        a.title_cn  AS ani_title_cn,
+        t.file_size AS tor_file_size,
+        t.file_name AS tor_file_name
+    FROM torrent_page AS tp
+    LEFT JOIN rss AS r ON r.URL_RSS = tp.URL_RSS
+    LEFT JOIN anime AS a ON a.ANI_ID = r.ANI_ID
+    LEFT JOIN torrent AS t ON t.TOR_HASH = tp.TOR_HASH
+    WHERE r.ANI_ID IN (SELECT ANI_ID FROM required_anime_id);
     """;
 
-    static final String UPSERT_TORRENT_PAGE_INFO =
-    """
-    INSERT INTO torrent_page (
-        URL_RSS,
-        TOR_HASH,
-        air_datetime,
-        url_download,
-        url_page,
-        title,
-        subtitle_group,
-        description,
-        update_datetime
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(URL_RSS, TOR_HASH) DO UPDATE SET
-        air_datetime      = excluded.air_datetime,
-        url_download      = excluded.url_download,
-        url_page          = excluded.url_page,
-        title             = excluded.title,
-        subtitle_group    = excluded.subtitle_group,
-        description       = excluded.description,
-        update_datetime   = excluded.update_datetime;
-    """;
+    static final String DELETE_REQUIRED_ANIME_IDS = "DELETE FROM required_anime_id;";
+    static final String INSERT_REQUIRED_ANIME_ID  = "INSERT INTO required_anime_id (ANI_ID) VALUES (?);";
 
-    static final String UPSERT_TORRENT_INFO =
+    static final String SELECT_SCHEMA_OBJECTS =
     """
-    INSERT INTO torrent (
-        TOR_HASH,
-        file_name,
-        file_size,
-        torrent_file
-    )
-    VALUES (?, ?, ?, ?)
-    ON CONFLICT(TOR_HASH) DO UPDATE SET
-        file_name    = excluded.file_name,
-        file_size    = excluded.file_size,
-        torrent_file = excluded.torrent_file;
+    SELECT type, name, sql
+    FROM sqlite_schema
+    WHERE type IN ('table', 'view')
+      AND name IN (
+          'anime',
+          'episode',
+          'episode_record',
+          'rss',
+          'torrent',
+          'torrent_page',
+          'required_anime_id',
+          'view_anime',
+          'view_episode',
+          'view_torrent_page'
+      );
     """;
 
     static List<String> createTableStatements() {
@@ -262,7 +243,16 @@ final class SQLiteSQL {
             CREATE_EPISODE_RECORD_TABLE,
             CREATE_RSS_TABLE,
             CREATE_TORRENT_TABLE,
-            CREATE_TORRENT_PAGE_TABLE
+            CREATE_TORRENT_PAGE_TABLE,
+            CREATE_REQUIRED_ANIME_ID_TABLE
+        );
+    }
+
+    static List<String> createViewStatements() {
+        return List.of(
+            CREATE_VIEW_ANIME,
+            CREATE_VIEW_EPISODE,
+            CREATE_VIEW_TORRENT_PAGE
         );
     }
 

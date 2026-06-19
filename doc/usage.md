@@ -85,6 +85,8 @@ EXPORT_DIR=ignore/torrents/
 
 ```powershell
 mvn -q -DskipTests compile
+# -q 选项让 Maven 输出更简洁
+# -DskipTests 跳过测试编译和运行
 ```
 
 然后在 VS Code / Java IDE 中使用 `Kumigumi: Main` 启动配置，参数为：

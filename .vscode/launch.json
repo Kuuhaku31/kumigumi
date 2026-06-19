@@ -3,6 +3,17 @@
   "configurations": [
     {
         "type": "java",
+        "name": "Utils.CreateDatabaseViews",
+        "request": "launch",
+        "mainClass": "kumigumi/Utils.CreateDatabaseViews",
+        "projectName": "kumigumi",
+        "args": "${workspaceFolder}/_out/kumigumi_test.db ${workspaceFolder}/_out/ani_id_list.txt",
+        "vmArgs": [
+            "--enable-native-access=org.xerial.sqlitejdbc"
+        ]
+    },
+    {
+        "type": "java",
         "name": "ExcelReaderBenchmark",
         "request": "launch",
         "mainClass": "Main.ExcelReaderBenchmark",
@@ -43,7 +54,7 @@
         "cwd": "${workspaceFolder}",
         "console": "integratedTerminal",
         "args": [
-           "--use_config",
+            "--use_config"
         ],
         "vmArgs": [
             "--enable-native-access=org.xerial.sqlitejdbc"
