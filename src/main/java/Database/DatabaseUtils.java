@@ -143,10 +143,12 @@ final class DatabaseUtils {
             expected = read_schema_objects(expected_conn);
         }
 
+        // 读取实际数据库的 schema 信息，并与预期进行对比，检查缺失或结构不正确的对象
         var actual = read_schema_objects(conn);
         var errors = new ArrayList<String>();
         for(var entry : expected.entrySet()) {
             var name = entry.getKey();
+            if(name.startsWith("view_")) continue; // 跳过视图的结构校验，因为它们会根据筛选条件动态变化
             var expected_object = entry.getValue();
             var actual_object = actual.get(name);
 

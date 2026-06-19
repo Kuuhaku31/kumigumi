@@ -244,7 +244,7 @@ class SQLiteAccessTest {
     }
 
     @Test
-    void rejectsExistingDatabaseWithMissingView() throws Exception {
+    void allowsExistingDatabaseWithMissingViewAndCanRecreateViews() throws Exception {
         var dbPath = tempDir.resolve("missing-view.db").toString();
         try(var _ = new SQLiteAccess(dbPath)) {}
 
@@ -253,8 +253,18 @@ class SQLiteAccessTest {
             stmt.execute("DROP VIEW view_episode");
         }
 
-        var error = assertThrows(SQLException.class, () -> new SQLiteAccess(dbPath));
-        assertTrue(error.getMessage().contains("缺失 view: view_episode"));
+        try(var db = new SQLiteAccess(dbPath)) {
+            db.FlushDatabaseViews();
+        }
+
+        try(var conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
+            var stmt = conn.createStatement();
+            var rs = stmt.executeQuery(
+                "SELECT COUNT(*) FROM sqlite_schema WHERE type = 'view' AND name = 'view_episode'"
+            )) {
+            assertTrue(rs.next());
+            assertEquals(1, rs.getInt(1));
+        }
     }
 
     @Test
