@@ -345,6 +345,73 @@ final class Commands {
         }
     }
 
+    static void flushDBView(MainApplication mainApp, List<String> cmd) {
+
+        if(cmd.size() != 1) {
+            var msg = "Invalid command format for FLUSH_DB_VIEW. Expected: FLUSH_DB_VIEW";
+            System.out.println(color(msg, ColorCode.BOLD_RED));
+            return;
+        }
+
+        try(var db = new SQLiteAccess(mainApp.DATABASE_PATH)) {
+            db.FlushDatabaseViews();
+            System.out.println("Database views refreshed.");
+        } catch(Exception e) {
+            System.err.println("Database operation error: " + e.getMessage());
+        }
+    }
+
+    static void flushDBViewRequired(MainApplication mainApp, List<String> cmd) {
+
+        var has_block_input = cmd.size() > 1;
+        var data_blocks = mainApp.getDataBlockByNames(cmd.subList(1, cmd.size()));
+        if(has_block_input && data_blocks.isEmpty()) {
+            System.out.println(color("No valid DataBlock found for database view filters; command skipped.", ColorCode.YELLOW));
+            return;
+        }
+
+        var ani_id_set = new LinkedHashSet<Integer>();
+        var rss_url_set = new LinkedHashSet<String>();
+        var found_filter_column = !has_block_input;
+        for(var data_block : data_blocks) {
+            var ani_id_column = data_block.GetColumn("ANI_ID");
+            if(ani_id_column != null) {
+                found_filter_column = true;
+                for(var value : ani_id_column) {
+                    if(value == null || value.isBlank()) continue;
+                    try {
+                        ani_id_set.add(Integer.parseInt(value.trim()));
+                    } catch(NumberFormatException e) {
+                        System.out.println(color("Invalid ANI_ID for database view filter: " + value, ColorCode.BOLD_YELLOW));
+                    }
+                }
+            }
+
+            var rss_url_column = data_block.GetColumn("URL_RSS");
+            if(rss_url_column != null) {
+                found_filter_column = true;
+                for(var value : rss_url_column) {
+                    if(value != null && !value.isBlank()) rss_url_set.add(value.trim());
+                }
+            }
+        }
+
+        if(!found_filter_column) {
+            System.out.println(color("DataBlock does not contain ANI_ID or URL_RSS columns; command skipped.", ColorCode.YELLOW));
+            return;
+        }
+
+        try(var db = new SQLiteAccess(mainApp.DATABASE_PATH)) {
+            db.ReplaceRequiredViewFilters(ani_id_set, rss_url_set);
+            System.out.println(
+                "Database view filters replaced: ANI_ID=" + ani_id_set.size()
+                + ", URL_RSS=" + rss_url_set.size()
+            );
+        } catch(Exception e) {
+            System.err.println("Database operation error: " + e.getMessage());
+        }
+    }
+
     static void exportTorrent(MainApplication mainApp, List<String> cmd) {
 
         // 参数检查

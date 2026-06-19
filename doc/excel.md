@@ -73,6 +73,8 @@ ANI_ID  2 int
 | `_to_db`                        | 无                                                      | `<infoVar...>`       | 写入 SQLite                   |
 | `_update_torrent`               | 无                                                      | `<infoVar...>`       | 下载缺失 torrent 并写入数据库 |
 | `_export_torrent`               | 无                                                      | `<blockVar...>`      | 按 `TOR_HASH` 导出 `.torrent` |
+| `_flush_db_view`                | 无                                                      | 无                   | 刷新数据库视图                |
+| `_flush_db_view_required`       | 无                                                      | `[<block...>]`       | 刷新数据库视图的筛选条件      |
 
 ## 命令细节
 
@@ -106,6 +108,10 @@ ANI_ID  2 int
 `_update_torrent` 接收包含 `TorrentPageInfo` 的 `InfoSetItem`，查询数据库中还没有 torrent blob 的 `TOR_HASH`，下载成功后写入 `TorrentInfo`。
 
 `_export_torrent` 接收 DataBlock 变量，要求包含 `TOR_HASH` 列。它从数据库读取已有 blob，并导出到 `EXPORT_DIR`。
+
+`_flush_db_view` 刷新数据库视图，直接删除并重新创建 `view_anime`、`view_episode`、`view_torrent_page`。
+
+`_flush_db_view_required` 刷新数据库视图的筛选条件。传入 DataBlock 变量时，提取出所有 `ANI_ID` 和 `URL_RSS` 列并替换筛选条件；不传入 DataBlock 时，清空 `required_anime_id` 和 `required_rss`。
 
 ## 当前限制
 
