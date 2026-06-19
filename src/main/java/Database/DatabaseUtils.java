@@ -122,6 +122,18 @@ final class DatabaseUtils {
         finally { conn.setAutoCommit(prev_auto); }
     }
 
+    static void recreate_database_views(Connection conn) throws SQLException {
+        var prev_auto = conn.getAutoCommit();
+        conn.setAutoCommit(false);
+        try(var st = conn.createStatement()) {
+            for(var sql : SQLiteSQL.dropViewStatements()) st.execute(sql);
+            for(var sql : SQLiteSQL.createViewStatements()) st.execute(sql);
+            conn.commit();
+        }
+        catch(SQLException | RuntimeException e) { conn.rollback(); throw e; }
+        finally { conn.setAutoCommit(prev_auto); }
+    }
+
     private record SchemaObject(String type, String sql) {}
 
     static void validate_database_schema(Connection conn) throws SQLException {

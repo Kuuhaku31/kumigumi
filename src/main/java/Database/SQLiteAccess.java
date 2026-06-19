@@ -191,6 +191,10 @@ public class SQLiteAccess implements Closeable {
         Transactions.replaceViewFilters(connect, ani_id_set, rss_url_set);
     }
 
+    public void FlushDatabaseViews() throws SQLException {
+        DatabaseUtils.recreate_database_views(connect);
+    }
+
     public void ExportTorrentFiles(Set<String> torHashList, String safePath) {
         if(torHashList == null || torHashList.isEmpty()) return;
 

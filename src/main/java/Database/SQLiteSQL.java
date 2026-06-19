@@ -223,6 +223,10 @@ final class SQLiteSQL {
       AND tp.URL_RSS IN (SELECT URL_RSS FROM required_rss);
     """;
 
+    static final String DROP_VIEW_ANIME        = "DROP VIEW IF EXISTS view_anime;";
+    static final String DROP_VIEW_EPISODE      = "DROP VIEW IF EXISTS view_episode;";
+    static final String DROP_VIEW_TORRENT_PAGE = "DROP VIEW IF EXISTS view_torrent_page;";
+
     static final String DELETE_REQUIRED_ANIME_IDS = "DELETE FROM required_anime_id;";
     static final String INSERT_REQUIRED_ANIME_ID  = "INSERT INTO required_anime_id (ANI_ID) VALUES (?);";
     static final String DELETE_REQUIRED_RSS       = "DELETE FROM required_rss;";
@@ -266,6 +270,14 @@ final class SQLiteSQL {
             CREATE_VIEW_ANIME,
             CREATE_VIEW_EPISODE,
             CREATE_VIEW_TORRENT_PAGE
+        );
+    }
+
+    static List<String> dropViewStatements() {
+        return List.of(
+            DROP_VIEW_TORRENT_PAGE,
+            DROP_VIEW_EPISODE,
+            DROP_VIEW_ANIME
         );
     }
 
