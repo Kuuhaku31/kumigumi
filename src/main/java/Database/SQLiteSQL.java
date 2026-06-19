@@ -211,6 +211,7 @@ final class SQLiteSQL {
         tp.subtitle_group,
         tp.description,
         tp.update_datetime,
+        a.ANI_ID    AS ani_id,
         a.title     AS ani_title,
         a.title_cn  AS ani_title_cn,
         t.file_size AS tor_file_size,
