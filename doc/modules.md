@@ -132,6 +132,7 @@ Info
 | ------------------- | ----------------------------------------- | ------------------------------ |
 | `SQLiteAccess`      | `SQLiteAccess(String dbPath)`             | 打开或创建 SQLite 数据库       |
 | `SQLiteAccess`      | `UpsertInfo(Set<? extends BaseInfo>)`     | 在单个事务中写入 Info 对象集合 |
+| `SQLiteAccess`      | `ReplaceRequiredViewFilters(Set<Integer>, Set<String>)` | 替换视图的 ANI_ID 与 RSS URL 筛选条件 |
 | `SQLiteAccess`      | `GetTorrentHashNotExist(Set<String>)`     | 查询缺失 torrent blob 的 hash  |
 | `SQLiteAccess`      | `GetDownloaderByHash(Set<String>)`        | 查询 hash 对应下载地址         |
 | `SQLiteAccess`      | `ExportTorrentFiles(Set<String>, String)` | 导出 torrent blob              |
