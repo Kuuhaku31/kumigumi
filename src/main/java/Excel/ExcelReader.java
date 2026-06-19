@@ -35,10 +35,11 @@ public class ExcelReader {
             try(var is = Files.newInputStream(source_path)) {
                 Files.copy(is, temp_file, StandardCopyOption.REPLACE_EXISTING);
             }
-            var msg = "ExcelReader: 复制文件到: " + temp_file.toAbsolutePath().toString();
+            var msg = "ExcelReader: 已复制文件到: " + temp_file.toAbsolutePath().toString();
             System.out.println(color(msg, ColorCode.GREEN));
 
             // 创建工作簿，并交给 ExcelReadContext 按需读取单元格数据
+            System.out.println(color("ExcelReader: 正在加载工作簿...", ColorCode.GREEN));
             try(
                 var fis = new FileInputStream(temp_file.toFile());
                 var workbook = new XSSFWorkbook(fis)
