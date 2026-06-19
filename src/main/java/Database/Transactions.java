@@ -20,23 +20,28 @@ final class Transactions {
 
     record UpsertFailure(BaseInfo info, SQLException error) {}
 
-    static void replaceAniIds(Connection connect, Set<Integer> newAniIDs) throws SQLException {
-
-        final String DELETE_REQUIRED_ANIME_IDS = "DELETE FROM required_anime_id;";
-        final String INSERT_REQUIRED_ANIME_ID  = "INSERT INTO required_anime_id (ANI_ID) VALUES (?);";
+    static void replaceViewFilters(
+        Connection   connect,
+        Set<Integer> newAniIDs,
+        Set<String>  newRssURLs
+    ) throws SQLException {
 
         var prev_auto = connect.getAutoCommit();
         connect.setAutoCommit(false);
         try(
-            var delete_statement = connect.prepareStatement(DELETE_REQUIRED_ANIME_IDS);
-            var insert_statement = connect.prepareStatement(INSERT_REQUIRED_ANIME_ID)
+            var delete_ani_statement = connect.prepareStatement(SQLiteSQL.DELETE_REQUIRED_ANIME_IDS);
+            var insert_ani_statement = connect.prepareStatement(SQLiteSQL.INSERT_REQUIRED_ANIME_ID);
+            var delete_rss_statement = connect.prepareStatement(SQLiteSQL.DELETE_REQUIRED_RSS);
+            var insert_rss_statement = connect.prepareStatement(SQLiteSQL.INSERT_REQUIRED_RSS)
         ) {
-            delete_statement.executeUpdate();
+            delete_ani_statement.executeUpdate();
+            delete_rss_statement.executeUpdate();
+
             for(var i : newAniIDs) {
                 if(i == null) continue;
                 try {
-                    insert_statement.setInt(1, i);
-                    insert_statement.executeUpdate();
+                    insert_ani_statement.setInt(1, i);
+                    insert_ani_statement.executeUpdate();
                 } catch(SQLException e) {
                     System.err.println("数据库写入失败: required_anime_id");
                     System.err.println("错误信息: " + e.getMessage());
@@ -44,6 +49,20 @@ final class Transactions {
                     throw e;
                 }
             }
+
+            for(var url : newRssURLs) {
+                if(url == null || url.isBlank()) continue;
+                try {
+                    insert_rss_statement.setString(1, url);
+                    insert_rss_statement.executeUpdate();
+                } catch(SQLException e) {
+                    System.err.println("数据库写入失败: required_rss");
+                    System.err.println("错误信息: " + e.getMessage());
+                    System.err.println("问题数据项: URL_RSS=" + url);
+                    throw e;
+                }
+            }
+
             connect.commit();
         }
         catch(SQLException | RuntimeException e) { connect.rollback(); throw e; }

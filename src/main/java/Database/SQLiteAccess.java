@@ -180,10 +180,19 @@ public class SQLiteAccess implements Closeable {
         finally { connect.setAutoCommit(prev_auto); }
     }
 
-    // 替换required_anime_id表中的ANI_ID列表，先删除原有数据再逐条插入新数据
-    public void ReplaceRequiredAnimeIds(Set<Integer> ani_id_set) throws SQLException {
+    // 在同一个事务中整表替换视图使用的ANI_ID和RSS URL筛选条件
+    public void ReplaceRequiredViewFilters(
+        Set<Integer> ani_id_set,
+        Set<String>  rss_url_set
+    ) throws SQLException {
 
-        Transactions.replaceAniIds(connect, ani_id_set);
+        if(ani_id_set == null) throw new IllegalArgumentException("ANI_ID set cannot be null");
+        if(rss_url_set == null) throw new IllegalArgumentException("RSS URL set cannot be null");
+        Transactions.replaceViewFilters(connect, ani_id_set, rss_url_set);
+    }
+
+    public void FlushDatabaseViews() throws SQLException {
+        DatabaseUtils.recreate_database_views(connect);
     }
 
     public void ExportTorrentFiles(Set<String> torHashList, String safePath) {

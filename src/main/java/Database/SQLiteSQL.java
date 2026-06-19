@@ -145,6 +145,14 @@ final class SQLiteSQL {
     );
     """;
 
+    static final String CREATE_REQUIRED_RSS_TABLE =
+    """
+    CREATE TABLE IF NOT EXISTS "required_rss" (
+        "URL_RSS" text NOT NULL,
+        PRIMARY KEY ("URL_RSS" DESC)
+    );
+    """;
+
     static final String CREATE_VIEW_ANIME =
     """
     CREATE VIEW view_anime AS
@@ -211,11 +219,18 @@ final class SQLiteSQL {
     LEFT JOIN rss AS r ON r.URL_RSS = tp.URL_RSS
     LEFT JOIN anime AS a ON a.ANI_ID = r.ANI_ID
     LEFT JOIN torrent AS t ON t.TOR_HASH = tp.TOR_HASH
-    WHERE r.ANI_ID IN (SELECT ANI_ID FROM required_anime_id);
+    WHERE r.ANI_ID IN (SELECT ANI_ID FROM required_anime_id)
+      AND tp.URL_RSS IN (SELECT URL_RSS FROM required_rss);
     """;
+
+    static final String DROP_VIEW_ANIME        = "DROP VIEW IF EXISTS view_anime;";
+    static final String DROP_VIEW_EPISODE      = "DROP VIEW IF EXISTS view_episode;";
+    static final String DROP_VIEW_TORRENT_PAGE = "DROP VIEW IF EXISTS view_torrent_page;";
 
     static final String DELETE_REQUIRED_ANIME_IDS = "DELETE FROM required_anime_id;";
     static final String INSERT_REQUIRED_ANIME_ID  = "INSERT INTO required_anime_id (ANI_ID) VALUES (?);";
+    static final String DELETE_REQUIRED_RSS       = "DELETE FROM required_rss;";
+    static final String INSERT_REQUIRED_RSS       = "INSERT INTO required_rss (URL_RSS) VALUES (?);";
 
     static final String SELECT_SCHEMA_OBJECTS =
     """
@@ -230,6 +245,7 @@ final class SQLiteSQL {
           'torrent',
           'torrent_page',
           'required_anime_id',
+          'required_rss',
           'view_anime',
           'view_episode',
           'view_torrent_page'
@@ -244,7 +260,8 @@ final class SQLiteSQL {
             CREATE_RSS_TABLE,
             CREATE_TORRENT_TABLE,
             CREATE_TORRENT_PAGE_TABLE,
-            CREATE_REQUIRED_ANIME_ID_TABLE
+            CREATE_REQUIRED_ANIME_ID_TABLE,
+            CREATE_REQUIRED_RSS_TABLE
         );
     }
 
@@ -253,6 +270,14 @@ final class SQLiteSQL {
             CREATE_VIEW_ANIME,
             CREATE_VIEW_EPISODE,
             CREATE_VIEW_TORRENT_PAGE
+        );
+    }
+
+    static List<String> dropViewStatements() {
+        return List.of(
+            DROP_VIEW_TORRENT_PAGE,
+            DROP_VIEW_EPISODE,
+            DROP_VIEW_ANIME
         );
     }
 
