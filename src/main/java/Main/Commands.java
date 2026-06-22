@@ -437,6 +437,7 @@ final class Commands {
                         continue;
                     }
                     for(var tor_hash_str : tor_hash_str_list) {
+                        if(tor_hash_str == null || tor_hash_str.isBlank()) continue; // 忽略空值
                         requested_tor_hash_set.add(tor_hash_str.trim());
                     }
                 }
